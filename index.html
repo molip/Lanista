@@ -1,0 +1,25 @@
+<html>
+<head>
+	<link rel="stylesheet" href="main.css">
+	
+	<script src="model.js"></script>
+	<script src="view.js"></script>
+	<script src="popup.js"></script>
+	<script src="controller.js"></script>
+	<script src="canvas.js"></script>
+	<script src="triggers.js"></script>
+</head>
+<body onload="Controller.onLoad()">
+	<div style="float:left">
+		<canvas id="canvas_ludus" width="1280" height="720" onclick="Canvas.onClick(event)" onmousemove="Canvas.onMouseMove(event)" onmouseout="Canvas.onMouseOut(event)"></canvas>
+	</div>
+
+    <div id="popup" onclick="Popup.onBackgroundClicked()">
+    	<div id="container" onclick="event.stopPropagation()"></div>
+	</div>
+
+	<img id="img_background" src="images/canvas/background.png" hidden="hidden">
+	<img id="img_home1" src="images/canvas/home1.png" hidden="hidden">
+	<img id="img_town" src="images/canvas/town.png" hidden="hidden">
+</body>
+</html>

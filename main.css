@@ -1,0 +1,46 @@
+body {
+    font-family:'Tahoma';
+}
+
+div	{ margin:10px }
+
+.item {
+	float: left;
+	border-style: solid;
+	margin: 10px;
+	background-color: white;
+}
+#popup {
+	position:fixed;
+	width:100%;
+	height:100%;
+	top:0px;
+	left:0px;
+	display: flex;
+	background-color:rgba(255, 255, 255, 0.5);
+    visibility: hidden;
+    opacity: 0;
+}
+
+#popup.show {
+    visibility: visible;
+    opacity: 1;
+    transition: all .5s ease-in-out;
+}
+
+#container {
+	border-style: solid;
+	margin: auto auto; 
+	background-color: white;
+	text-align: center;
+    transform: scale(0);
+}
+
+#container.show {
+    transform: scale(1);
+    transition: all .5s ease-in-out;
+}
+
+.item:hover { border-color: cornflowerblue; }
+.item:active { background-color: cornflowerblue; }
+img { margin: 5px }
