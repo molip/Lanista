@@ -35,6 +35,8 @@ View.showPopup = function(popup, title)
         itemHtml = itemHtml.replace('{{lock_hidden}}', popup.items[i].locked ? '' : 'hidden');
         
         html += itemHtml;
+        if (i > 0 && i % 4 == 0)
+            html += '<br>';
     }
 
     document.getElementById('container').innerHTML = html;
