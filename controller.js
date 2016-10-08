@@ -5,6 +5,7 @@ var Controller = {}
 Controller.onLoad = function()
 {
     Canvas.draw();
+    Controller.updateHUD();
 }
 
 Controller.onHomeTriggerClicked = function () 
@@ -14,16 +15,11 @@ Controller.onHomeTriggerClicked = function ()
 
 Controller.onTownTriggerClicked = function ()
 {
-    var items = [];
-    items.push({ title: 'Builders\' Merchant', image: 'images/builders.jpg', description: 'Buy building kits' });
-    items.push({ title: 'Animal Market', image: 'images/animals.jpg', description: 'Buy animals', locked: true });
-    items.push({ title: 'People Market', image: 'images/people.png', description: 'Buy people', locked: true });
-    items.push({ title: 'Armourer', image: 'images/armourer.jpg', description: 'Buy armour', locked: true });
-
-    Popup.show('Let\'s go shopping!', items, function (item) { Controller.onShopItemClicked(item); });
+    Shop.showShopsPopup();
 }
 
-Controller.onShopItemClicked = function (item)
+Controller.updateHUD = function ()
 {
-    View.showInfo(item.title, 'TODO: Shop items go here.');
+    var text = 'Money: ' + Util.formatMoney(Model.getMoney());
+    View.setHUDText(text);
 }

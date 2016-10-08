@@ -35,6 +35,8 @@ View.showPopup = function(popup, title)
         itemHtml = itemHtml.replace('{{lock_hidden}}', popup.items[i].locked ? '' : 'hidden');
         
         html += itemHtml;
+        if (i > 0 && i % 4 == 0)
+            html += '<br>';
     }
 
     document.getElementById('container').innerHTML = html;
@@ -63,4 +65,9 @@ View.showInfo = function (title, description) {
     document.getElementById('container').innerHTML = html;
     document.getElementById('container').className = 'show';
     document.getElementById('popup').className = 'show';
+}
+
+View.setHUDText = function (text)
+{
+    document.getElementById('hud_span').innerText = text;
 }
