@@ -5,6 +5,7 @@ var Controller = {}
 Controller.onLoad = function()
 {
     Canvas.draw();
+    Controller.updateHUD();
 }
 
 Controller.onHomeTriggerClicked = function () 
@@ -15,4 +16,10 @@ Controller.onHomeTriggerClicked = function ()
 Controller.onTownTriggerClicked = function ()
 {
     Shop.showShopsPopup();
+}
+
+Controller.updateHUD = function ()
+{
+    var text = 'Money: ' + Util.formatMoney(Model.getMoney());
+    View.setHUDText(text);
 }

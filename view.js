@@ -66,3 +66,8 @@ View.showInfo = function (title, description) {
     document.getElementById('container').className = 'show';
     document.getElementById('popup').className = 'show';
 }
+
+View.setHUDText = function (text)
+{
+    document.getElementById('hud_span').innerText = text;
+}

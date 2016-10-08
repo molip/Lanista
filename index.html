@@ -12,8 +12,9 @@
 	<script src="util.js"></script>
 </head>
 <body onload="Controller.onLoad()">
-	<div style="float:left">
+	<div id="canvas_div">
 		<canvas id="canvas_ludus" width="1280" height="720" onclick="Canvas.onClick(event)" onmousemove="Canvas.onMouseMove(event)" onmouseout="Canvas.onMouseOut(event)"></canvas>
+        <div id="hud_div"><span id="hud_span"></span></div> 
 	</div>
 
     <div id="popup" onclick="Popup.onBackgroundClicked()">

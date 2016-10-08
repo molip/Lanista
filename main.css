@@ -10,6 +10,22 @@ div	{ margin:10px }
 	margin: 10px;
 	background-color: white;
 }
+
+#canvas_div {
+	float: left;
+	position: relative;
+}
+
+#hud_div {
+	position: absolute;
+	top:0px;
+	left:0px;
+}
+
+#hud_span {
+	font-size: 200%;
+}
+
 #popup {
 	position:fixed;
 	width:100%;
