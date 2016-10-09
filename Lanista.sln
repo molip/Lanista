@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Controller", "Controller", "{D3A23EE9-AC6F-451D-80AD-580A3082A81A}"
+	ProjectSection(SolutionItems) = preProject
+		js\controller\canvas.js = js\controller\canvas.js
+		js\controller\controller.js = js\controller\controller.js
+		js\controller\popup.js = js\controller\popup.js
+		js\controller\shop.js = js\controller\shop.js
+		js\controller\triggers.js = js\controller\triggers.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Model", "Model", "{4B085633-784E-450C-99C5-3C83568F30C7}"
+	ProjectSection(SolutionItems) = preProject
+		js\model\model.js = js\model\model.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "View", "View", "{C4749A01-E219-469C-A186-392269873696}"
+	ProjectSection(SolutionItems) = preProject
+		js\view\canvas.js = js\view\canvas.js
+		js\view\view.js = js\view\view.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "JS", "JS", "{D54A3FAA-B16A-4D99-8573-DB188887C515}"
+	ProjectSection(SolutionItems) = preProject
+		js\util.js = js\util.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Project", "Project", "{E765FC6B-E0EE-45A7-979D-514D5F94DDED}"
+	ProjectSection(SolutionItems) = preProject
+		index.html = index.html
+		main.css = main.css
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D3A23EE9-AC6F-451D-80AD-580A3082A81A} = {D54A3FAA-B16A-4D99-8573-DB188887C515}
+		{4B085633-784E-450C-99C5-3C83568F30C7} = {D54A3FAA-B16A-4D99-8573-DB188887C515}
+		{C4749A01-E219-469C-A186-392269873696} = {D54A3FAA-B16A-4D99-8573-DB188887C515}
+		{D54A3FAA-B16A-4D99-8573-DB188887C515} = {E765FC6B-E0EE-45A7-979D-514D5F94DDED}
+	EndGlobalSection
+EndGlobal

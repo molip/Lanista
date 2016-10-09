@@ -1,6 +1,10 @@
 
 var View = {}
 
+View.getCanvas = function ()
+{
+    return document.getElementById("canvas_ludus");
+}
 
 View.showPopup = function(popup, title)
 {
