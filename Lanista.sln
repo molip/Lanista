@@ -14,11 +14,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Controller", "Controller", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Model", "Model", "{4B085633-784E-450C-99C5-3C83568F30C7}"
 	ProjectSection(SolutionItems) = preProject
+		js\model\buildings.js = js\model\buildings.js
 		js\model\model.js = js\model\model.js
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "View", "View", "{C4749A01-E219-469C-A186-392269873696}"
 	ProjectSection(SolutionItems) = preProject
+		js\view\buildings.js = js\view\buildings.js
 		js\view\canvas.js = js\view\canvas.js
 		js\view\view.js = js\view\view.js
 	EndProjectSection

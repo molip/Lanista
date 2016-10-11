@@ -5,6 +5,7 @@ var Model = {}
 Model.State = function ()
 {
 	this.money = 100;
+	this.buildings = new Model.Buildings.State();
 }
 
 Model.init = function ()

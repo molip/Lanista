@@ -2,9 +2,9 @@
 
 var Shop = {}
 
-Shop.createShopItem = function (title, image, description, price)
+Shop.createShopItem = function (title, image, description, price, locked)
 {
-    return { title: title, title2: Util.formatMoney(price), image: image, description: description, price: price, locked: price > Model.getMoney() };
+    return { title: title, title2: Util.formatMoney(price), image: image, description: description, price: price, locked: locked };
 }
 
 Shop.getShopTitle = function (name)
@@ -25,16 +25,17 @@ Shop.showShopsPopup = function ()
 
 Shop.onBuildersMerchantClicked = function ()
 {
-    var items = [];
-    items.push(Shop.createShopItem('Barracks', 'images/builders.jpg', 'For gladiators to live in.', 50));
-    items.push(Shop.createShopItem('Kennels', 'images/builders.jpg', 'For animals to live in.', 200));
-    items.push(Shop.createShopItem('Storage', 'images/builders.jpg', 'For stuff to live in.', 200));
-    items.push(Shop.createShopItem('Weapon manufactory', 'images/builders.jpg', 'To make weapons.', 200));
-    items.push(Shop.createShopItem('Armour manufactory', 'images/builders.jpg', 'To make armour.', 200));
-    items.push(Shop.createShopItem('Training hall', 'images/builders.jpg', 'To train gladiators.', 200));
-    items.push(Shop.createShopItem('Surgery', 'images/builders.jpg', 'To fix gladiators.', 200));
-    items.push(Shop.createShopItem('Lab', 'images/builders.jpg', 'To invent stuff.', 200));
-    items.push(Shop.createShopItem('Merchandising stall', 'images/builders.jpg', 'To sell stuff.', 200));
+	var items = [];
+
+	for (var i = 0, id; id = ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'][i]; ++i)
+	{
+		var level = Model.Buildings.getNextLevel(id);
+		if (level)
+		{
+			var viewLevel = View.Buildings.Types[id][Model.Buildings.getNextLevelIndex(id)];
+			items.push(Shop.createShopItem(viewLevel.name, viewLevel.shopImage, viewLevel.description, level.cost, !Model.Buildings.canUpgrade(id)));
+		}
+	}
 
     Popup.show(Shop.getShopTitle('Builders\' Merchant'), items, function (item) { Model.spendMoney(item.price); Controller.updateHUD(); });
 }
