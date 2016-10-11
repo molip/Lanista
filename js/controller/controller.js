@@ -4,6 +4,7 @@ var Controller = {}
 
 Controller.onLoad = function()
 {
+	Model.init();
     View.Canvas.draw();
     Controller.updateHUD();
 }
