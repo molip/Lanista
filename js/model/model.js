@@ -2,17 +2,26 @@
 
 var Model = {}
 
-Model._money = 100;
+Model.State = function ()
+{
+	this.money = 50;
+	this.buildings = new Model.Buildings.State();
+}
 
-Model.getMoney = function() { return this._money; }
+Model.init = function ()
+{
+	this._state = new Model.State();
+}
+
+Model.getMoney = function () { return this._state.money; }
 
 Model.spendMoney = function(amount) 
 {
-    Util.assert(amount >= 0 && this._money >= amount);
-    this._money -= amount;
+	Util.assert(amount >= 0 && this._state.money >= amount);
+	this._state.money -= amount;
 }
 
 Model.addMoney = function (amount) {
-    Util.assert(amount >= 0);
-    this._money += amount;
+	Util.assert(amount >= 0);
+	this._state.money += amount;
 }
