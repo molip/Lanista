@@ -4,7 +4,7 @@ var Model = {}
 
 Model.State = function ()
 {
-	this.money = 100;
+	this.money = 50;
 	this.buildings = new Model.Buildings.State();
 }
 

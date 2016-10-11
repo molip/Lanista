@@ -32,10 +32,19 @@ Shop.onBuildersMerchantClicked = function ()
 		var level = Model.Buildings.getNextLevel(id);
 		if (level)
 		{
-			var viewLevel = View.Buildings.Types[id][Model.Buildings.getNextLevelIndex(id)];
-			items.push(Shop.createShopItem(viewLevel.name, viewLevel.shopImage, viewLevel.description, level.cost, !Model.Buildings.canUpgrade(id)));
+			var levelIndex = Model.Buildings.getNextLevelIndex(id);
+			var viewLevel = View.Buildings.Types[id][levelIndex];
+			var item = Shop.createShopItem(viewLevel.name, viewLevel.shopImage, viewLevel.description, level.cost, !Model.Buildings.canUpgrade(id));
+			item.id = id, item.levelIndex = levelIndex;
+			items.push(item);
 		}
 	}
 
-    Popup.show(Shop.getShopTitle('Builders\' Merchant'), items, function (item) { Model.spendMoney(item.price); Controller.updateHUD(); });
+    Popup.show(Shop.getShopTitle('Builders\' Merchant'), items, function (item) 
+	{ 
+		Model.spendMoney(item.price); 
+		Model.Buildings.setLevelIndex(item.id, item.levelIndex);
+		Controller.updateHUD(); 
+		Controller.updateTriggers(); 
+	});
 }

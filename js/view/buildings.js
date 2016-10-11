@@ -7,7 +7,7 @@ View.Buildings._makeLevel = function (name, shopImage, mapX, mapY, description) 
 View.Buildings.Types = //					name			shop image				map x	map y	description						
 {
     'home':[	View.Buildings._makeLevel(	'Shack'			,'images/builders.jpg'	,40		,230	,''								),		
-				View.Buildings._makeLevel(	'House'			,'images/builders.jpg'	,1100	,290	,'Nice House'					)],
+				View.Buildings._makeLevel(	'House'			,'images/builders.jpg'	,60		,250	,'Nice House'					)],
     'barracks':[View.Buildings._makeLevel(	'Barracks 1'	,'images/builders.jpg'	,0		,0		,'For gladiators to live in'	),
 				View.Buildings._makeLevel(	'Barracks 2'	,'images/builders.jpg'	,0		,0		,'Nice Barracks'				)],
     'kennels':[	View.Buildings._makeLevel(	'Kennels 1'		,'images/builders.jpg'	,0		,0		,'For animals to live in'		),	

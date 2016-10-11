@@ -7,7 +7,7 @@ Model.Buildings._makeLevel = function (cost, buildSteps) { return { cost:cost, b
 Model.Buildings.Types = //					cost	build steps
 {													
     'home':[	Model.Buildings._makeLevel(	0		,3	),		
-				Model.Buildings._makeLevel(	100		,5	)],
+				Model.Buildings._makeLevel(	50		,5	)],
     'barracks':[Model.Buildings._makeLevel(	100		,3	),
 				Model.Buildings._makeLevel(	200		,5	)],
     'kennels':[	Model.Buildings._makeLevel(	100		,3	),	
@@ -59,6 +59,13 @@ Model.Buildings.getNextLevel = function (id)
 {
 	var index = this.getNextLevelIndex(id);
 	return index < 0 ? null : Model.Buildings.Types[id][index];
+}
+
+Model.Buildings.setLevelIndex = function (id, index)
+{
+	Util.assert(id in Model._state.buildings);
+	Util.assert(index < Model.Buildings.Types[id].length);
+	Model._state.buildings[id].levelIndex = index;
 }
 
 Model.Buildings.canUpgrade = function(id) 
