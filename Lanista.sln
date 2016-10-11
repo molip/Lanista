@@ -9,7 +9,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Controller", "Controller", 
 		js\controller\controller.js = js\controller\controller.js
 		js\controller\popup.js = js\controller\popup.js
 		js\controller\shop.js = js\controller\shop.js
-		js\controller\triggers.js = js\controller\triggers.js
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Model", "Model", "{4B085633-784E-450C-99C5-3C83568F30C7}"

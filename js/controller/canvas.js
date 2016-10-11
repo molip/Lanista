@@ -6,19 +6,13 @@ Controller.Canvas.HotTrigger = null;
 
 Controller.Canvas.hitTestTriggers = function (x, y)
 {
-    for (var i = 0; i < Triggers.length; ++i)
+    for (var i = 0, trigger; trigger = View.Canvas.Triggers[i]; ++i)
     {
-        var trigger = Triggers[i];
-        var id = trigger.getImageID();
-        if (id)
+        if (x >= trigger.x && y >= trigger.y)
         {
-            var image = TriggerImages[id];
-            if (x >= image.x && y >= image.y)
-            {
-                var element = document.getElementById(image.elementID);
-                if (x - image.x < element.width && y - image.y < element.height)
-                    return trigger;
-            }
+            var element = document.getElementById(trigger.imgElementID);
+            if (x - trigger.x < element.width && y - trigger.y < element.height)
+                return trigger;
         }
     }
     return null;
@@ -27,7 +21,7 @@ Controller.Canvas.hitTestTriggers = function (x, y)
 Controller.Canvas.onClick = function (e)
 {
     if (this.HotTrigger)
-        this.HotTrigger.onClicked();
+	    Controller.onTriggerClicked(this.HotTrigger.id);
 }
 
 Controller.Canvas.onMouseMove = function (e)

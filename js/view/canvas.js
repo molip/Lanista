@@ -1,6 +1,7 @@
 "use strict";
 
 View.Canvas = {}
+View.Canvas.Triggers = [];
 
 View.Canvas.draw = function ()
 {
@@ -13,23 +14,21 @@ View.Canvas.draw = function ()
 
     ctx.drawImage(img, 0, 0);
 
-    Triggers.forEach(function (trigger)
+    for (var i = 0, trigger; trigger = View.Canvas.Triggers[i]; ++i)
     {
-        var id = trigger.getImageID();
-        if (id)
+		var imgElement = document.getElementById(trigger.imgElementID);
+		ctx.drawImage(imgElement, trigger.x, trigger.y); 
+
+        if (trigger == Controller.Canvas.HotTrigger)
         {
-            var image = TriggerImages[id];
-            var imgElement = document.getElementById(image.elementID);
-            ctx.drawImage(imgElement, image.x, image.y); 
-            
-            if (trigger == Controller.Canvas.HotTrigger)
-            {
-                ctx.beginPath();
-                ctx.rect(image.x, image.y, imgElement.width, imgElement.height);
-                ctx.closePath();
-                ctx.lineWidth = 3;
-                ctx.stroke();
-            }
+            ctx.beginPath();
+            ctx.rect(trigger.x, trigger.y, imgElement.width, imgElement.height);
+            ctx.closePath();
+            ctx.lineWidth = 3;
+            ctx.stroke();
         }
-    });
+    }
 }
+
+View.Canvas.makeTrigger = function(id, x, y, imgElementID) { return {id:id, x:x, y:y, imgElementID:imgElementID}; }
+
