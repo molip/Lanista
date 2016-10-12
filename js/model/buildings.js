@@ -4,28 +4,48 @@ Model.Buildings = {}
 
 Model.Buildings._makeLevel = function (cost, buildSteps) { return { cost:cost, buildSteps:buildSteps }; }
 
-Model.Buildings.Types = //					cost	build steps
+Model.Buildings.Types = //			cost	build steps
 {													
-    'home':[	Model.Buildings._makeLevel(	0		,3	),		
-				Model.Buildings._makeLevel(	50		,5	)],
-    'barracks':[Model.Buildings._makeLevel(	100		,3	),
-				Model.Buildings._makeLevel(	200		,5	)],
-    'kennels':[	Model.Buildings._makeLevel(	100		,3	),	
-				Model.Buildings._makeLevel(	200		,5	)],
-    'storage':[	Model.Buildings._makeLevel(	100		,3	),	
-				Model.Buildings._makeLevel(	200		,5	)],
-    'weapon':[	Model.Buildings._makeLevel(	100		,3	),	
-				Model.Buildings._makeLevel(	200		,5	)],
-    'armour':[	Model.Buildings._makeLevel(	100		,3	),	
-				Model.Buildings._makeLevel(	200		,5	)],    
-    'training':[Model.Buildings._makeLevel(	100		,3	),	
-				Model.Buildings._makeLevel(	200		,5	)],
-    'surgery':[	Model.Buildings._makeLevel(	100		,3	),	
-				Model.Buildings._makeLevel(	200		,5	)],      
-    'lab':[		Model.Buildings._makeLevel(	100		,3	),
-				Model.Buildings._makeLevel(	200		,5	)],
-    'merch':[	Model.Buildings._makeLevel(	100		,3	),		
-				Model.Buildings._makeLevel(	200		,5	)],
+	'home':[	
+		Model.Buildings._makeLevel(	0		,3	),		
+		Model.Buildings._makeLevel(	50		,5	),
+	],
+	'barracks':[
+		Model.Buildings._makeLevel(	100		,3	),
+		Model.Buildings._makeLevel(	200		,5	),
+	],
+	'kennels':[	
+		Model.Buildings._makeLevel(	100		,3	),	
+		Model.Buildings._makeLevel(	200		,5	),
+	],
+	'storage':[	
+		Model.Buildings._makeLevel(	100		,3	),	
+		Model.Buildings._makeLevel(	200		,5	),
+	],
+	'weapon':[	
+		Model.Buildings._makeLevel(	100		,3	),	
+		Model.Buildings._makeLevel(	200		,5	),
+	],
+	'armour':[	
+		Model.Buildings._makeLevel(	100		,3	),	
+		Model.Buildings._makeLevel(	200		,5	),
+	],
+	'training':[
+		Model.Buildings._makeLevel(	100		,3	),	
+		Model.Buildings._makeLevel(	200		,5	),
+	],
+	'surgery':[	
+		Model.Buildings._makeLevel(	100		,3	),	
+		Model.Buildings._makeLevel(	200		,5	),
+	],	
+	'lab':[
+		Model.Buildings._makeLevel(	100		,3	),
+		Model.Buildings._makeLevel(	200		,5	),
+	],
+	'merch':[	
+		Model.Buildings._makeLevel(	100		,3	),		
+		Model.Buildings._makeLevel(	200		,5	),
+	],
 }
 
 Model.Buildings.State = function ()
