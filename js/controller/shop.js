@@ -33,7 +33,7 @@ Shop.onBuildersMerchantClicked = function ()
 		if (level)
 		{
 			var levelIndex = Model.Buildings.getNextLevelIndex(id);
-			var viewLevel = View.Buildings.Types[id][levelIndex];
+			var viewLevel = View.Data.Buildings.Types[id][levelIndex];
 			var item = Shop.createShopItem(viewLevel.name, viewLevel.shopImage, viewLevel.description, level.cost, !Model.Buildings.canUpgrade(id));
 			item.id = id, item.levelIndex = levelIndex;
 			items.push(item);

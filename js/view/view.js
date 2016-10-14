@@ -1,6 +1,12 @@
 
 var View = {}
 
+
+View.init = function ()
+{
+    View.Canvas.init()
+}
+
 View.getCanvas = function ()
 {
     return document.getElementById("canvas_ludus");

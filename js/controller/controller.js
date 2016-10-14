@@ -5,6 +5,7 @@ var Controller = {}
 Controller.onLoad = function()
 {
 	Model.init();
+	View.init();
     Controller.updateTriggers();
     Controller.updateHUD();
 }
@@ -35,15 +36,16 @@ Controller.updateHUD = function ()
 Controller.updateTriggers = function ()
 {
 	var triggers = [];
-	triggers.push(View.Canvas.makeTrigger('town', 1100, 290, 'img_town'));
+    var town = View.Data.TownTrigger;
+	triggers.push(View.Canvas.makeTrigger('town', town.mapX, town.mapY, town.mapImage));
 
 	for (var id in Model.Buildings.Types)
 	{
 		var index = Model.Buildings.getCurrentLevelIndex(id);
 		if (index >= 0)
 		{
-			var level = View.Buildings.Types[id][index];
-			triggers.push(View.Canvas.makeTrigger(id, level.mapX, level.mapY, 'img_' + id + index));
+			var level = View.Data.Buildings.Types[id][index];
+			triggers.push(View.Canvas.makeTrigger(id, level.mapX, level.mapY, level.mapImage));
 		}
 	}
 	View.Canvas.Triggers = triggers;

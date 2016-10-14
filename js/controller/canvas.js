@@ -10,8 +10,7 @@ Controller.Canvas.hitTestTriggers = function (x, y)
     {
         if (x >= trigger.x && y >= trigger.y)
         {
-            var element = document.getElementById(trigger.imgElementID);
-            if (x - trigger.x < element.width && y - trigger.y < element.height)
+            if (x - trigger.x < trigger.image.width && y - trigger.y < trigger.image.height)
                 return trigger;
         }
     }
