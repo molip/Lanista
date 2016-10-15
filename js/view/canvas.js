@@ -20,7 +20,7 @@ View.Canvas.draw = function ()
 
     for (var i = 0, trigger; trigger = View.Canvas.Triggers[i]; ++i)
     {
-		ctx.drawImage(trigger.image, trigger.x, trigger.y); 
+        ctx.drawImage(trigger.image, trigger.x, trigger.y); 
 
         if (trigger == Controller.Canvas.HotTrigger)
         {
@@ -35,14 +35,14 @@ View.Canvas.draw = function ()
 
 View.Canvas.makeImage = function(imgPath) 
 {
-	var image = new Image();
+    var image = new Image();
     image.onload = function() { View.Canvas.draw.call(View.Canvas); };
-	image.src = imgPath;
+    image.src = imgPath;
     return image;
 }
 
 View.Canvas.makeTrigger = function(id, x, y, imgPath) 
 {
-	return {id:id, x:x, y:y, image:this.makeImage(imgPath)}; 
+    return {id:id, x:x, y:y, image:this.makeImage(imgPath)}; 
 }
 

@@ -25,26 +25,26 @@ Shop.showShopsPopup = function ()
 
 Shop.onBuildersMerchantClicked = function ()
 {
-	var items = [];
+    var items = [];
 
-	for (var i = 0, id; id = ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'][i]; ++i)
-	{
-		var level = Model.Buildings.getNextLevel(id);
-		if (level)
-		{
-			var levelIndex = Model.Buildings.getNextLevelIndex(id);
-			var viewLevel = View.Data.Buildings.Types[id][levelIndex];
-			var item = Shop.createShopItem(viewLevel.name, viewLevel.shopImage, viewLevel.description, level.cost, !Model.Buildings.canUpgrade(id));
-			item.id = id, item.levelIndex = levelIndex;
-			items.push(item);
-		}
-	}
+    for (var i = 0, id; id = ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'][i]; ++i)
+    {
+        var level = Model.Buildings.getNextLevel(id);
+        if (level)
+        {
+            var levelIndex = Model.Buildings.getNextLevelIndex(id);
+            var viewLevel = View.Data.Buildings.Types[id][levelIndex];
+            var item = Shop.createShopItem(viewLevel.name, viewLevel.shopImage, viewLevel.description, level.cost, !Model.Buildings.canUpgrade(id));
+            item.id = id, item.levelIndex = levelIndex;
+            items.push(item);
+        }
+    }
 
     Popup.show(Shop.getShopTitle('Builders\' Merchant'), items, function (item) 
-	{ 
-		Model.spendMoney(item.price); 
-		Model.Buildings.setLevelIndex(item.id, item.levelIndex);
-		Controller.updateHUD(); 
-		Controller.updateTriggers(); 
-	});
+    { 
+        Model.spendMoney(item.price); 
+        Model.Buildings.setLevelIndex(item.id, item.levelIndex);
+        Controller.updateHUD(); 
+        Controller.updateTriggers(); 
+    });
 }

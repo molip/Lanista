@@ -20,7 +20,7 @@ Controller.Canvas.hitTestTriggers = function (x, y)
 Controller.Canvas.onClick = function (e)
 {
     if (this.HotTrigger)
-	    Controller.onTriggerClicked(this.HotTrigger.id);
+        Controller.onTriggerClicked(this.HotTrigger.id);
 }
 
 Controller.Canvas.onMouseMove = function (e)

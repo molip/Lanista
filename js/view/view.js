@@ -15,14 +15,14 @@ View.getCanvas = function ()
 View.showPopup = function(popup, title)
 {
     var template = '\
-	    <div id="{{id}}" class="{{classes}}" onclick="Popup.onItemClicked({{index}}); event.stopPropagation();">\
-		    <h3>{{title}}</h3>\
-		    <div style="position: relative">\
+        <div id="{{id}}" class="{{classes}}" onclick="Popup.onItemClicked({{index}}); event.stopPropagation();">\
+            <h3>{{title}}</h3>\
+            <div style="position: relative">\
             <img style="opacity: {{opacity}}" height="200px" src="{{image}}">\
             <img class="centre" {{lock_hidden}} src="images/lock.png">\
             </div>\
-		    <p>{{description}}</p>\
-	    </div>'
+            <p>{{description}}</p>\
+        </div>'
 
     var html = ''
 
@@ -62,9 +62,9 @@ View.hidePopup = function ()
 
 View.showInfo = function (title, description) {
     var template = '\
-	    <div class="item">\
-		    <p>{{description}}</p>\
-	    </div>'
+        <div class="item">\
+            <p>{{description}}</p>\
+        </div>'
 
     var html = '<h2 style="margin:10px">' + title + '</h2>';
 
