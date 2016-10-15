@@ -12,7 +12,19 @@ Controller.onLoad = function()
 
 Controller.onTriggerClicked = function (id)
 {
-	var handlers = { 'home': Controller.onHomeTriggerClicked, 'town': Controller.onTownTriggerClicked };
+	var handlers = { 
+		'home':		Controller.onHomeTriggerClicked, 
+		'barracks':	Controller.onBarracksTriggerClicked, 
+		'kennels':	Controller.onKennelsTriggerClicked,	
+		'storage':	Controller.onStorageTriggerClicked,	
+		'weapon':	Controller.onWeaponTriggerClicked,	
+		'armour':	Controller.onArmourTriggerClicked,	
+		'training':	Controller.onTrainingTriggerClicked,
+		'surgery':	Controller.onSurgeryTriggerClicked,	
+		'lab':		Controller.onLabTriggerClicked,		
+		'merch':	Controller.onMerchTriggerClicked,	
+		'town':		Controller.onTownTriggerClicked,
+	};
 	Util.assert(handlers[id]);
 	handlers[id]();
 }
@@ -20,6 +32,51 @@ Controller.onTriggerClicked = function (id)
 Controller.onHomeTriggerClicked = function () 
 {
     View.showInfo('Home', 'TODO: general stats etc. go here.');
+}
+
+Controller.onBarracksTriggerClicked = function () 
+{
+    View.showInfo('Barracks', 'TODO.');
+}
+
+Controller.onKennelsTriggerClicked = function () 
+{
+    View.showInfo('Kennels', 'TODO.');
+}
+
+Controller.onStorageTriggerClicked = function () 
+{
+    View.showInfo('Storage', 'TODO.');
+}
+
+Controller.onWeaponTriggerClicked = function () 
+{
+    View.showInfo('Weapon', 'TODO.');
+}
+
+Controller.onArmourTriggerClicked = function () 
+{
+    View.showInfo('Armour', 'TODO.');
+}
+
+Controller.onTrainingTriggerClicked = function () 
+{
+    View.showInfo('Training', 'TODO.');
+}
+
+Controller.onSurgeryTriggerClicked = function () 
+{
+    View.showInfo('Surgery', 'TODO.');
+}
+
+Controller.onLabTriggerClicked = function () 
+{
+    View.showInfo('Lab', 'TODO.');
+}
+
+Controller.onMerchTriggerClicked = function () 
+{
+    View.showInfo('Merch', 'TODO.');
 }
 
 Controller.onTownTriggerClicked = function ()
