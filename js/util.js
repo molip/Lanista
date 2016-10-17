@@ -8,7 +8,7 @@ Util.formatMoney = function (amount)
 Util.getEventPos = function (event, element)
 {
     var rect = element.getBoundingClientRect();
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    return new Point(event.clientX - rect.left, event.clientY - rect.top);
 }
 
 Util.assert = function (condition, message)

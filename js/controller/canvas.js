@@ -25,8 +25,9 @@ Controller.Canvas.onClick = function (e)
 
 Controller.Canvas.onMouseMove = function (e)
 {
-    var pos = Util.getEventPos(e, View.getCanvas());
-    var trigger = this.hitTestTriggers(pos.x, pos.y);
+    let devPos = Util.getEventPos(e, View.getCanvas());
+    let logPos = View.Canvas.devToLog(devPos.x, devPos.y);
+    var trigger = this.hitTestTriggers(logPos.x, logPos.y);
     if (trigger != this.HotTrigger)
     {
         this.HotTrigger = trigger;

@@ -26,6 +26,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "View", "View", "{C4749A01-E
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "JS", "JS", "{D54A3FAA-B16A-4D99-8573-DB188887C515}"
 	ProjectSection(SolutionItems) = preProject
+		js\types.js = js\types.js
 		js\util.js = js\util.js
 	EndProjectSection
 EndProject

@@ -2,6 +2,9 @@
 <head>
 	<link rel="stylesheet" href="main.css">
 	
+	<script src="js/types.js"></script>
+	<script src="js/util.js"></script>
+
 	<script src="js/controller/controller.js"></script>
 	<script src="js/controller/canvas.js"></script>
     <script src="js/controller/popup.js"></script>
@@ -13,14 +16,10 @@
 	<script src="js/view/view.js"></script>
 	<script src="js/view/canvas.js"></script>
 	<script src="js/view/data.js"></script>
-	
-    <script src="js/util.js"></script>
 </head>
-<body onload="Controller.onLoad()">
-	<div id="canvas_div">
-		<canvas id="canvas_ludus" width="1280" height="720" onclick="Controller.Canvas.onClick(event)" onmousemove="Controller.Canvas.onMouseMove(event)" onmouseout="Controller.Canvas.onMouseOut(event)"></canvas>
-        <div id="hud_div"><span id="hud_span"></span></div> 
-	</div>
+	<canvas id="canvas_ludus" onclick="Controller.Canvas.onClick(event)" onmousemove="Controller.Canvas.onMouseMove(event)" onmouseout="Controller.Canvas.onMouseOut(event)"></canvas>
+	<div id="hud_div"><span id="hud_span"></span></div> 
+<body onload="Controller.onLoad()" onresize="View.Canvas.onResize()">
 
     <div id="popup" onclick="Popup.onBackgroundClicked()">
     	<div id="container" onclick="event.stopPropagation()"></div>
