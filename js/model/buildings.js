@@ -86,6 +86,7 @@ Model.Buildings.setLevelIndex = function (id, index)
     Util.assert(id in Model._state.buildings);
     Util.assert(index < Model.Buildings.Types[id].length);
     Model._state.buildings[id].levelIndex = index;
+    Model.saveState();
 }
 
 Model.Buildings.canUpgrade = function(id) 

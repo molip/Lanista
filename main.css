@@ -20,12 +20,18 @@ div	{ margin:0px }
 
 #hud_div {
 	position: absolute;
-	top:0px;
-	left:0px;
+	top:10px;
+	left:1%;
+    width:98%;
 }
 
 #hud_span {
 	font-size: 200%;
+}
+
+#reset_btn
+{
+	float:right;
 }
 
 #popup {

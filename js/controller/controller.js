@@ -29,6 +29,16 @@ Controller.onTriggerClicked = function (id)
     handlers[id]();
 }
 
+Controller.onResetClicked = function () 
+{
+    if (confirm('Reset game?'))
+    {
+        Model.resetState();
+        this.updateHUD();
+        this.updateTriggers();
+    }
+}
+
 Controller.onHomeTriggerClicked = function () 
 {
     View.showInfo('Home', 'TODO: general stats etc. go here.');
