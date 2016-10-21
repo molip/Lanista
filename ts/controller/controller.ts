@@ -1,14 +1,17 @@
-﻿"use strict";
-var Controller;
-(function (Controller) {
-    function onLoad() {
+"use strict";
+
+namespace Controller
+{
+    export function onLoad()
+    {
         Model.init();
         View.init();
         updateTriggers();
         updateHUD();
     }
-    Controller.onLoad = onLoad;
-    function onTriggerClicked(id) {
+
+    export function onTriggerClicked(id: string)
+    {
         var handlers = {
             'home': onHomeTriggerClicked,
             'barracks': onBarracksTriggerClicked,
@@ -25,62 +28,90 @@ var Controller;
         Util.assert(handlers[id]);
         handlers[id]();
     }
-    Controller.onTriggerClicked = onTriggerClicked;
-    function onResetClicked() {
-        if (confirm('Reset game?')) {
+
+    export function onResetClicked()
+    {
+        if (confirm('Reset game?'))
+        {
             Model.resetState();
             this.updateHUD();
             this.updateTriggers();
         }
     }
-    Controller.onResetClicked = onResetClicked;
-    function onHomeTriggerClicked() {
+
+    function onHomeTriggerClicked()
+    {
         View.showInfo('Home', 'TODO: general stats etc. go here.');
     }
-    function onBarracksTriggerClicked() {
+
+    function onBarracksTriggerClicked()
+    {
         View.showInfo('Barracks', 'TODO.');
     }
-    function onKennelsTriggerClicked() {
+
+    function onKennelsTriggerClicked()
+    {
         View.showInfo('Kennels', 'TODO.');
     }
-    function onStorageTriggerClicked() {
+
+    function onStorageTriggerClicked()
+    {
         View.showInfo('Storage', 'TODO.');
     }
-    function onWeaponTriggerClicked() {
+
+    function onWeaponTriggerClicked()
+    {
         View.showInfo('Weapon', 'TODO.');
     }
-    function onArmourTriggerClicked() {
+
+    function onArmourTriggerClicked()
+    {
         View.showInfo('Armour', 'TODO.');
     }
-    function onTrainingTriggerClicked() {
+
+    function onTrainingTriggerClicked()
+    {
         View.showInfo('Training', 'TODO.');
     }
-    function onSurgeryTriggerClicked() {
+
+    function onSurgeryTriggerClicked()
+    {
         View.showInfo('Surgery', 'TODO.');
     }
-    function onLabTriggerClicked() {
+
+    function onLabTriggerClicked()
+    {
         View.showInfo('Lab', 'TODO.');
     }
-    function onMerchTriggerClicked() {
+
+    function onMerchTriggerClicked()
+    {
         View.showInfo('Merch', 'TODO.');
     }
-    function onTownTriggerClicked() {
-        Controller.Shop.showShopsPopup();
+
+    function onTownTriggerClicked()
+    {
+        Shop.showShopsPopup();
     }
-    function updateHUD() {
+
+    export function updateHUD()
+    {
         var text = 'Money: ' + Util.formatMoney(Model.state.getMoney());
         View.setHUDText(text);
     }
-    Controller.updateHUD = updateHUD;
-    function updateTriggers() {
+
+    export function updateTriggers()
+    {
         var triggers = [];
         var town = View.Data.TownTrigger;
         triggers.push(new View.Trigger('town', town.mapX, town.mapY, town.mapImage));
-        for (var _i = 0, _a = Model.Buildings.getTypes(); _i < _a.length; _i++) {
-            var id = _a[_i];
+
+        for (var id of Model.Buildings.getTypes())
+        {
             var x = Model.state.buildings;
             var index = Model.state.buildings.getCurrentLevelIndex(id);
-            if (index >= 0) {
+            if (index >= 0)
+            {
                 var level = View.Data.Buildings.getLevel(id, index);
                 triggers.push(new View.Trigger(id, level.mapX, level.mapY, level.mapImage));
             }
@@ -88,5 +119,4 @@ var Controller;
         View.Canvas.Triggers = triggers;
         View.Canvas.draw();
     }
-    Controller.updateTriggers = updateTriggers;
-})(Controller || (Controller = {}));
+}

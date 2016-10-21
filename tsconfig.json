@@ -1,0 +1,12 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "rootDir": "./ts",
+    "outDir": "./js",
+    "allowJs": true,
+    "target": "es5",
+    "watch": true,
+    "emitBOM": true
+  },
+  "include": [ "**/*" ]
+}

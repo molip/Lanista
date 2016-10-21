@@ -17,11 +17,11 @@
 	<script src="js/view/canvas.js"></script>
 	<script src="js/view/data.js"></script>
 </head>
-	<canvas id="canvas_ludus" onclick="Controller.Canvas.onClick(event)" onmousemove="Controller.Canvas.onMouseMove(event)" onmouseout="Controller.Canvas.onMouseOut(event)"></canvas>
 <body onload="Controller.onLoad()" onresize="View.Canvas.onResize()">
+	<canvas id="canvas_ludus" onclick="Controller.Canvas.onClick(event)" onmousemove="Controller.Canvas.onMouseMove(event)" onmouseout="Controller.Canvas.onMouseOut(event)"></canvas>
 	<div id="hud_div"><span id="hud_span"></span><button id="reset_btn" onclick="Controller.onResetClicked()">Reset</button> </div> 
 
-    <div id="popup" onclick="Popup.onBackgroundClicked()">
+    <div id="popup" onclick="Controller.Popup.onBackgroundClicked()">
     	<div id="container" onclick="event.stopPropagation()"></div>
 	</div>
 </body>
