@@ -1,21 +1,31 @@
 "use strict";
 
-var Popup = { items: null, action: null };
+namespace Controller
+{
+    export class Popup
+    {
+        static items: Array<any>;
+        static action: any;
 
-Popup.show = function (title, items, action) {
-    this.items = items;
-    this.action = action;
-    View.showPopup(this, title);
-}
+        static show(title, items, action)
+        {
+            Popup.items = items;
+            Popup.action = action;
+            View.showPopup(this, title);
+        }
 
-Popup.onItemClicked = function (index) {
-    View.hidePopup();
-    var action = this.action, item = this.items[index];
-    this.items = this.action = null;
-    action(item);
-}
+        static onItemClicked(index)
+        {
+            View.hidePopup();
+            var action = this.action, item = this.items[index];
+            this.items = this.action = null;
+            action(item);
+        }
 
-Popup.onBackgroundClicked = function () {
-    View.hidePopup();
-    this.items = this.action = null;
+        static onBackgroundClicked()
+        {
+            View.hidePopup();
+            this.items = this.action = null;
+        }
+    }
 }

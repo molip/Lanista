@@ -1,18 +1,14 @@
 "use strict";
 
-function Point (x, y)
+class Point
 {
-    this.x = x;
-    this.y = y;
+    constructor(public x, public y) { }
 }
 
-function Rect (left, top, right, bottom)
+class Rect
 {
-    this.left = left;
-    this.top = top;
-    this.right = right;
-    this.bottom = bottom;
+    constructor(public left, public top, public right, public bottom) { }
+    width() { return this.right - this.left; }
+    height() { return this.bottom - this.top; }
 }
 
-Rect.prototype.width = function () { return this.right - this.left; }
-Rect.prototype.height = function () { return this.bottom - this.top; }

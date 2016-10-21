@@ -1,106 +1,114 @@
 "use strict";
 
-Model.Buildings = {}
-
-Model.Buildings._makeLevel = function (cost, buildSteps) { return { cost:cost, buildSteps:buildSteps }; }
-
-Model.Buildings.Types = //			cost	build steps
-{													
-    'home':[	
-        Model.Buildings._makeLevel(	0		,3	),		
-        Model.Buildings._makeLevel(	50		,5	),
-    ],
-    'barracks':[
-        Model.Buildings._makeLevel(	100		,3	),
-        Model.Buildings._makeLevel(	200		,5	),
-    ],
-    'kennels':[	
-        Model.Buildings._makeLevel(	100		,3	),	
-        Model.Buildings._makeLevel(	200		,5	),
-    ],
-    'storage':[	
-        Model.Buildings._makeLevel(	100		,3	),	
-        Model.Buildings._makeLevel(	200		,5	),
-    ],
-    'weapon':[	
-        Model.Buildings._makeLevel(	100		,3	),	
-        Model.Buildings._makeLevel(	200		,5	),
-    ],
-    'armour':[	
-        Model.Buildings._makeLevel(	100		,3	),	
-        Model.Buildings._makeLevel(	200		,5	),
-    ],
-    'training':[
-        Model.Buildings._makeLevel(	100		,3	),	
-        Model.Buildings._makeLevel(	200		,5	),
-    ],
-    'surgery':[	
-        Model.Buildings._makeLevel(	100		,3	),	
-        Model.Buildings._makeLevel(	200		,5	),
-    ],	
-    'lab':[
-        Model.Buildings._makeLevel(	100		,3	),
-        Model.Buildings._makeLevel(	200		,5	),
-    ],
-    'merch':[	
-        Model.Buildings._makeLevel(	100		,3	),		
-        Model.Buildings._makeLevel(	200		,5	),
-    ],
-}
-
-Model.Buildings.State = function ()
+namespace Model
 {
-    for (var type in Model.Buildings.Types)
+    export namespace Buildings
     {
-        var free = Model.Buildings.Types[type][0].cost == 0;
-        this[type] = { levelIndex: free ? 0 : -1, progress: -1 }
+        class Level { constructor(public cost, public buildSteps) { } }
+
+        export let Types = //	cost	build steps
+            {
+                'home': [
+                    new Level(  0,      3),
+                    new Level(  50,     5),
+                ],
+                'barracks': [
+                    new Level(  100,    3),
+                    new Level(  200,    5),
+                ],
+                'kennels': [
+                    new Level(  100,    3),
+                    new Level(  200,    5),
+                ],
+                'storage': [
+                    new Level(  100,    3),
+                    new Level(  200,    5),
+                ],
+                'weapon': [
+                    new Level(  100,    3),
+                    new Level(  200,    5),
+                ],
+                'armour': [
+                    new Level(  100,    3),
+                    new Level(  200,    5),
+                ],
+                'training': [
+                    new Level(  100,    3),
+                    new Level(  200,    5),
+                ],
+                'surgery': [
+                    new Level(  100,    3),
+                    new Level(  200,    5),
+                ],
+                'lab': [
+                    new Level(  100,    3),
+                    new Level(  200,    5),
+                ],
+                'merch': [
+                    new Level(  100,    3),
+                    new Level(  200,    5),
+                ],
+            }
+
+        export class State
+        {
+            types = {};
+            constructor()
+            {
+                for (var type in Types)
+                {
+                    var free = Types[type][0].cost == 0;
+                    this.types[type] = { levelIndex: free ? 0 : -1, progress: -1 }
+                }
+            }
+
+            getCurrentLevelIndex(id)
+            {
+                Util.assert(id in this.types);
+                return this.types[id].levelIndex;
+            }
+
+            getNextLevelIndex(id)
+            {
+                var nextIndex = this.getCurrentLevelIndex(id) + 1;
+                return nextIndex < Types[id].length ? nextIndex : -1;
+            }
+
+            getCurrentLevel(id)
+            {
+                var index = this.getCurrentLevelIndex(id);
+                return index < 0 ? null : Types[id][index];
+            }
+
+            getNextLevel(id)
+            {
+                var index = this.getNextLevelIndex(id);
+                return index < 0 ? null : Types[id][index];
+            }
+
+            setLevelIndex(id, index)
+            {
+                Util.assert(id in this.types);
+                Util.assert(index < Types[id].length);
+                this.types[id].levelIndex = index;
+                Model.saveState();
+            }
+
+            canUpgrade(id)
+            {
+                Util.assert(id in this.types);
+                var level = this.getNextLevel(id);
+                return level && Model.state.money >= level.cost && this.getRemainingBuildSteps(id) == 0;
+            }
+
+            getRemainingBuildSteps(id)
+            {
+                Util.assert(id in this.types);
+                if (this.types[id].progress < 0)
+                    return 0;
+
+                return Types[id].buildSteps - this.types[id].progress;
+            }
+        }
     }
-}
-
-Model.Buildings.getCurrentLevelIndex = function(id) 
-{
-    Util.assert(id in Model._state.buildings);
-    return Model._state.buildings[id].levelIndex;
-}
-
-Model.Buildings.getNextLevelIndex = function(id) 
-{
-    var nextIndex = this.getCurrentLevelIndex(id) + 1;
-    return nextIndex < Model.Buildings.Types[id].length ? nextIndex : -1;
-}
-
-Model.Buildings.getCurrentLevel = function (id)
-{
-    var index = this.getCurrentLevelIndex(id);
-    return index < 0 ? null : Model.Buildings.Types[id][index];
-}
-
-Model.Buildings.getNextLevel = function (id)
-{
-    var index = this.getNextLevelIndex(id);
-    return index < 0 ? null : Model.Buildings.Types[id][index];
-}
-
-Model.Buildings.setLevelIndex = function (id, index)
-{
-    Util.assert(id in Model._state.buildings);
-    Util.assert(index < Model.Buildings.Types[id].length);
-    Model._state.buildings[id].levelIndex = index;
-    Model.saveState();
-}
-
-Model.Buildings.canUpgrade = function(id) 
-{
-    Util.assert(id in Model._state.buildings);
-    var level = this.getNextLevel(id);
-    return level && Model._state.money >= level.cost && this.getRemainingBuildSteps(id) == 0;
-}
-
-Model.Buildings.getRemainingBuildSteps = function(id) 
-{
-    Util.assert(id in Model._state.buildings);
-    if (Model._state.buildings[id].progress < 0)
-        return 0;
-
-    return Model.Buildings.Types[id].buildSteps - Model._state.buildings[id].progress;
 }

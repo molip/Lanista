@@ -1,45 +1,49 @@
 "use strict";
 
-Controller.Canvas = {}
-
-Controller.Canvas.HotTrigger = null;
-
-Controller.Canvas.hitTestTriggers = function (x, y)
+namespace Controller
 {
-    for (var i = 0, trigger; trigger = View.Canvas.Triggers[i]; ++i)
+    export namespace Canvas
     {
-        if (x >= trigger.x && y >= trigger.y)
+        export let HotTrigger = null;
+
+        function hitTestTriggers(x, y)
         {
-            if (x - trigger.x < trigger.image.width && y - trigger.y < trigger.image.height)
-                return trigger;
+            for (var i = 0, trigger; trigger = View.Canvas.Triggers[i]; ++i)
+            {
+                if (x >= trigger.x && y >= trigger.y)
+                {
+                    if (x - trigger.x < trigger.image.width && y - trigger.y < trigger.image.height)
+                        return trigger;
+                }
+            }
+            return null;
         }
-    }
-    return null;
-}
 
-Controller.Canvas.onClick = function (e)
-{
-    if (this.HotTrigger)
-        Controller.onTriggerClicked(this.HotTrigger.id);
-}
+        export function onClick(e)
+        {
+            if (this.HotTrigger)
+                Controller.onTriggerClicked(this.HotTrigger.id);
+        }
 
-Controller.Canvas.onMouseMove = function (e)
-{
-    let devPos = Util.getEventPos(e, View.getCanvas());
-    let logPos = View.Canvas.devToLog(devPos.x, devPos.y);
-    var trigger = this.hitTestTriggers(logPos.x, logPos.y);
-    if (trigger != this.HotTrigger)
-    {
-        this.HotTrigger = trigger;
-        View.Canvas.draw();
-    }
-}
+        export function onMouseMove(e)
+        {
+            let devPos = Util.getEventPos(e, View.getCanvas());
+            let logPos = View.Canvas.devToLog(devPos.x, devPos.y);
+            var trigger = hitTestTriggers(logPos.x, logPos.y);
+            if (trigger != HotTrigger)
+            {
+                HotTrigger = trigger;
+                View.Canvas.draw();
+            }
+        }
 
-Controller.Canvas.onMouseOut = function (e)
-{
-    if (this.HotTrigger)
-    {
-        this.HotTrigger = null;
-        View.Canvas.draw();
+        export function onMouseOut(e)
+        {
+            if (this.HotTrigger)
+            {
+                HotTrigger = null;
+                View.Canvas.draw();
+            }
+        }
     }
 }
