@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 var Model;
 (function (Model) {
     var State = (function () {
@@ -17,11 +17,12 @@ var Model;
             Model.state.money += amount;
             Model.saveState();
         };
+        State.key = "state.v1";
         return State;
     }());
     Model.State = State;
     function init() {
-        var str = localStorage.getItem('state');
+        var str = localStorage.getItem(State.key);
         if (str) {
             this.state = JSON.parse(str);
             this.state.__proto__ = State.prototype;
@@ -32,12 +33,12 @@ var Model;
     }
     Model.init = init;
     function saveState() {
-        localStorage.setItem('state', JSON.stringify(Model.state));
+        localStorage.setItem(State.key, JSON.stringify(Model.state));
     }
     Model.saveState = saveState;
     function resetState() {
         Model.state = new State();
-        localStorage.clear();
+        localStorage.removeItem(State.key);
     }
     Model.resetState = resetState;
 })(Model || (Model = {}));

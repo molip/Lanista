@@ -4,6 +4,7 @@ namespace Model
 {
     export class State
     {
+        static key: string = "state.v1"
         money: number;
         public buildings: Buildings.State;
         constructor()
@@ -33,7 +34,7 @@ namespace Model
 
     export function init()
     {
-        let str = localStorage.getItem('state');
+        let str = localStorage.getItem(State.key);
         if (str)
         {
             this.state = JSON.parse(str);
@@ -46,12 +47,12 @@ namespace Model
 
     export function saveState()
     {
-        localStorage.setItem('state', JSON.stringify(state));
+        localStorage.setItem(State.key, JSON.stringify(state));
     }
 
     export function resetState()
     {
         state = new State();
-        localStorage.clear();
+        localStorage.removeItem(State.key);
     }
 }
