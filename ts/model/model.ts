@@ -12,16 +12,16 @@ namespace Model
             this.buildings = new Buildings.State();
         }
 
-        getMoney() { return state.money; }
+        getMoney(): number { return state.money; }
 
-        spendMoney(amount) 
+        spendMoney(amount: number) 
         {
             Util.assert(amount >= 0 && state.money >= amount);
             state.money -= amount;
             Model.saveState();
         }
 
-        addMoney(amount)
+        addMoney(amount: number)
         {
             Util.assert(amount >= 0);
             state.money += amount;

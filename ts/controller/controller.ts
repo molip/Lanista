@@ -10,7 +10,7 @@ namespace Controller
         updateHUD();
     }
 
-    export function onTriggerClicked(id)
+    export function onTriggerClicked(id: string)
     {
         var handlers = {
             'home': onHomeTriggerClicked,
@@ -106,13 +106,13 @@ namespace Controller
         var town = View.Data.TownTrigger;
         triggers.push(new View.Trigger('town', town.mapX, town.mapY, town.mapImage));
 
-        for (var id in Model.Buildings.Types)
+        for (var id of Model.Buildings.getTypes())
         {
             var x = Model.state.buildings;
             var index = Model.state.buildings.getCurrentLevelIndex(id);
             if (index >= 0)
             {
-                var level = View.Data.Buildings.Types[id][index];
+                var level = View.Data.Buildings.getLevel(id, index);
                 triggers.push(new View.Trigger(id, level.mapX, level.mapY, level.mapImage));
             }
         }

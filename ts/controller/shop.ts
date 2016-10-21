@@ -4,12 +4,15 @@ namespace Controller
 {
     export namespace Shop
     {
-        export function createShopItem(title, image, description, price, locked)
+        class Item extends Popup.Item
         {
-            return { title: title, title2: Util.formatMoney(price), image: image, description: description, price: price, locked: locked, data: {} };
+            constructor(title: string, description: string, image: string, locked: boolean, public price: number, public handler: any, public data?: any)
+            {
+                super(title, title + '<br>' + Util.formatMoney(price), image, locked, handler);
+            }
         }
 
-        function getShopTitle(name)
+        function getShopTitle(name: string)
         {
             return name + ' (money available: ' + Util.formatMoney(Model.state.getMoney()) + ')';
         }
@@ -17,10 +20,10 @@ namespace Controller
         export function showShopsPopup()
         {
             var items = [];
-            items.push({ title: 'Builders\' Merchant', image: 'images/builders.jpg', description: 'Buy building kits', handler: onBuildersMerchantClicked });
-            items.push({ title: 'Animal Market', image: 'images/animals.jpg', description: 'Buy animals', locked: true });
-            items.push({ title: 'People Market', image: 'images/people.png', description: 'Buy people', locked: true });
-            items.push({ title: 'Armourer', image: 'images/armourer.jpg', description: 'Buy armour', locked: true });
+            items.push(new Popup.Item('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked));
+            items.push(new Popup.Item('Animal Market', 'Buy animals', 'images/animals.jpg', true));
+            items.push(new Popup.Item('People Market', 'Buy people', 'images/people.png', true));
+            items.push(new Popup.Item('Armourer', 'Buy armour', 'images/armourer.jpg', true));
 
             Popup.show('Let\'s go shopping!', items, function (item) { item.handler(); });
         }
@@ -35,9 +38,8 @@ namespace Controller
                 if (level)
                 {
                     var levelIndex = Model.state.buildings.getNextLevelIndex(id);
-                    var viewLevel = View.Data.Buildings.Types[id][levelIndex];
-                    var item = Shop.createShopItem(viewLevel.name, viewLevel.shopImage, viewLevel.description, level.cost, !Model.state.buildings.canUpgrade(id));
-                    item.data['id'] = id, item.data['levelIndex'] = levelIndex;
+                    var viewLevel = View.Data.Buildings.getLevel(id, levelIndex);
+                    var item = new Item(viewLevel.name, viewLevel.description, viewLevel.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, null, { id: id, levelIndex: levelIndex });
                     items.push(item);
                 }
             }

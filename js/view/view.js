@@ -1,4 +1,4 @@
-var View;
+﻿var View;
 (function (View) {
     function init() {
         View.Canvas.init();
@@ -22,12 +22,9 @@ var View;
         if (title)
             html += '<h2 style="margin:10px">' + title + '</h2>';
         for (var i = 0; i < popup.items.length; ++i) {
-            var title = popup.items[i].title;
-            if (popup.items[i].title2)
-                title += '<br>' + popup.items[i].title2;
             var itemHtml = template;
             itemHtml = itemHtml.replace('{{index}}', String(i));
-            itemHtml = itemHtml.replace('{{title}}', title);
+            itemHtml = itemHtml.replace('{{title}}', popup.items[i].title);
             itemHtml = itemHtml.replace('{{image}}', popup.items[i].image);
             itemHtml = itemHtml.replace('{{description}}', popup.items[i].description);
             itemHtml = itemHtml.replace('{{classes}}', popup.items[i].locked ? 'item disabled' : 'item');

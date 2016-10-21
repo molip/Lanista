@@ -5,7 +5,7 @@ namespace View
     export class Trigger
     {
         image;
-        constructor(public id, public x, public y, imgPath)
+        constructor(public id: string, public x: number, public y: number, imgPath: string)
         {
             this.image = Canvas.makeImage(imgPath);
         }
@@ -13,10 +13,10 @@ namespace View
 
     export class Canvas
     {
-        static Triggers = [];
-        static Scale = 1;
-        static Offset = new Point(0, 0);
-        static BackgroundImage;
+        static Triggers: Array<Trigger> = [];
+        static Scale: number = 1;
+        static Offset: Point = new Point(0, 0);
+        static BackgroundImage: HTMLImageElement;
 
         static init()
         {
@@ -28,7 +28,7 @@ namespace View
             this.draw();
         }
 
-        static devToLog(x, y)
+        static devToLog(x: number, y: number): Point
         {
             return new Point((x - this.Offset.x) / this.Scale, (y - this.Offset.y) / this.Scale);
         }
@@ -93,7 +93,7 @@ namespace View
             }
         }
 
-        static makeImage(imgPath) 
+        static makeImage(imgPath: string): HTMLImageElement
         {
             var image = new Image();
             image.onload = function () { View.Canvas.draw.call(View.Canvas); };

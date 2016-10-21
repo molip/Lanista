@@ -2,19 +2,24 @@
 
 namespace Controller
 {
-    export class Popup
+    export namespace Popup
     {
-        static items: Array<any>;
-        static action: any;
+        export class Item
+        {
+            constructor(public title: string, public description: string, public image: string, public locked: boolean, public handler?: any) { }
+        }
 
-        static show(title, items, action)
+        export let items: Array<Item>;
+        export let action: any;
+
+        export function show(title: string, items: Array<Item>, action)
         {
             Popup.items = items;
             Popup.action = action;
             View.showPopup(this, title);
         }
 
-        static onItemClicked(index)
+        export function onItemClicked(index: number)
         {
             View.hidePopup();
             var action = this.action, item = this.items[index];
@@ -22,7 +27,7 @@ namespace Controller
             action(item);
         }
 
-        static onBackgroundClicked()
+        export function onBackgroundClicked()
         {
             View.hidePopup();
             this.items = this.action = null;

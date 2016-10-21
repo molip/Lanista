@@ -29,13 +29,9 @@ namespace View
 
         for (var i = 0; i < popup.items.length; ++i)
         {
-            var title = popup.items[i].title;
-            if (popup.items[i].title2)
-                title += '<br>' + popup.items[i].title2;
-
             var itemHtml = template;
             itemHtml = itemHtml.replace('{{index}}', String(i));
-            itemHtml = itemHtml.replace('{{title}}', title);
+            itemHtml = itemHtml.replace('{{title}}', popup.items[i].title);
             itemHtml = itemHtml.replace('{{image}}', popup.items[i].image);
             itemHtml = itemHtml.replace('{{description}}', popup.items[i].description);
             itemHtml = itemHtml.replace('{{classes}}', popup.items[i].locked ? 'item disabled' : 'item');

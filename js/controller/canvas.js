@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 var Controller;
 (function (Controller) {
     var Canvas;
@@ -14,8 +14,8 @@ var Controller;
             return null;
         }
         function onClick(e) {
-            if (this.HotTrigger)
-                Controller.onTriggerClicked(this.HotTrigger.id);
+            if (Canvas.HotTrigger)
+                Controller.onTriggerClicked(Canvas.HotTrigger.id);
         }
         Canvas.onClick = onClick;
         function onMouseMove(e) {
@@ -29,7 +29,7 @@ var Controller;
         }
         Canvas.onMouseMove = onMouseMove;
         function onMouseOut(e) {
-            if (this.HotTrigger) {
+            if (Canvas.HotTrigger) {
                 Canvas.HotTrigger = null;
                 View.Canvas.draw();
             }

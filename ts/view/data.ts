@@ -6,9 +6,9 @@ namespace View
     {
         export namespace Buildings
         {
-            class Level { constructor(public mapImage, public mapX, public mapY, public shopImage, public name, public description) { } }
+            class Level { constructor(public mapImage: string, public mapX: number, public mapY: number, public shopImage: string, public name: string, public description: string) { } }
 
-            export let Types = //   map image               map x   map y   shop image              name            description                     
+            let Types = //          map image               map x   map y   shop image              name            description                     
             {
                 'home': [
                     new Level('images/canvas/home0.png',    40,     230,    'images/builders.jpg', 'Shack',         ''),
@@ -51,7 +51,15 @@ namespace View
                     new Level('images/canvas/home0.png',    0,      0,      'images/builders.jpg', 'Merch 2',       'Nice Merch'),
                 ],
             }
+
+            export function getLevel(id: string, index: number): Level
+            {
+                Util.assert(id in Types);
+                Util.assert(index >= 0 && index < Types[id].length);
+                return Types[id][index];
+            }
         }
+
         export let TownTrigger = { mapX: 1100, mapY: 290, mapImage: 'images/canvas/town.png' };
         export let LudusBackground = { mapImage: 'images/canvas/background.png' };
     }

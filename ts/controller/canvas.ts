@@ -4,9 +4,9 @@ namespace Controller
 {
     export namespace Canvas
     {
-        export let HotTrigger = null;
+        export let HotTrigger: View.Trigger = null;
 
-        function hitTestTriggers(x, y)
+        function hitTestTriggers(x, y): View.Trigger
         {
             for (var i = 0, trigger; trigger = View.Canvas.Triggers[i]; ++i)
             {
@@ -21,15 +21,15 @@ namespace Controller
 
         export function onClick(e)
         {
-            if (this.HotTrigger)
-                Controller.onTriggerClicked(this.HotTrigger.id);
+            if (HotTrigger)
+                Controller.onTriggerClicked(HotTrigger.id);
         }
 
         export function onMouseMove(e)
         {
-            let devPos = Util.getEventPos(e, View.getCanvas());
-            let logPos = View.Canvas.devToLog(devPos.x, devPos.y);
-            var trigger = hitTestTriggers(logPos.x, logPos.y);
+            let devPos: Point = Util.getEventPos(e, View.getCanvas());
+            let logPos: Point = View.Canvas.devToLog(devPos.x, devPos.y);
+            var trigger: View.Trigger = hitTestTriggers(logPos.x, logPos.y);
             if (trigger != HotTrigger)
             {
                 HotTrigger = trigger;
@@ -39,7 +39,7 @@ namespace Controller
 
         export function onMouseOut(e)
         {
-            if (this.HotTrigger)
+            if (HotTrigger)
             {
                 HotTrigger = null;
                 View.Canvas.draw();

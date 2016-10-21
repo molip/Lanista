@@ -10,7 +10,7 @@ var Model;
             }
             return Level;
         }());
-        Buildings.Types = {
+        var Types = {
             'home': [
                 new Level(0, 3),
                 new Level(50, 5),
@@ -52,11 +52,24 @@ var Model;
                 new Level(200, 5),
             ],
         };
+        function getTypes() {
+            var types = [];
+            for (var t in Types)
+                types.push(t);
+            return types;
+        }
+        Buildings.getTypes = getTypes;
+        function getLevel(id, index) {
+            Util.assert(id in Types);
+            Util.assert(index >= 0 && index < Types[id].length);
+            return Types[id][index];
+        }
+        Buildings.getLevel = getLevel;
         var State = (function () {
             function State() {
                 this.types = {};
-                for (var type in Buildings.Types) {
-                    var free = Buildings.Types[type][0].cost == 0;
+                for (var type in Types) {
+                    var free = Types[type][0].cost == 0;
                     this.types[type] = { levelIndex: free ? 0 : -1, progress: -1 };
                 }
             }
@@ -66,19 +79,19 @@ var Model;
             };
             State.prototype.getNextLevelIndex = function (id) {
                 var nextIndex = this.getCurrentLevelIndex(id) + 1;
-                return nextIndex < Buildings.Types[id].length ? nextIndex : -1;
+                return nextIndex < Types[id].length ? nextIndex : -1;
             };
             State.prototype.getCurrentLevel = function (id) {
                 var index = this.getCurrentLevelIndex(id);
-                return index < 0 ? null : Buildings.Types[id][index];
+                return index < 0 ? null : Types[id][index];
             };
             State.prototype.getNextLevel = function (id) {
                 var index = this.getNextLevelIndex(id);
-                return index < 0 ? null : Buildings.Types[id][index];
+                return index < 0 ? null : Types[id][index];
             };
             State.prototype.setLevelIndex = function (id, index) {
                 Util.assert(id in this.types);
-                Util.assert(index < Buildings.Types[id].length);
+                Util.assert(index < Types[id].length);
                 this.types[id].levelIndex = index;
                 Model.saveState();
             };
@@ -91,7 +104,7 @@ var Model;
                 Util.assert(id in this.types);
                 if (this.types[id].progress < 0)
                     return 0;
-                return Buildings.Types[id].buildSteps - this.types[id].progress;
+                return Types[id].buildSteps - this.types[id].progress;
             };
             return State;
         }());

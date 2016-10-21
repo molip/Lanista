@@ -16,7 +16,7 @@ var View;
                 }
                 return Level;
             }());
-            Buildings.Types = {
+            var Types = {
                 'home': [
                     new Level('images/canvas/home0.png', 40, 230, 'images/builders.jpg', 'Shack', ''),
                     new Level('images/canvas/home1.png', 60, 250, 'images/builders.jpg', 'House', 'Nice House'),
@@ -58,6 +58,12 @@ var View;
                     new Level('images/canvas/home0.png', 0, 0, 'images/builders.jpg', 'Merch 2', 'Nice Merch'),
                 ],
             };
+            function getLevel(id, index) {
+                Util.assert(id in Types);
+                Util.assert(index >= 0 && index < Types[id].length);
+                return Types[id][index];
+            }
+            Buildings.getLevel = getLevel;
         })(Buildings = Data.Buildings || (Data.Buildings = {}));
         Data.TownTrigger = { mapX: 1100, mapY: 290, mapImage: 'images/canvas/town.png' };
         Data.LudusBackground = { mapImage: 'images/canvas/background.png' };

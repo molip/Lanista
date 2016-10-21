@@ -2,13 +2,13 @@
 
 class Point
 {
-    constructor(public x, public y) { }
+    constructor(public x: number, public y: number) { }
 }
 
 class Rect
 {
-    constructor(public left, public top, public right, public bottom) { }
-    width() { return this.right - this.left; }
-    height() { return this.bottom - this.top; }
+    constructor(public left: number, public top: number, public right: number, public bottom: number) { }
+    width(): number { return this.right - this.left; }
+    height(): number { return this.bottom - this.top; }
 }
 
