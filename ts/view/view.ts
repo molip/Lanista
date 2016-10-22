@@ -18,7 +18,7 @@ namespace View
         <div class="{{classes}}" onclick="Controller.Popup.onItemClicked({{index}}); event.stopPropagation();">\
             <h3>{{title}}</h3>\
             <div style="position: relative">\
-            <img style="opacity: {{opacity}}" height="200px" src="{{image}}">\
+            <img style="opacity: {{opacity}}" height="180px" src="{{image}}">\
             <img class="centre" {{lock_hidden}} src="images/lock.png">\
             </div>\
             <p>{{description}}</p>\
