@@ -6,7 +6,9 @@
     "allowJs": true,
     "target": "es5",
     "watch": true,
-    "emitBOM": true
+    "emitBOM": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true
   },
   "include": [ "**/*" ]
 }

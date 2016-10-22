@@ -12,7 +12,7 @@ namespace Controller
 
     export function onTriggerClicked(id: string)
     {
-        var handlers = {
+        var handlers: { [key: string]: any; } = {
             'home': onHomeTriggerClicked,
             'barracks': onBarracksTriggerClicked,
             'kennels': onKennelsTriggerClicked,
@@ -34,8 +34,8 @@ namespace Controller
         if (confirm('Reset game?'))
         {
             Model.resetState();
-            this.updateHUD();
-            this.updateTriggers();
+            updateHUD();
+            updateTriggers();
         }
     }
 
@@ -102,7 +102,7 @@ namespace Controller
 
     export function updateTriggers()
     {
-        var triggers = [];
+        var triggers: View.Trigger[] = [];
         var town = View.Data.TownTrigger;
         triggers.push(new View.Trigger('town', town.mapX, town.mapY, town.mapImage));
 

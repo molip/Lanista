@@ -37,9 +37,9 @@ namespace Model
         let str = localStorage.getItem(State.key);
         if (str)
         {
-            this.state = JSON.parse(str);
-            this.state.__proto__ = State.prototype;
-            this.state.buildings.__proto__ = Buildings.State.prototype;
+            state = JSON.parse(str);
+            state.__proto__ = State.prototype;
+            state.buildings.__proto__ = Buildings.State.prototype;
         }
         else
             resetState();

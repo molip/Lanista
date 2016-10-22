@@ -13,7 +13,7 @@ var Controller;
             }
             return null;
         }
-        function onClick(e) {
+        function onClick() {
             if (Canvas.HotTrigger)
                 Controller.onTriggerClicked(Canvas.HotTrigger.id);
         }
@@ -28,7 +28,7 @@ var Controller;
             }
         }
         Canvas.onMouseMove = onMouseMove;
-        function onMouseOut(e) {
+        function onMouseOut() {
             if (Canvas.HotTrigger) {
                 Canvas.HotTrigger = null;
                 View.Canvas.draw();

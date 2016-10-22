@@ -4,7 +4,7 @@ namespace View
 {
     export class Trigger
     {
-        image;
+        image: HTMLImageElement;
         constructor(public id: string, public x: number, public y: number, imgPath: string)
         {
             this.image = Canvas.makeImage(imgPath);
@@ -78,7 +78,7 @@ namespace View
 
             ctx.drawImage(this.BackgroundImage, 0, 0);
 
-            for (var i = 0, trigger; trigger = View.Canvas.Triggers[i]; ++i)
+            for (var i = 0, trigger: View.Trigger; trigger = View.Canvas.Triggers[i]; ++i)
             {
                 ctx.drawImage(trigger.image, trigger.x, trigger.y);
 

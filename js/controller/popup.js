@@ -17,19 +17,19 @@ var Controller;
         function show(title, items, action) {
             Popup.items = items;
             Popup.action = action;
-            View.showPopup(this, title);
+            View.showPopup(title);
         }
         Popup.show = show;
         function onItemClicked(index) {
             View.hidePopup();
-            var action = this.action, item = this.items[index];
-            this.items = this.action = null;
-            action(item);
+            var oldAction = Popup.action, oldItem = Popup.items[index];
+            Popup.items = Popup.action = null;
+            oldAction(oldItem);
         }
         Popup.onItemClicked = onItemClicked;
         function onBackgroundClicked() {
             View.hidePopup();
-            this.items = this.action = null;
+            Popup.items = Popup.action = null;
         }
         Popup.onBackgroundClicked = onBackgroundClicked;
     })(Popup = Controller.Popup || (Controller.Popup = {}));

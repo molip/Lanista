@@ -8,8 +8,8 @@ namespace View
         {
             class Level { constructor(public mapImage: string, public mapX: number, public mapY: number, public shopImage: string, public name: string, public description: string) { } }
 
-            let Types = //          map image               map x   map y   shop image              name            description                     
-            {
+            let Types: { [key: string]: Level[]; } = 
+                {               //  map image               map x   map y   shop image              name            description                     
                 'home': [
                     new Level('images/canvas/home0.png',    40,     230,    'images/builders.jpg', 'Shack',         ''),
                     new Level('images/canvas/home1.png',    60,     250,    'images/builders.jpg', 'House',         'Nice House'),

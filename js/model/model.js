@@ -24,9 +24,9 @@ var Model;
     function init() {
         var str = localStorage.getItem(State.key);
         if (str) {
-            this.state = JSON.parse(str);
-            this.state.__proto__ = State.prototype;
-            this.state.buildings.__proto__ = Model.Buildings.State.prototype;
+            Model.state = JSON.parse(str);
+            Model.state.__proto__ = State.prototype;
+            Model.state.buildings.__proto__ = Model.Buildings.State.prototype;
         }
         else
             resetState();

@@ -6,9 +6,9 @@ namespace Controller
     {
         export let HotTrigger: View.Trigger = null;
 
-        function hitTestTriggers(x, y): View.Trigger
+        function hitTestTriggers(x: number, y: number): View.Trigger
         {
-            for (var i = 0, trigger; trigger = View.Canvas.Triggers[i]; ++i)
+            for (var i = 0, trigger: View.Trigger; trigger = View.Canvas.Triggers[i]; ++i)
             {
                 if (x >= trigger.x && y >= trigger.y)
                 {
@@ -19,13 +19,13 @@ namespace Controller
             return null;
         }
 
-        export function onClick(e)
+        export function onClick()
         {
             if (HotTrigger)
                 Controller.onTriggerClicked(HotTrigger.id);
         }
 
-        export function onMouseMove(e)
+        export function onMouseMove(e: MouseEvent)
         {
             let devPos: Point = Util.getEventPos(e, View.getCanvas());
             let logPos: Point = View.Canvas.devToLog(devPos.x, devPos.y);
@@ -37,7 +37,7 @@ namespace Controller
             }
         }
 
-        export function onMouseOut(e)
+        export function onMouseOut()
         {
             if (HotTrigger)
             {

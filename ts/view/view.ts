@@ -1,3 +1,5 @@
+"use strict";
+
 namespace View 
 {
     export function init()
@@ -10,7 +12,7 @@ namespace View
         return <HTMLCanvasElement>document.getElementById("canvas_ludus");
     }
 
-    export function showPopup(popup, title)
+    export function showPopup(title: string)
     {
         var template = '\
         <div class="{{classes}}" onclick="Controller.Popup.onItemClicked({{index}}); event.stopPropagation();">\
@@ -22,21 +24,22 @@ namespace View
             <p>{{description}}</p>\
         </div>'
 
+        let items = Controller.Popup.items;
         var html = ''
 
         if (title)
             html += '<h2 style="margin:10px">' + title + '</h2>';
 
-        for (var i = 0; i < popup.items.length; ++i)
+        for (var i = 0; i < items.length; ++i)
         {
             var itemHtml = template;
             itemHtml = itemHtml.replace('{{index}}', String(i));
-            itemHtml = itemHtml.replace('{{title}}', popup.items[i].title);
-            itemHtml = itemHtml.replace('{{image}}', popup.items[i].image);
-            itemHtml = itemHtml.replace('{{description}}', popup.items[i].description);
-            itemHtml = itemHtml.replace('{{classes}}', popup.items[i].locked ? 'item disabled' : 'item');
-            itemHtml = itemHtml.replace('{{opacity}}', popup.items[i].locked ? '0.5' : '1');
-            itemHtml = itemHtml.replace('{{lock_hidden}}', popup.items[i].locked ? '' : 'hidden');
+            itemHtml = itemHtml.replace('{{title}}', items[i].title);
+            itemHtml = itemHtml.replace('{{image}}', items[i].image);
+            itemHtml = itemHtml.replace('{{description}}', items[i].description);
+            itemHtml = itemHtml.replace('{{classes}}', items[i].locked ? 'item disabled' : 'item');
+            itemHtml = itemHtml.replace('{{opacity}}', items[i].locked ? '0.5' : '1');
+            itemHtml = itemHtml.replace('{{lock_hidden}}', items[i].locked ? '' : 'hidden');
 
             html += itemHtml;
             if (i > 0 && i % 4 == 0)
@@ -54,7 +57,7 @@ namespace View
         document.getElementById('popup').className = '';
     }
 
-    export function showInfo(title, description)
+    export function showInfo(title: string, description: string)
     {
         var template = '\
         <div class="item">\
@@ -72,7 +75,7 @@ namespace View
         document.getElementById('popup').className = 'show';
     }
 
-    export function setHUDText(text)
+    export function setHUDText(text: string)
     {
         document.getElementById('hud_span').innerText = text;
     }

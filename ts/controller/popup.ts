@@ -12,25 +12,25 @@ namespace Controller
         export let items: Array<Item>;
         export let action: any;
 
-        export function show(title: string, items: Array<Item>, action)
+        export function show(title: string, items: Array<Item>, action: (item: Item)=>void)
         {
             Popup.items = items;
             Popup.action = action;
-            View.showPopup(this, title);
+            View.showPopup(title);
         }
 
         export function onItemClicked(index: number)
         {
             View.hidePopup();
-            var action = this.action, item = this.items[index];
-            this.items = this.action = null;
-            action(item);
+            var oldAction = action, oldItem = items[index];
+            items = action = null;
+            oldAction(oldItem);
         }
 
         export function onBackgroundClicked()
         {
             View.hidePopup();
-            this.items = this.action = null;
+            items = action = null;
         }
     }
 }

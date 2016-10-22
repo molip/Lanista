@@ -6,7 +6,7 @@ namespace Model
     {
         class Level { constructor(public cost: number, public buildSteps: number) { } }
 
-        let Types = //	cost	build steps
+        let Types: { [key: string]: Level[]; } = //	cost	build steps
             {
                 'home': [
                     new Level(  0,      3),
@@ -50,9 +50,9 @@ namespace Model
                 ],
             }
 
-        export function getTypes(): Array<string>
+        export function getTypes(): string[]
         {
-            let types = [];
+            let types: string[] = [];
             for (let t in Types)
                 types.push(t);
             return types;
@@ -67,7 +67,7 @@ namespace Model
 
         export class State
         {
-            types = {};
+            types: { [key: string]: any; } = {};
             constructor()
             {
                 for (var type in Types)
@@ -121,8 +121,9 @@ namespace Model
                 Util.assert(id in this.types);
                 if (this.types[id].progress < 0)
                     return 0;
-
-                return Types[id].buildSteps - this.types[id].progress;
+                let level = this.getNextLevel(id);
+                Util.assert(level != null);
+                return level.buildSteps - this.types[id].progress;
             }
         }
     }

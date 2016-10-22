@@ -29,8 +29,8 @@ var Controller;
     function onResetClicked() {
         if (confirm('Reset game?')) {
             Model.resetState();
-            this.updateHUD();
-            this.updateTriggers();
+            updateHUD();
+            updateTriggers();
         }
     }
     Controller.onResetClicked = onResetClicked;

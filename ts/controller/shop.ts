@@ -19,20 +19,20 @@ namespace Controller
 
         export function showShopsPopup()
         {
-            var items = [];
+            var items: Popup.Item[] = [];
             items.push(new Popup.Item('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked));
             items.push(new Popup.Item('Animal Market', 'Buy animals', 'images/animals.jpg', true));
             items.push(new Popup.Item('People Market', 'Buy people', 'images/people.png', true));
             items.push(new Popup.Item('Armourer', 'Buy armour', 'images/armourer.jpg', true));
 
-            Popup.show('Let\'s go shopping!', items, function (item) { item.handler(); });
+            Popup.show('Let\'s go shopping!', items, function (item: Popup.Item) { item.handler(); });
         }
 
         function onBuildersMerchantClicked()
         {
-            var items = [];
+            var items: Popup.Item[] = [];
 
-            for (var i = 0, id; id = ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'][i]; ++i)
+            for (var i = 0, id: string; id = ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'][i]; ++i)
             {
                 var level = Model.state.buildings.getNextLevel(id);
                 if (level)
@@ -44,7 +44,7 @@ namespace Controller
                 }
             }
 
-            Popup.show(getShopTitle('Builders\' Merchant'), items, function (item) 
+            Popup.show(getShopTitle('Builders\' Merchant'), items, function (item: Item) 
             {
                 Model.state.spendMoney(item.price);
                 Model.state.buildings.setLevelIndex(item.data.id, item.data.levelIndex);

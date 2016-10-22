@@ -104,7 +104,9 @@ var Model;
                 Util.assert(id in this.types);
                 if (this.types[id].progress < 0)
                     return 0;
-                return Types[id].buildSteps - this.types[id].progress;
+                var level = this.getNextLevel(id);
+                Util.assert(level != null);
+                return level.buildSteps - this.types[id].progress;
             };
             return State;
         }());

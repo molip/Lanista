@@ -1,4 +1,5 @@
-﻿var Util;
+﻿"use strict";
+var Util;
 (function (Util) {
     function formatMoney(amount) {
         return '§' + amount;
