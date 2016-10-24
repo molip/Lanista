@@ -10,7 +10,7 @@ namespace Controller
         updateHUD();
     }
 
-    export function onTriggerClicked(id: string)
+    export function onBuildingTriggerClicked(id: string)
     {
         var handlers: { [key: string]: any; } = {
             'home': onHomeTriggerClicked,
@@ -23,7 +23,6 @@ namespace Controller
             'surgery': onSurgeryTriggerClicked,
             'lab': onLabTriggerClicked,
             'merch': onMerchTriggerClicked,
-            'town': onTownTriggerClicked,
         };
         Util.assert(handlers[id]);
         handlers[id]();
@@ -104,7 +103,7 @@ namespace Controller
     {
         var triggers: View.Trigger[] = [];
         var town = View.Data.TownTrigger;
-        triggers.push(new View.Trigger('town', town.mapX, town.mapY, town.mapImage));
+        triggers.push(new View.Trigger('town', new Point(town.mapX, town.mapY), town.mapImage, onTownTriggerClicked));
 
         for (var id of Model.Buildings.getTypes())
         {
@@ -113,10 +112,10 @@ namespace Controller
             if (index >= 0)
             {
                 var level = View.Data.Buildings.getLevel(id, index);
-                triggers.push(new View.Trigger(id, level.mapX, level.mapY, level.mapImage));
+                triggers.push(new View.Trigger(id, new Point(level.mapX, level.mapY), level.mapImage, onBuildingTriggerClicked));
             }
         }
-        View.Canvas.Triggers = triggers;
+        View.Canvas.Objects = triggers;
         View.Canvas.draw();
     }
 }

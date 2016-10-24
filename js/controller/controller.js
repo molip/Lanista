@@ -8,7 +8,7 @@ var Controller;
         updateHUD();
     }
     Controller.onLoad = onLoad;
-    function onTriggerClicked(id) {
+    function onBuildingTriggerClicked(id) {
         var handlers = {
             'home': onHomeTriggerClicked,
             'barracks': onBarracksTriggerClicked,
@@ -20,12 +20,11 @@ var Controller;
             'surgery': onSurgeryTriggerClicked,
             'lab': onLabTriggerClicked,
             'merch': onMerchTriggerClicked,
-            'town': onTownTriggerClicked,
         };
         Util.assert(handlers[id]);
         handlers[id]();
     }
-    Controller.onTriggerClicked = onTriggerClicked;
+    Controller.onBuildingTriggerClicked = onBuildingTriggerClicked;
     function onResetClicked() {
         if (confirm('Reset game?')) {
             Model.resetState();
@@ -75,17 +74,17 @@ var Controller;
     function updateTriggers() {
         var triggers = [];
         var town = View.Data.TownTrigger;
-        triggers.push(new View.Trigger('town', town.mapX, town.mapY, town.mapImage));
+        triggers.push(new View.Trigger('town', new Point(town.mapX, town.mapY), town.mapImage, onTownTriggerClicked));
         for (var _i = 0, _a = Model.Buildings.getTypes(); _i < _a.length; _i++) {
             var id = _a[_i];
             var x = Model.state.buildings;
             var index = Model.state.buildings.getCurrentLevelIndex(id);
             if (index >= 0) {
                 var level = View.Data.Buildings.getLevel(id, index);
-                triggers.push(new View.Trigger(id, level.mapX, level.mapY, level.mapImage));
+                triggers.push(new View.Trigger(id, new Point(level.mapX, level.mapY), level.mapImage, onBuildingTriggerClicked));
             }
         }
-        View.Canvas.Triggers = triggers;
+        View.Canvas.Objects = triggers;
         View.Canvas.draw();
     }
     Controller.updateTriggers = updateTriggers;
