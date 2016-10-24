@@ -4,11 +4,19 @@ var Controller;
     function onLoad() {
         Model.init();
         View.init();
-        updateTriggers();
+        View.Canvas.initObjects();
         updateHUD();
+        window.setInterval(Controller.onTick, 100);
     }
     Controller.onLoad = onLoad;
-    function onTriggerClicked(id) {
+    function onTick() {
+        if (Model.state.update(0.1)) {
+            View.Canvas.updateObjects();
+            updateHUD();
+        }
+    }
+    Controller.onTick = onTick;
+    function onBuildingTriggerClicked(id) {
         var handlers = {
             'home': onHomeTriggerClicked,
             'barracks': onBarracksTriggerClicked,
@@ -20,17 +28,16 @@ var Controller;
             'surgery': onSurgeryTriggerClicked,
             'lab': onLabTriggerClicked,
             'merch': onMerchTriggerClicked,
-            'town': onTownTriggerClicked,
         };
         Util.assert(handlers[id]);
         handlers[id]();
     }
-    Controller.onTriggerClicked = onTriggerClicked;
+    Controller.onBuildingTriggerClicked = onBuildingTriggerClicked;
     function onResetClicked() {
         if (confirm('Reset game?')) {
             Model.resetState();
             updateHUD();
-            updateTriggers();
+            View.Canvas.initObjects();
         }
     }
     Controller.onResetClicked = onResetClicked;
@@ -67,26 +74,10 @@ var Controller;
     function onTownTriggerClicked() {
         Controller.Shop.showShopsPopup();
     }
+    Controller.onTownTriggerClicked = onTownTriggerClicked;
     function updateHUD() {
         var text = 'Money: ' + Util.formatMoney(Model.state.getMoney());
         View.setHUDText(text);
     }
     Controller.updateHUD = updateHUD;
-    function updateTriggers() {
-        var triggers = [];
-        var town = View.Data.TownTrigger;
-        triggers.push(new View.Trigger('town', town.mapX, town.mapY, town.mapImage));
-        for (var _i = 0, _a = Model.Buildings.getTypes(); _i < _a.length; _i++) {
-            var id = _a[_i];
-            var x = Model.state.buildings;
-            var index = Model.state.buildings.getCurrentLevelIndex(id);
-            if (index >= 0) {
-                var level = View.Data.Buildings.getLevel(id, index);
-                triggers.push(new View.Trigger(id, level.mapX, level.mapY, level.mapImage));
-            }
-        }
-        View.Canvas.Triggers = triggers;
-        View.Canvas.draw();
-    }
-    Controller.updateTriggers = updateTriggers;
 })(Controller || (Controller = {}));

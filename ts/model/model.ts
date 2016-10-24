@@ -13,6 +13,13 @@ namespace Model
             this.buildings = new Buildings.State();
         }
 
+        update(seconds: number)
+        {
+            let changed = this.buildings.update(seconds);
+            Model.saveState();
+            return changed;
+        }
+
         getMoney(): number { return state.money; }
 
         spendMoney(amount: number) 

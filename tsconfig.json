@@ -8,7 +8,8 @@
     "watch": true,
     "emitBOM": true,
     "noImplicitAny": true,
-    "noImplicitThis": true
+    "noImplicitThis": true,
+    "noImplicitReturns": true
   },
   "include": [ "**/*" ]
 }

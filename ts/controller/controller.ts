@@ -6,11 +6,22 @@ namespace Controller
     {
         Model.init();
         View.init();
-        updateTriggers();
+        View.Canvas.initObjects();
         updateHUD();
+
+        window.setInterval(Controller.onTick, 100);
     }
 
-    export function onTriggerClicked(id: string)
+    export function onTick()
+    {
+        if (Model.state.update(0.1))
+        {
+            View.Canvas.updateObjects();
+            updateHUD();
+        }
+    }
+
+    export function onBuildingTriggerClicked(id: string)
     {
         var handlers: { [key: string]: any; } = {
             'home': onHomeTriggerClicked,
@@ -23,7 +34,6 @@ namespace Controller
             'surgery': onSurgeryTriggerClicked,
             'lab': onLabTriggerClicked,
             'merch': onMerchTriggerClicked,
-            'town': onTownTriggerClicked,
         };
         Util.assert(handlers[id]);
         handlers[id]();
@@ -35,7 +45,7 @@ namespace Controller
         {
             Model.resetState();
             updateHUD();
-            updateTriggers();
+            View.Canvas.initObjects();
         }
     }
 
@@ -89,7 +99,7 @@ namespace Controller
         View.showInfo('Merch', 'TODO.');
     }
 
-    function onTownTriggerClicked()
+    export function onTownTriggerClicked()
     {
         Shop.showShopsPopup();
     }
@@ -98,25 +108,5 @@ namespace Controller
     {
         var text = 'Money: ' + Util.formatMoney(Model.state.getMoney());
         View.setHUDText(text);
-    }
-
-    export function updateTriggers()
-    {
-        var triggers: View.Trigger[] = [];
-        var town = View.Data.TownTrigger;
-        triggers.push(new View.Trigger('town', town.mapX, town.mapY, town.mapImage));
-
-        for (var id of Model.Buildings.getTypes())
-        {
-            var x = Model.state.buildings;
-            var index = Model.state.buildings.getCurrentLevelIndex(id);
-            if (index >= 0)
-            {
-                var level = View.Data.Buildings.getLevel(id, index);
-                triggers.push(new View.Trigger(id, level.mapX, level.mapY, level.mapImage));
-            }
-        }
-        View.Canvas.Triggers = triggers;
-        View.Canvas.draw();
     }
 }

@@ -67,5 +67,6 @@ var View;
         })(Buildings = Data.Buildings || (Data.Buildings = {}));
         Data.TownTrigger = { mapX: 1100, mapY: 290, mapImage: 'images/canvas/town.png' };
         Data.LudusBackground = { mapImage: 'images/canvas/background.png' };
+        Data.ConstructionImage = 'images/canvas/construction.png';
     })(Data = View.Data || (View.Data = {}));
 })(View || (View = {}));
