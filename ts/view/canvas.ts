@@ -41,11 +41,9 @@ namespace View
 
     export class Trigger extends CanvasImage
     {
-        constructor(public id: string, pos: Point, imgPath: string, public handler: (id: string) => void)
+        constructor(public id: string, public handler: (id: string) => void)
         {
             super();
-            this.loadImage(imgPath);
-            this.pos = pos;
         }
 
         onClick()
@@ -54,9 +52,35 @@ namespace View
         }
     }
 
+    export class Building extends Trigger
+    {
+        levelIndex: number;
+        constructor(id: string, public handler: (id: string) => void)
+        {
+            super(id, handler);
+            this.levelIndex = -1;
+        }
+
+        update()
+        {
+            var index = Model.state.buildings.getCurrentLevelIndex(this.id);
+            Util.assert(index >= 0);
+
+            if (this.levelIndex != index)
+            {
+                this.levelIndex = index;
+                var level = View.Data.Buildings.getLevel(this.id, index);
+                this.loadImage(level.mapImage);
+                this.pos = new Point(level.mapX, level.mapY);
+                return true;
+            }
+            return false;
+        }
+    }
     export class Canvas
     {
         static Objects: CanvasObject[] = [];
+        static Buildings: { [key: string]: Building } = {};
         static Scale: number = 1;
         static Offset: Point = new Point(0, 0);
         static BackgroundImage: CanvasImage;
@@ -136,6 +160,44 @@ namespace View
                 }
             }
         }
-    }
 
+        static initObjects()
+        {
+            this.Objects.length = 0;
+            this.Buildings = {};
+
+            let town = View.Data.TownTrigger;
+            let trigger = new View.Trigger('town', Controller.onTownTriggerClicked);
+            trigger.loadImage(town.mapImage);
+            trigger.pos = new Point(town.mapX, town.mapY);
+            this.Objects.push(trigger);
+
+            this.updateObjects();
+            this.draw();
+        }
+
+        static updateObjects()
+        {
+            let redraw = false;
+            for (var id of Model.Buildings.getTypes())
+            {
+                var index = Model.state.buildings.getCurrentLevelIndex(id);
+                if (index >= 0)
+                {
+                    let building = this.Buildings[id];
+                    if (!(id in this.Buildings))
+                    {
+                        building = new Building(id, Controller.onBuildingTriggerClicked);
+                        this.Buildings[id] = building;
+                        this.Objects.push(building);
+                    }
+
+                    if (building.update())
+                        redraw = true;
+                }
+            }
+            if (redraw)
+                this.draw();
+        }
+    }
 }

@@ -6,7 +6,7 @@ namespace Controller
     {
         Model.init();
         View.init();
-        updateTriggers();
+        View.Canvas.initObjects();
         updateHUD();
     }
 
@@ -34,7 +34,7 @@ namespace Controller
         {
             Model.resetState();
             updateHUD();
-            updateTriggers();
+            View.Canvas.initObjects();
         }
     }
 
@@ -88,7 +88,7 @@ namespace Controller
         View.showInfo('Merch', 'TODO.');
     }
 
-    function onTownTriggerClicked()
+    export function onTownTriggerClicked()
     {
         Shop.showShopsPopup();
     }
@@ -97,25 +97,5 @@ namespace Controller
     {
         var text = 'Money: ' + Util.formatMoney(Model.state.getMoney());
         View.setHUDText(text);
-    }
-
-    export function updateTriggers()
-    {
-        var triggers: View.Trigger[] = [];
-        var town = View.Data.TownTrigger;
-        triggers.push(new View.Trigger('town', new Point(town.mapX, town.mapY), town.mapImage, onTownTriggerClicked));
-
-        for (var id of Model.Buildings.getTypes())
-        {
-            var x = Model.state.buildings;
-            var index = Model.state.buildings.getCurrentLevelIndex(id);
-            if (index >= 0)
-            {
-                var level = View.Data.Buildings.getLevel(id, index);
-                triggers.push(new View.Trigger(id, new Point(level.mapX, level.mapY), level.mapImage, onBuildingTriggerClicked));
-            }
-        }
-        View.Canvas.Objects = triggers;
-        View.Canvas.draw();
     }
 }

@@ -4,7 +4,7 @@ var Controller;
     function onLoad() {
         Model.init();
         View.init();
-        updateTriggers();
+        View.Canvas.initObjects();
         updateHUD();
     }
     Controller.onLoad = onLoad;
@@ -29,7 +29,7 @@ var Controller;
         if (confirm('Reset game?')) {
             Model.resetState();
             updateHUD();
-            updateTriggers();
+            View.Canvas.initObjects();
         }
     }
     Controller.onResetClicked = onResetClicked;
@@ -66,26 +66,10 @@ var Controller;
     function onTownTriggerClicked() {
         Controller.Shop.showShopsPopup();
     }
+    Controller.onTownTriggerClicked = onTownTriggerClicked;
     function updateHUD() {
         var text = 'Money: ' + Util.formatMoney(Model.state.getMoney());
         View.setHUDText(text);
     }
     Controller.updateHUD = updateHUD;
-    function updateTriggers() {
-        var triggers = [];
-        var town = View.Data.TownTrigger;
-        triggers.push(new View.Trigger('town', new Point(town.mapX, town.mapY), town.mapImage, onTownTriggerClicked));
-        for (var _i = 0, _a = Model.Buildings.getTypes(); _i < _a.length; _i++) {
-            var id = _a[_i];
-            var x = Model.state.buildings;
-            var index = Model.state.buildings.getCurrentLevelIndex(id);
-            if (index >= 0) {
-                var level = View.Data.Buildings.getLevel(id, index);
-                triggers.push(new View.Trigger(id, new Point(level.mapX, level.mapY), level.mapImage, onBuildingTriggerClicked));
-            }
-        }
-        View.Canvas.Objects = triggers;
-        View.Canvas.draw();
-    }
-    Controller.updateTriggers = updateTriggers;
 })(Controller || (Controller = {}));

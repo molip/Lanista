@@ -49,7 +49,7 @@ namespace Controller
                 Model.state.spendMoney(item.price);
                 Model.state.buildings.setLevelIndex(item.data.id, item.data.levelIndex);
                 Controller.updateHUD();
-                Controller.updateTriggers();
+                View.Canvas.updateObjects();
             });
         }
     }

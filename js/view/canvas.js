@@ -37,12 +37,10 @@ var View;
     View.CanvasImage = CanvasImage;
     var Trigger = (function (_super) {
         __extends(Trigger, _super);
-        function Trigger(id, pos, imgPath, handler) {
+        function Trigger(id, handler) {
             _super.call(this);
             this.id = id;
             this.handler = handler;
-            this.loadImage(imgPath);
-            this.pos = pos;
         }
         Trigger.prototype.onClick = function () {
             this.handler(this.id);
@@ -50,6 +48,28 @@ var View;
         return Trigger;
     }(CanvasImage));
     View.Trigger = Trigger;
+    var Building = (function (_super) {
+        __extends(Building, _super);
+        function Building(id, handler) {
+            _super.call(this, id, handler);
+            this.handler = handler;
+            this.levelIndex = -1;
+        }
+        Building.prototype.update = function () {
+            var index = Model.state.buildings.getCurrentLevelIndex(this.id);
+            Util.assert(index >= 0);
+            if (this.levelIndex != index) {
+                this.levelIndex = index;
+                var level = View.Data.Buildings.getLevel(this.id, index);
+                this.loadImage(level.mapImage);
+                this.pos = new Point(level.mapX, level.mapY);
+                return true;
+            }
+            return false;
+        };
+        return Building;
+    }(Trigger));
+    View.Building = Building;
     var Canvas = (function () {
         function Canvas() {
         }
@@ -105,7 +125,38 @@ var View;
                 }
             }
         };
+        Canvas.initObjects = function () {
+            this.Objects.length = 0;
+            this.Buildings = {};
+            var town = View.Data.TownTrigger;
+            var trigger = new View.Trigger('town', Controller.onTownTriggerClicked);
+            trigger.loadImage(town.mapImage);
+            trigger.pos = new Point(town.mapX, town.mapY);
+            this.Objects.push(trigger);
+            this.updateObjects();
+            this.draw();
+        };
+        Canvas.updateObjects = function () {
+            var redraw = false;
+            for (var _i = 0, _a = Model.Buildings.getTypes(); _i < _a.length; _i++) {
+                var id = _a[_i];
+                var index = Model.state.buildings.getCurrentLevelIndex(id);
+                if (index >= 0) {
+                    var building = this.Buildings[id];
+                    if (!(id in this.Buildings)) {
+                        building = new Building(id, Controller.onBuildingTriggerClicked);
+                        this.Buildings[id] = building;
+                        this.Objects.push(building);
+                    }
+                    if (building.update())
+                        redraw = true;
+                }
+            }
+            if (redraw)
+                this.draw();
+        };
         Canvas.Objects = [];
+        Canvas.Buildings = {};
         Canvas.Scale = 1;
         Canvas.Offset = new Point(0, 0);
         return Canvas;
