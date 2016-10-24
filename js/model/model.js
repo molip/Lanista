@@ -6,6 +6,11 @@ var Model;
             this.money = 1000;
             this.buildings = new Model.Buildings.State();
         }
+        State.prototype.update = function (seconds) {
+            var changed = this.buildings.update(seconds);
+            Model.saveState();
+            return changed;
+        };
         State.prototype.getMoney = function () { return Model.state.money; };
         State.prototype.spendMoney = function (amount) {
             Util.assert(amount >= 0 && Model.state.money >= amount);

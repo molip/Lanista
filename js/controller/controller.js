@@ -6,8 +6,16 @@ var Controller;
         View.init();
         View.Canvas.initObjects();
         updateHUD();
+        window.setInterval(Controller.onTick, 100);
     }
     Controller.onLoad = onLoad;
+    function onTick() {
+        if (Model.state.update(0.1)) {
+            View.Canvas.updateObjects();
+            updateHUD();
+        }
+    }
+    Controller.onTick = onTick;
     function onBuildingTriggerClicked(id) {
         var handlers = {
             'home': onHomeTriggerClicked,

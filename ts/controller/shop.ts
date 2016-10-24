@@ -34,10 +34,10 @@ namespace Controller
 
             for (var i = 0, id: string; id = ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'][i]; ++i)
             {
-                var level = Model.state.buildings.getNextLevel(id);
+                var level = Model.state.buildings.getNextUpgradeLevel(id);
                 if (level)
                 {
-                    var levelIndex = Model.state.buildings.getNextLevelIndex(id);
+                    var levelIndex = Model.state.buildings.getNextUpgradeIndex(id);
                     var viewLevel = View.Data.Buildings.getLevel(id, levelIndex);
                     var item = new Item(viewLevel.name, viewLevel.description, viewLevel.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, null, { id: id, levelIndex: levelIndex });
                     items.push(item);
@@ -46,8 +46,7 @@ namespace Controller
 
             Popup.show(getShopTitle('Builders\' Merchant'), items, function (item: Item) 
             {
-                Model.state.spendMoney(item.price);
-                Model.state.buildings.setLevelIndex(item.data.id, item.data.levelIndex);
+                Model.state.buildings.buyUpgrade(item.data.id);
                 Controller.updateHUD();
                 View.Canvas.updateObjects();
             });

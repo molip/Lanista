@@ -62,5 +62,6 @@ namespace View
 
         export let TownTrigger = { mapX: 1100, mapY: 290, mapImage: 'images/canvas/town.png' };
         export let LudusBackground = { mapImage: 'images/canvas/background.png' };
+        export let ConstructionImage = 'images/canvas/construction.png';
     }
 }

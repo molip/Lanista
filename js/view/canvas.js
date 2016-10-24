@@ -53,19 +53,56 @@ var View;
         function Building(id, handler) {
             _super.call(this, id, handler);
             this.handler = handler;
+            this.progress = -1;
             this.levelIndex = -1;
+            this.progress = -1;
         }
         Building.prototype.update = function () {
+            var changed = false;
             var index = Model.state.buildings.getCurrentLevelIndex(this.id);
-            Util.assert(index >= 0);
-            if (this.levelIndex != index) {
+            if (index < 0 && !this.image) {
+                var level_1 = View.Data.Buildings.getLevel(this.id, 0);
+                this.loadImage(View.Data.ConstructionImage);
+                this.pos = new Point(level_1.mapX, level_1.mapY);
+                changed = true;
+            }
+            else if (this.levelIndex != index) {
                 this.levelIndex = index;
                 var level = View.Data.Buildings.getLevel(this.id, index);
                 this.loadImage(level.mapImage);
                 this.pos = new Point(level.mapX, level.mapY);
-                return true;
+                changed = true;
             }
-            return false;
+            var oldProgress = this.progress;
+            if (Model.state.buildings.isConstructing(this.id))
+                this.progress = Model.state.buildings.getConstructionProgress(this.id);
+            else
+                this.progress = -1;
+            if (this.progress != oldProgress)
+                changed = true;
+            return changed;
+        };
+        Building.prototype.draw = function (ctx) {
+            if (this.progress >= 0) {
+                var rect = this.getRect();
+                rect.left = rect.right + 3;
+                rect.right += 10;
+                rect.top += 3;
+                var rect2 = Object.create(rect);
+                rect2.top = rect2.bottom - rect2.height() * this.progress;
+                ctx.beginPath();
+                rect2.path(ctx);
+                ctx.closePath();
+                ctx.fillStyle = '#80f080';
+                ctx.fill();
+                ctx.beginPath();
+                rect.path(ctx);
+                ctx.closePath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#208020';
+                ctx.stroke();
+            }
+            _super.prototype.draw.call(this, ctx);
         };
         return Building;
     }(Trigger));
@@ -121,6 +158,7 @@ var View;
                     obj.getRect().path(ctx);
                     ctx.closePath();
                     ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#8080ff';
                     ctx.stroke();
                 }
             }
@@ -140,8 +178,7 @@ var View;
             var redraw = false;
             for (var _i = 0, _a = Model.Buildings.getTypes(); _i < _a.length; _i++) {
                 var id = _a[_i];
-                var index = Model.state.buildings.getCurrentLevelIndex(id);
-                if (index >= 0) {
+                if (Model.state.buildings.getCurrentLevel(id) || Model.state.buildings.isConstructing(id)) {
                     var building = this.Buildings[id];
                     if (!(id in this.Buildings)) {
                         building = new Building(id, Controller.onBuildingTriggerClicked);

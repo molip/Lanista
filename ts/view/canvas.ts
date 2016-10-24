@@ -55,26 +55,72 @@ namespace View
     export class Building extends Trigger
     {
         levelIndex: number;
+        progress = -1;
         constructor(id: string, public handler: (id: string) => void)
         {
             super(id, handler);
             this.levelIndex = -1;
+            this.progress = -1;
         }
 
         update()
         {
+            let changed = false;
             var index = Model.state.buildings.getCurrentLevelIndex(this.id);
-            Util.assert(index >= 0);
 
-            if (this.levelIndex != index)
+            if (index < 0 && !this.image)
+            {
+                let level = View.Data.Buildings.getLevel(this.id, 0);
+                this.loadImage(View.Data.ConstructionImage);
+                this.pos = new Point(level.mapX, level.mapY);
+                changed = true;
+            }
+            else if (this.levelIndex != index)
             {
                 this.levelIndex = index;
                 var level = View.Data.Buildings.getLevel(this.id, index);
                 this.loadImage(level.mapImage);
                 this.pos = new Point(level.mapX, level.mapY);
-                return true;
+                changed = true;
             }
-            return false;
+
+            let oldProgress = this.progress;
+            if (Model.state.buildings.isConstructing(this.id))
+                this.progress = Model.state.buildings.getConstructionProgress(this.id);
+            else
+                this.progress = -1;
+
+            if (this.progress != oldProgress)
+                changed = true;
+
+            return changed;
+        }
+
+        draw(ctx: CanvasRenderingContext2D)
+        {
+            if (this.progress >= 0)
+            {
+                let rect = this.getRect();
+                rect.left = rect.right + 3;
+                rect.right += 10;
+                rect.top += 3;
+
+                let rect2 = Object.create(rect);
+                rect2.top = rect2.bottom - rect2.height() * this.progress;
+                ctx.beginPath();
+                rect2.path(ctx);
+                ctx.closePath();
+                ctx.fillStyle = '#80f080';
+                ctx.fill();
+
+                ctx.beginPath();
+                rect.path(ctx);
+                ctx.closePath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#208020';
+                ctx.stroke();
+            }
+            super.draw(ctx);
         }
     }
     export class Canvas
@@ -156,6 +202,7 @@ namespace View
                     obj.getRect().path(ctx);
                     ctx.closePath();
                     ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#8080ff';
                     ctx.stroke();
                 }
             }
@@ -181,8 +228,7 @@ namespace View
             let redraw = false;
             for (var id of Model.Buildings.getTypes())
             {
-                var index = Model.state.buildings.getCurrentLevelIndex(id);
-                if (index >= 0)
+                if (Model.state.buildings.getCurrentLevel(id) || Model.state.buildings.isConstructing(id))
                 {
                     let building = this.Buildings[id];
                     if (!(id in this.Buildings))

@@ -8,6 +8,17 @@ namespace Controller
         View.init();
         View.Canvas.initObjects();
         updateHUD();
+
+        window.setInterval(Controller.onTick, 100);
+    }
+
+    export function onTick()
+    {
+        if (Model.state.update(0.1))
+        {
+            View.Canvas.updateObjects();
+            updateHUD();
+        }
     }
 
     export function onBuildingTriggerClicked(id: string)
