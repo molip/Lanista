@@ -19,36 +19,36 @@ namespace View
                     new Level('images/canvas/barracks1.png',    44,     317,    'images/canvas/barracks1.png',  'Barracks 2',    'Nice Barracks'),
                 ],
                 'kennels': [
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Kennels 1',     'For animals to live in'),
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Kennels 2',     'Nice Kennels'),
+                    new Level('images/canvas/home0.png',        350,    60,     'images/canvas/home0.png',      'Kennels 1',     'For animals to live in'),
+                    new Level('images/canvas/home1.png',        350,    60,     'images/canvas/home1.png',      'Kennels 2',     'Nice Kennels'),
                 ],
                 'storage': [
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Storage 1',     'For stuff to live in.'),
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Storage 2',     'Nice Storage'),
+                    new Level('images/canvas/home0.png',        350,    317,    'images/canvas/home0.png',      'Storage 1',     'For stuff to live in.'),
+                    new Level('images/canvas/home1.png',        350,    317,    'images/canvas/home1.png',      'Storage 2',     'Nice Storage'),
                 ],
                 'weapon': [
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Weapon 1',      'To make weapons'),
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Weapon 2',      'Nice Weapon'),
+                    new Level('images/canvas/home0.png',        700,    50,     'images/canvas/home0.png',      'Weapon 1',      'To make weapons'),
+                    new Level('images/canvas/home1.png',        700,    50,     'images/canvas/home1.png',      'Weapon 2',      'Nice Weapon'),
                 ],
                 'armour': [
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Armour 1',      'To make armour'),
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Armour 2',      'Nice Armour'),
+                    new Level('images/canvas/home0.png',        1100,   50,      'images/canvas/home0.png',     'Armour 1',      'To make armour'),
+                    new Level('images/canvas/home1.png',        1100,   50,      'images/canvas/home1.png',     'Armour 2',      'Nice Armour'),
                 ],
                 'training': [
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Training 1',    'To train gladiators'),
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Training 2',    'Nice Training'),
+                    new Level('images/canvas/home0.png',        700,    300,     'images/canvas/home0.png',     'Training 1',    'To train gladiators'),
+                    new Level('images/canvas/home1.png',        700,    300,     'images/canvas/home1.png',     'Training 2',    'Nice Training'),
                 ],
                 'surgery': [
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Surgery 1',     'To fix gladiators'),
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Surgery 2',     'Nice Surgery'),
+                    new Level('images/canvas/home0.png',        1100,   300,     'images/canvas/home0.png',     'Surgery 1',     'To fix gladiators'),
+                    new Level('images/canvas/home1.png',        1100,   300,     'images/canvas/home1.png',     'Surgery 2',     'Nice Surgery'),
                 ],
                 'lab': [
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Lab 1',         'To invent stuff'),
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Lab 2',         'Nice Lab'),
+                    new Level('images/canvas/home0.png',        1100,   575,     'images/canvas/home0.png',     'Lab 1',         'To invent stuff'),
+                    new Level('images/canvas/home1.png',        1100,   575,     'images/canvas/home1.png',     'Lab 2',         'Nice Lab'),
                 ],
                 'merch': [
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Merch 1',       'To sell stuff'),
-                    new Level('images/canvas/home0.png',        0,      0,      'images/canvas/home0.png',      'Merch 2',       'Nice Merch'),
+                    new Level('images/canvas/home0.png',        700,    575,     'images/canvas/home0.png',     'Merch 1',       'To sell stuff'),
+                    new Level('images/canvas/home1.png',        700,    575,     'images/canvas/home1.png',     'Merch 2',       'Nice Merch'),
                 ],
             }
 
@@ -60,7 +60,7 @@ namespace View
             }
         }
 
-        export let TownTrigger = { mapX: 1100, mapY: 290, mapImage: 'images/canvas/town.png' };
+        export let TownTrigger = { mapX: 1100, mapY: 400, mapImage: 'images/canvas/town.png' };
         export let LudusBackground = { mapImage: 'images/canvas/background.png' };
         export let ConstructionImage = 'images/canvas/construction.png';
     }
