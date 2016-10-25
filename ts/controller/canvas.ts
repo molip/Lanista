@@ -9,7 +9,7 @@ namespace Controller
         function hitTestObjects(x: number, y: number): View.CanvasObject
         {
             for (let obj of View.Canvas.Objects)
-                if (obj.getRect().pointInRect(new Point(x, y)))
+                if (obj.isEnabled() && obj.getRect().pointInRect(new Point(x, y)))
                     return obj;
             return null;
         }

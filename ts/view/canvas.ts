@@ -8,6 +8,7 @@ namespace View
         draw(ctx: CanvasRenderingContext2D) { }
         getRect(): Rect { return null; }
         onClick() {}
+        isEnabled() { return true; }
     }
 
     export class CanvasImage extends CanvasObject
@@ -48,7 +49,8 @@ namespace View
 
         onClick()
         {
-            this.handler(this.id);
+            if (this.isEnabled())
+                this.handler(this.id);
         }
     }
 
@@ -61,6 +63,11 @@ namespace View
             super(id, handler);
             this.levelIndex = -1;
             this.progress = -1;
+        }
+
+        isEnabled()
+        {
+            return Model.state.buildings.getCurrentLevel(this.id) != null;
         }
 
         update()

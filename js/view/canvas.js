@@ -12,6 +12,7 @@ var View;
         CanvasObject.prototype.draw = function (ctx) { };
         CanvasObject.prototype.getRect = function () { return null; };
         CanvasObject.prototype.onClick = function () { };
+        CanvasObject.prototype.isEnabled = function () { return true; };
         return CanvasObject;
     }());
     View.CanvasObject = CanvasObject;
@@ -43,7 +44,8 @@ var View;
             this.handler = handler;
         }
         Trigger.prototype.onClick = function () {
-            this.handler(this.id);
+            if (this.isEnabled())
+                this.handler(this.id);
         };
         return Trigger;
     }(CanvasImage));
@@ -57,6 +59,9 @@ var View;
             this.levelIndex = -1;
             this.progress = -1;
         }
+        Building.prototype.isEnabled = function () {
+            return Model.state.buildings.getCurrentLevel(this.id) != null;
+        };
         Building.prototype.update = function () {
             var changed = false;
             var index = Model.state.buildings.getCurrentLevelIndex(this.id);
