@@ -67,7 +67,7 @@ namespace View
 
         isEnabled()
         {
-            return Model.state.buildings.getCurrentLevel(this.id) != null;
+            return Model.state.buildings.getCurrentLevelIndex(this.id) >= 0;
         }
 
         update()
@@ -77,15 +77,15 @@ namespace View
 
             if (index < 0 && !this.image)
             {
-                let level = View.Data.Buildings.getLevel(this.id, 0);
-                this.loadImage(View.Data.ConstructionImage);
+                let level = Data.Buildings.getLevel(this.id, 0);
+                this.loadImage(Data.Misc.ConstructionImage);
                 this.pos = new Point(level.mapX, level.mapY);
                 changed = true;
             }
             else if (this.levelIndex != index)
             {
                 this.levelIndex = index;
-                var level = View.Data.Buildings.getLevel(this.id, index);
+                var level = Data.Buildings.getLevel(this.id, index);
                 this.loadImage(level.mapImage);
                 this.pos = new Point(level.mapX, level.mapY);
                 changed = true;
@@ -141,7 +141,7 @@ namespace View
         static init()
         {
             Canvas.BackgroundImage = new CanvasImage();
-            Canvas.BackgroundImage.loadImage(View.Data.LudusBackground.mapImage);
+            Canvas.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage);
         }
 
         static onResize()
@@ -220,7 +220,7 @@ namespace View
             this.Objects.length = 0;
             this.Buildings = {};
 
-            let town = View.Data.TownTrigger;
+            let town = Data.Misc.TownTrigger;
             let trigger = new View.Trigger('town', Controller.onTownTriggerClicked);
             trigger.loadImage(town.mapImage);
             trigger.pos = new Point(town.mapX, town.mapY);
@@ -233,9 +233,9 @@ namespace View
         static updateObjects()
         {
             let redraw = false;
-            for (var id of Model.Buildings.getTypes())
+            for (var id in Data.Buildings.Levels)
             {
-                if (Model.state.buildings.getCurrentLevel(id) || Model.state.buildings.isConstructing(id))
+                if (Model.state.buildings.getCurrentLevelIndex(id) >= 0 || Model.state.buildings.isConstructing(id))
                 {
                     let building = this.Buildings[id];
                     if (!(id in this.Buildings))

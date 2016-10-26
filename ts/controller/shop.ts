@@ -34,12 +34,10 @@ namespace Controller
 
             for (var i = 0, id: string; id = ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'][i]; ++i)
             {
-                var level = Model.state.buildings.getNextUpgradeLevel(id);
+                var level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
                 if (level)
                 {
-                    var levelIndex = Model.state.buildings.getNextUpgradeIndex(id);
-                    var viewLevel = View.Data.Buildings.getLevel(id, levelIndex);
-                    var item = new Item(viewLevel.name, viewLevel.description, viewLevel.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, null, { id: id, levelIndex: levelIndex });
+                    var item = new Item(level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, null, { id: id });
                     items.push(item);
                 }
             }

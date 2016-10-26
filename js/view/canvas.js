@@ -60,20 +60,20 @@ var View;
             this.progress = -1;
         }
         Building.prototype.isEnabled = function () {
-            return Model.state.buildings.getCurrentLevel(this.id) != null;
+            return Model.state.buildings.getCurrentLevelIndex(this.id) >= 0;
         };
         Building.prototype.update = function () {
             var changed = false;
             var index = Model.state.buildings.getCurrentLevelIndex(this.id);
             if (index < 0 && !this.image) {
-                var level_1 = View.Data.Buildings.getLevel(this.id, 0);
-                this.loadImage(View.Data.ConstructionImage);
+                var level_1 = Data.Buildings.getLevel(this.id, 0);
+                this.loadImage(Data.Misc.ConstructionImage);
                 this.pos = new Point(level_1.mapX, level_1.mapY);
                 changed = true;
             }
             else if (this.levelIndex != index) {
                 this.levelIndex = index;
-                var level = View.Data.Buildings.getLevel(this.id, index);
+                var level = Data.Buildings.getLevel(this.id, index);
                 this.loadImage(level.mapImage);
                 this.pos = new Point(level.mapX, level.mapY);
                 changed = true;
@@ -117,7 +117,7 @@ var View;
         }
         Canvas.init = function () {
             Canvas.BackgroundImage = new CanvasImage();
-            Canvas.BackgroundImage.loadImage(View.Data.LudusBackground.mapImage);
+            Canvas.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage);
         };
         Canvas.onResize = function () {
             this.draw();
@@ -171,7 +171,7 @@ var View;
         Canvas.initObjects = function () {
             this.Objects.length = 0;
             this.Buildings = {};
-            var town = View.Data.TownTrigger;
+            var town = Data.Misc.TownTrigger;
             var trigger = new View.Trigger('town', Controller.onTownTriggerClicked);
             trigger.loadImage(town.mapImage);
             trigger.pos = new Point(town.mapX, town.mapY);
@@ -181,9 +181,8 @@ var View;
         };
         Canvas.updateObjects = function () {
             var redraw = false;
-            for (var _i = 0, _a = Model.Buildings.getTypes(); _i < _a.length; _i++) {
-                var id = _a[_i];
-                if (Model.state.buildings.getCurrentLevel(id) || Model.state.buildings.isConstructing(id)) {
+            for (var id in Data.Buildings.Levels) {
+                if (Model.state.buildings.getCurrentLevelIndex(id) >= 0 || Model.state.buildings.isConstructing(id)) {
                     var building = this.Buildings[id];
                     if (!(id in this.Buildings)) {
                         building = new Building(id, Controller.onBuildingTriggerClicked);
