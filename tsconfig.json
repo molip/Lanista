@@ -1,9 +1,7 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
-    "rootDir": "./ts",
-    "outDir": "./js",
-    "allowJs": true,
+    "outFile": "app.js",
     "target": "es5",
     "watch": true,
     "emitBOM": true,
@@ -11,5 +9,5 @@
     "noImplicitThis": true,
     "noImplicitReturns": true
   },
-  "include": [ "**/*" ]
+  "include": [ "ts/**/*" ]
 }

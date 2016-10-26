@@ -2,23 +2,10 @@
 <head>
 	<link rel="stylesheet" href="main.css">
 	
-	<script src="js/types.js"></script>
-	<script src="js/util.js"></script>
-	<script src="js/data.js"></script>
+	<script src="app.js"></script>
 
 	<script src="data/buildings.js"></script>
 	<script src="data/misc.js"></script>
-
-	<script src="js/controller/controller.js"></script>
-	<script src="js/controller/canvas.js"></script>
-    <script src="js/controller/popup.js"></script>
-	<script src="js/controller/shop.js"></script>
-
-	<script src="js/model/model.js"></script>
-	<script src="js/model/buildings.js"></script>
-
-	<script src="js/view/view.js"></script>
-	<script src="js/view/canvas.js"></script>
 </head>
 <body onload="Controller.onLoad()" onresize="View.Canvas.onResize()">
 	<canvas id="canvas_ludus" onclick="Controller.Canvas.onClick(event)" onmousemove="Controller.Canvas.onMouseMove(event)" onmouseout="Controller.Canvas.onMouseOut(event)"></canvas>
