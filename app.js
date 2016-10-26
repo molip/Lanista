@@ -210,15 +210,15 @@ var Data;
     var Buildings;
     (function (Buildings) {
         var Level = (function () {
-            function Level(mapImage, mapX, mapY, shopImage, name, description, cost, buildTime) {
-                this.mapImage = mapImage;
+            function Level(cost, buildTime, mapX, mapY, mapImage, shopImage, name, description) {
+                this.cost = cost;
+                this.buildTime = buildTime;
                 this.mapX = mapX;
                 this.mapY = mapY;
+                this.mapImage = mapImage;
                 this.shopImage = shopImage;
                 this.name = name;
                 this.description = description;
-                this.cost = cost;
-                this.buildTime = buildTime;
             }
             return Level;
         }());
