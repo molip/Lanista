@@ -57,7 +57,7 @@ namespace View
     export class Building extends Trigger
     {
         levelIndex: number;
-        progress = -1;
+        progress: number;
         constructor(id: string, public handler: (id: string) => void)
         {
             super(id, handler);
@@ -137,6 +137,7 @@ namespace View
         static Scale: number = 1;
         static Offset: Point = new Point(0, 0);
         static BackgroundImage: CanvasImage;
+        static hasDrawn: boolean;
 
         static init()
         {
@@ -146,6 +147,7 @@ namespace View
 
         static onResize()
         {
+            this.updateTransform();
             this.draw();
         }
 
@@ -182,11 +184,24 @@ namespace View
                 this.Offset = new Point((canvas.width - devWidth) / 2, 0);
                 this.Scale = sy;
             }
+
+            let hud = document.getElementById('hud_div');
+            hud.style.top = this.Offset.y.toString() + 'px';
+            hud.style.left = this.Offset.x.toString() + 'px';
+            hud.style.right = this.Offset.x.toString() + 'px';
+            //hud.style.right = (window.innerWidth - this.Offset.x).toString() + 'px';
         }
 
         static draw()
         {
-            this.updateTransform();
+            if (!this.BackgroundImage.image.complete)
+                return;
+
+            if (!this.hasDrawn)
+            {
+                this.hasDrawn = true;
+                this.updateTransform();
+            }
 
             var canvas = View.getCanvas();
             var ctx = canvas.getContext("2d");

@@ -464,7 +464,6 @@ var View;
         function Building(id, handler) {
             _super.call(this, id, handler);
             this.handler = handler;
-            this.progress = -1;
             this.levelIndex = -1;
             this.progress = -1;
         }
@@ -529,6 +528,7 @@ var View;
             Canvas.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage);
         };
         Canvas.onResize = function () {
+            this.updateTransform();
             this.draw();
         };
         Canvas.devToLog = function (x, y) {
@@ -555,9 +555,19 @@ var View;
                 this.Offset = new Point((canvas.width - devWidth) / 2, 0);
                 this.Scale = sy;
             }
+            var hud = document.getElementById('hud_div');
+            hud.style.top = this.Offset.y.toString() + 'px';
+            hud.style.left = this.Offset.x.toString() + 'px';
+            hud.style.right = this.Offset.x.toString() + 'px';
+            //hud.style.right = (window.innerWidth - this.Offset.x).toString() + 'px';
         };
         Canvas.draw = function () {
-            this.updateTransform();
+            if (!this.BackgroundImage.image.complete)
+                return;
+            if (!this.hasDrawn) {
+                this.hasDrawn = true;
+                this.updateTransform();
+            }
             var canvas = View.getCanvas();
             var ctx = canvas.getContext("2d");
             ctx.setTransform(1, 0, 0, 1, 0, 0);

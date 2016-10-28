@@ -2,6 +2,7 @@ body {
     font-family:'Tahoma';
     margin:0;
     overflow:hidden;
+    background-color: black; 
 }
 
 div	{ margin:0 }
@@ -25,13 +26,9 @@ tr {
 
 #hud_div {
 	position: absolute;
-	top:10px;
-	left:1%;
-    width:98%;
-}
-
-#hud_span {
-	font-size: 200%;
+    margin: 1vmin 1vmin 1vmin 1vmin;
+	font-size: 4vmin;
+    color: white;
 }
 
 #reset_btn
