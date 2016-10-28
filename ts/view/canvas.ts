@@ -209,7 +209,7 @@ namespace View
                     obj.getRect().path(ctx);
                     ctx.closePath();
                     ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#8080ff';
+                    ctx.strokeStyle = 'cornflowerblue';
                     ctx.stroke();
                 }
             }

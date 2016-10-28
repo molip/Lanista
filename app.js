@@ -572,7 +572,7 @@ var View;
                     obj.getRect().path(ctx);
                     ctx.closePath();
                     ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#8080ff';
+                    ctx.strokeStyle = 'cornflowerblue';
                     ctx.stroke();
                 }
             }
@@ -626,31 +626,35 @@ var View;
     View.getCanvas = getCanvas;
     function showPopup(title) {
         var template = '\
-        <div class="{{classes}}" onclick="Controller.Popup.onItemClicked({{index}}); event.stopPropagation();">\
-            <h3>{{title}}</h3>\
-            <div style="position: relative">\
-            <img style="opacity: {{opacity}}" height="180px" src="{{image}}">\
-            <img class="centre" {{lock_hidden}} src="images/lock.png">\
-            </div>\
-            <p>{{description}}</p>\
-        </div>';
+        <tr class="{{classes}}" style="opacity: {{opacity}}; " onclick="Controller.Popup.onItemClicked({{index}}); event.stopPropagation();">\
+            <td style="width:20%">\
+                <h4>{{title}}</h4>\
+            </td>\
+            <td style="position: relative; width:20%">\
+                <img class="centre" style="height:90%" src="{{image}}">\
+                <!--<img class="centre" style="height:50%" {{lock_hidden}} src="images/lock.png">-->\
+            </td>\
+            <td>\
+                <p>{{description}}</p>\
+            </td>\
+        </tr>';
         var items = Controller.Popup.items;
         var html = '';
         if (title)
-            html += '<h2 style="margin:10px">' + title + '</h2>';
+            html += '<h2 style="margin:1vmin; text-align: center">' + title + '</h2>';
+        html += '<table>';
         for (var i = 0; i < items.length; ++i) {
             var itemHtml = template;
             itemHtml = itemHtml.replace('{{index}}', String(i));
             itemHtml = itemHtml.replace('{{title}}', items[i].title);
             itemHtml = itemHtml.replace('{{image}}', items[i].image);
             itemHtml = itemHtml.replace('{{description}}', items[i].description);
-            itemHtml = itemHtml.replace('{{classes}}', items[i].locked ? 'item disabled' : 'item');
+            itemHtml = itemHtml.replace('{{classes}}', items[i].locked ? 'disabled' : '');
             itemHtml = itemHtml.replace('{{opacity}}', items[i].locked ? '0.5' : '1');
             itemHtml = itemHtml.replace('{{lock_hidden}}', items[i].locked ? '' : 'hidden');
             html += itemHtml;
-            if (i > 0 && i % 4 == 0)
-                html += '<br>';
         }
+        html += '</table>';
         document.getElementById('container').innerHTML = html;
         document.getElementById('container').className = 'show';
         document.getElementById('popup').className = 'show';
