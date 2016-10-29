@@ -32,9 +32,9 @@ namespace View
         var html = ''
 
         if (title)
-            html += '<h2 style="margin:1vmin; text-align: center">' + title + '</h2>';
+            html += '<h3 style="margin:1vmin; text-align: center">' + title + '</h3>';
 
-        html += '<table>';
+        html += '<div class="container_scroller"> <table>';
 
         for (var i = 0; i < items.length; ++i)
         {
@@ -50,7 +50,7 @@ namespace View
             html += itemHtml;
         }
 
-        html += '</table>';
+        html += '</table></div>';
 
         document.getElementById('container').innerHTML = html;
         document.getElementById('container').className = 'show';

@@ -9,7 +9,6 @@ div	{ margin:0 }
 
 table {
     width: 100%; 
-    border-collapse: collapse; 
 }
 
 tr {
@@ -60,9 +59,8 @@ tr {
 	margin: auto auto; 
 	background-color: white;
     transform: scale(0);
-    overflow:auto;
     width: 90vmin;
-    max-height: 80vmin;
+    height: 80vmin;
     position: relative; 
 	font-size: 3vmin;
 }
@@ -70,6 +68,14 @@ tr {
 #container.show {
     transform: scale(1);
     transition: opacity .5s ease-in-out, transform .5s ease-in-out;
+}
+
+.container_scroller {
+	overflow:auto;
+	width: 100%;
+	top: 6vh;
+	bottom:0;
+	position: absolute;
 }
 
 .centre {

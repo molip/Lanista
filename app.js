@@ -651,8 +651,8 @@ var View;
         var items = Controller.Popup.items;
         var html = '';
         if (title)
-            html += '<h2 style="margin:1vmin; text-align: center">' + title + '</h2>';
-        html += '<table>';
+            html += '<h3 style="margin:1vmin; text-align: center">' + title + '</h3>';
+        html += '<div class="container_scroller"> <table>';
         for (var i = 0; i < items.length; ++i) {
             var itemHtml = template;
             itemHtml = itemHtml.replace('{{index}}', String(i));
@@ -664,7 +664,7 @@ var View;
             itemHtml = itemHtml.replace('{{lock_hidden}}', items[i].locked ? '' : 'hidden');
             html += itemHtml;
         }
-        html += '</table>';
+        html += '</table></div>';
         document.getElementById('container').innerHTML = html;
         document.getElementById('container').className = 'show';
         document.getElementById('popup').className = 'show';
