@@ -8,7 +8,7 @@ namespace Controller
         {
             constructor(title: string, description: string, image: string, locked: boolean, public price: number, public handler: any, public data?: any)
             {
-                super(title, title + '<br>' + Util.formatMoney(price), image, locked, handler);
+                super(title, title + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
             }
         }
 
@@ -21,7 +21,7 @@ namespace Controller
         {
             var items: Popup.Item[] = [];
             items.push(new Popup.Item('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked));
-            items.push(new Popup.Item('Animal Market', 'Buy animals', 'images/animals.jpg', true));
+            items.push(new Popup.Item('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked));
             items.push(new Popup.Item('People Market', 'Buy people', 'images/people.png', true));
             items.push(new Popup.Item('Armourer', 'Buy armour', 'images/armourer.jpg', true));
 
@@ -47,6 +47,23 @@ namespace Controller
                 Model.state.buildings.buyUpgrade(item.data.id);
                 Controller.updateHUD();
                 View.Canvas.updateObjects();
+            });
+        }
+
+        function onAnimalMarketClicked()
+        {
+            let items: Popup.Item[] = [];
+            let kennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
+            for (let id in Data.Animals.Types)
+            {
+                let type = Data.Animals.Types[id];
+                items.push(new Item(type.name, type.description, type.shopImage, !kennels, type.cost, null, { id: id }));
+            }
+
+            Popup.show(getShopTitle('Animal Market'), items, function (item: Item) 
+            {
+                Model.state.buyAnimal(item.data.id);
+                Controller.updateHUD();
             });
         }
     }

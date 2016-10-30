@@ -168,7 +168,7 @@ var Controller;
         var Item = (function (_super) {
             __extends(Item, _super);
             function Item(title, description, image, locked, price, handler, data) {
-                _super.call(this, title, title + '<br>' + Util.formatMoney(price), image, locked, handler);
+                _super.call(this, title, title + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
                 this.price = price;
                 this.handler = handler;
                 this.data = data;
@@ -181,7 +181,7 @@ var Controller;
         function showShopsPopup() {
             var items = [];
             items.push(new Controller.Popup.Item('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked));
-            items.push(new Controller.Popup.Item('Animal Market', 'Buy animals', 'images/animals.jpg', true));
+            items.push(new Controller.Popup.Item('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked));
             items.push(new Controller.Popup.Item('People Market', 'Buy people', 'images/people.png', true));
             items.push(new Controller.Popup.Item('Armourer', 'Buy armour', 'images/armourer.jpg', true));
             Controller.Popup.show('Let\'s go shopping!', items, function (item) { item.handler(); });
@@ -202,11 +202,36 @@ var Controller;
                 View.Canvas.updateObjects();
             });
         }
+        function onAnimalMarketClicked() {
+            var items = [];
+            var kennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
+            for (var id in Data.Animals.Types) {
+                var type = Data.Animals.Types[id];
+                items.push(new Item(type.name, type.description, type.shopImage, !kennels, type.cost, null, { id: id }));
+            }
+            Controller.Popup.show(getShopTitle('Animal Market'), items, function (item) {
+                Model.state.buyAnimal(item.data.id);
+                Controller.updateHUD();
+            });
+        }
     })(Shop = Controller.Shop || (Controller.Shop = {}));
 })(Controller || (Controller = {}));
 "use strict";
 var Data;
 (function (Data) {
+    var Animals;
+    (function (Animals) {
+        var Type = (function () {
+            function Type(cost, shopImage, name, description) {
+                this.cost = cost;
+                this.shopImage = shopImage;
+                this.name = name;
+                this.description = description;
+            }
+            return Type;
+        }());
+        Animals.Type = Type;
+    })(Animals = Data.Animals || (Data.Animals = {}));
     var Buildings;
     (function (Buildings) {
         var Level = (function () {
@@ -233,6 +258,17 @@ var Data;
     (function (Misc) {
     })(Misc = Data.Misc || (Data.Misc = {}));
 })(Data || (Data = {}));
+"use strict";
+var Model;
+(function (Model) {
+    var Animal = (function () {
+        function Animal(id) {
+            this.id = id;
+        }
+        return Animal;
+    }());
+    Model.Animal = Animal;
+})(Model || (Model = {}));
 "use strict";
 var Model;
 (function (Model) {
@@ -276,7 +312,7 @@ var Model;
             State.prototype.canUpgrade = function (id) {
                 Util.assert(id in this.types);
                 var level = this.getNextLevel(id);
-                return level && Model.state.money >= level.cost && !this.isConstructing(id);
+                return level && Model.state.getMoney() >= level.cost && !this.isConstructing(id);
             };
             State.prototype.buyUpgrade = function (id) {
                 Util.assert(this.canUpgrade(id));
@@ -328,6 +364,7 @@ var Model;
         function State() {
             this.money = 1000;
             this.buildings = new Model.Buildings.State();
+            this.animals = [];
         }
         State.prototype.update = function (seconds) {
             var changed = this.buildings.update(seconds);
@@ -345,7 +382,13 @@ var Model;
             Model.state.money += amount;
             Model.saveState();
         };
-        State.key = "state.v1";
+        State.prototype.buyAnimal = function (id) {
+            Util.assert(id in Data.Animals.Types);
+            this.spendMoney(Data.Animals.Types[id].cost);
+            this.animals.push(new Model.Animal(id));
+            Model.saveState();
+        };
+        State.key = "state.v2";
         return State;
     }());
     Model.State = State;
