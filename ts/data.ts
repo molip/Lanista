@@ -4,7 +4,7 @@ namespace Data
 {
     export namespace Animals
     {
-        export class Type { constructor(public cost: number, public shopImage: string, public name: string, public description: string) { } }
+        export class Type { constructor(public cost: number, public shopImage: string, public name: string, public description: string, public health: number, public attack: number, public defense: number) { } }
         export let Types: { [key: string]: Type };
     }
 

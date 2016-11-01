@@ -4,6 +4,11 @@ namespace Model
 {
     export class Animal
     {
-        constructor(public id: string) { }
+        health: number;
+        constructor(public id: string)
+        {
+            let type = Data.Animals.Types[id];
+            this.health = type.health;
+        }
     }
 }

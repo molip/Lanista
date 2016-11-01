@@ -91,7 +91,8 @@ var Controller;
         View.showInfo('Barracks', 'TODO.');
     }
     function onKennelsTriggerClicked() {
-        View.showInfo('Kennels', 'TODO.');
+        var popup = new View.KennelsPopup();
+        popup.show();
     }
     function onStorageTriggerClicked() {
         View.showInfo('Storage', 'TODO.');
@@ -189,11 +190,14 @@ var Data;
     var Animals;
     (function (Animals) {
         var Type = (function () {
-            function Type(cost, shopImage, name, description) {
+            function Type(cost, shopImage, name, description, health, attack, defense) {
                 this.cost = cost;
                 this.shopImage = shopImage;
                 this.name = name;
                 this.description = description;
+                this.health = health;
+                this.attack = attack;
+                this.defense = defense;
             }
             return Type;
         }());
@@ -231,6 +235,8 @@ var Model;
     var Animal = (function () {
         function Animal(id) {
             this.id = id;
+            var type = Data.Animals.Types[id];
+            this.health = type.health;
         }
         return Animal;
     }());
@@ -678,6 +684,32 @@ var View;
     }(Popup));
     View.ListPopup = ListPopup;
 })(View || (View = {}));
+/// <reference path="popup.ts" />
+"use strict";
+var View;
+(function (View) {
+    var KennelsPopup = (function (_super) {
+        __extends(KennelsPopup, _super);
+        function KennelsPopup() {
+            _super.call(this, 'Kennels');
+            var tableFactory = new View.Table.Factory();
+            this.div.appendChild(tableFactory.element);
+            tableFactory.addColumnHeader('Name', 20);
+            tableFactory.addColumnHeader('Image', 20);
+            tableFactory.addColumnHeader('HP', 20);
+            tableFactory.addColumnHeader('Atk', 20);
+            tableFactory.addColumnHeader('Def');
+            for (var _i = 0, _a = Model.state.animals; _i < _a.length; _i++) {
+                var animal = _a[_i];
+                var type = Data.Animals.Types[animal.id];
+                var cells = [new View.Table.TextCell('<h4>' + type.name + '</h4>'), new View.Table.ImageCell(type.shopImage), new View.Table.TextCell(animal.health.toString()), new View.Table.TextCell(type.attack.toString()), new View.Table.TextCell(type.defense.toString())];
+                tableFactory.addRow(cells, false, null);
+            }
+        }
+        return KennelsPopup;
+    }(View.Popup));
+    View.KennelsPopup = KennelsPopup;
+})(View || (View = {}));
 "use strict";
 var View;
 (function (View) {
@@ -736,6 +768,17 @@ var View;
                 this.element.appendChild(this.table);
                 this.element.className = 'container_scroller';
             }
+            Factory.prototype.addColumnHeader = function (name, width) {
+                if (!this.headerRow) {
+                    this.headerRow = this.table.insertRow(0);
+                    this.headerRow.className = 'disabled';
+                }
+                var th = document.createElement('th');
+                this.headerRow.appendChild(th);
+                th.innerText = name;
+                if (width)
+                    th.style.width = width.toString() + '%';
+            };
             Factory.prototype.addRow = function (cells, locked, handler) {
                 var row = document.createElement('tr');
                 this.table.appendChild(row);
@@ -744,10 +787,10 @@ var View;
                     row.appendChild(cell.getElement());
                 }
                 row.addEventListener('click', handler);
-                if (locked) {
+                if (locked)
                     row.style.opacity = '0.5';
+                if (locked || !handler)
                     row.className = 'disabled';
-                }
             };
             return Factory;
         }());

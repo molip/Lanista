@@ -56,12 +56,28 @@ namespace View
         {
             element: HTMLDivElement;
             private table: HTMLTableElement;
+            private headerRow: HTMLTableRowElement;
             constructor() 
             {
                 this.element = document.createElement('div');
                 this.table = document.createElement('table');
                 this.element.appendChild(this.table);
                 this.element.className = 'container_scroller';
+            }
+
+            addColumnHeader(name: string, width?: number)
+            {
+                if (!this.headerRow)
+                {
+                    this.headerRow = this.table.insertRow(0);
+                    this.headerRow.className = 'disabled';
+                }
+
+                let th = document.createElement('th');
+                this.headerRow.appendChild(th);
+                th.innerText = name;
+                if (width)
+                    th.style.width = width.toString() + '%';
             }
 
             addRow(cells: Cell[], locked: boolean, handler: () => void)
@@ -72,10 +88,10 @@ namespace View
                     row.appendChild(cell.getElement());
                 row.addEventListener('click', handler);
                 if (locked)
-                {
                     row.style.opacity = '0.5';
+
+                if (locked || !handler)
                     row.className = 'disabled';
-                }
             }
         }
     }

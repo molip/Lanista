@@ -61,7 +61,8 @@ namespace Controller
 
     function onKennelsTriggerClicked()
     {
-        View.showInfo('Kennels', 'TODO.');
+        let popup = new View.KennelsPopup();
+        popup.show();
     }
 
     function onStorageTriggerClicked()
