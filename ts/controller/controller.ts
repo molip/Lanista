@@ -56,7 +56,8 @@ namespace Controller
 
     function onBarracksTriggerClicked()
     {
-        View.showInfo('Barracks', 'TODO.');
+        let popup = new View.BarracksPopup();
+        popup.show();
     }
 
     function onKennelsTriggerClicked()

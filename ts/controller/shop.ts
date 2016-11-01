@@ -19,7 +19,7 @@ namespace Controller
             let popup = new View.ListPopup('Let\'s go shopping!');
             popup.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
             popup.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
-            popup.addItem('People Market', 'Buy people', 'images/people.png', true, null);
+            popup.addItem('People Market', 'Buy people', 'images/people.png', false, onPeopleMarketClicked);
             popup.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', true, null);
             popup.show();
         }
@@ -48,7 +48,7 @@ namespace Controller
 
         function onAnimalMarketClicked()
         {
-            let popup = new View.ListPopup(getShopTitle('Builders\' Merchant'));
+            let popup = new View.ListPopup(getShopTitle('Animal Market'));
 
             let hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
             for (let id in Data.Animals.Types)
@@ -61,6 +61,24 @@ namespace Controller
 
                 let type = Data.Animals.Types[id];
                 addItem(popup, type.name, type.description, type.shopImage, !hasKennels, type.cost, handler);
+                popup.show();
+            }
+        }
+        function onPeopleMarketClicked()
+        {
+            let popup = new View.ListPopup(getShopTitle('People Market'));
+
+            let hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
+            for (let id in Data.People.Types)
+            {
+                var handler = function ()
+                {
+                    Model.state.buyPerson(id);
+                    Controller.updateHUD();
+                };
+
+                let type = Data.People.Types[id];
+                addItem(popup, type.name, type.description, type.shopImage, !hasBarracks, type.cost, handler);
                 popup.show();
             }
         }

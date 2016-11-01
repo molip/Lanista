@@ -4,10 +4,15 @@ namespace Data
 {
     export namespace Animals
     {
-        export class Type { constructor(public cost: number, public shopImage: string, public name: string, public description: string, public health: number, public attack: number, public defense: number) { } }
+        export class Type { constructor(public health: number, public attack: number, public defense: number, public cost: number, public shopImage: string, public name: string, public description: string) { } }
         export let Types: { [key: string]: Type };
     }
 
+    export namespace People
+    {
+        export class Type { constructor(public health: number, public attack: number, public defense: number, public cost: number, public shopImage: string, public name: string, public description: string) { } }
+        export let Types: { [key: string]: Type };
+    }
     export namespace Buildings
     {
         export class Level { constructor(public cost: number, public buildTime: number, public mapX: number, public mapY: number, public mapImage: string, public shopImage: string, public name: string, public description: string) { } }

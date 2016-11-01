@@ -88,7 +88,8 @@ var Controller;
         View.showInfo('Home', 'TODO: general stats etc. go here.');
     }
     function onBarracksTriggerClicked() {
-        View.showInfo('Barracks', 'TODO.');
+        var popup = new View.BarracksPopup();
+        popup.show();
     }
     function onKennelsTriggerClicked() {
         var popup = new View.KennelsPopup();
@@ -140,7 +141,7 @@ var Controller;
             var popup = new View.ListPopup('Let\'s go shopping!');
             popup.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
             popup.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
-            popup.addItem('People Market', 'Buy people', 'images/people.png', true, null);
+            popup.addItem('People Market', 'Buy people', 'images/people.png', false, onPeopleMarketClicked);
             popup.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', true, null);
             popup.show();
         }
@@ -166,7 +167,7 @@ var Controller;
             }
         }
         function onAnimalMarketClicked() {
-            var popup = new View.ListPopup(getShopTitle('Builders\' Merchant'));
+            var popup = new View.ListPopup(getShopTitle('Animal Market'));
             var hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
             var _loop_2 = function(id) {
                 handler = function () {
@@ -182,6 +183,23 @@ var Controller;
                 _loop_2(id);
             }
         }
+        function onPeopleMarketClicked() {
+            var popup = new View.ListPopup(getShopTitle('People Market'));
+            var hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
+            var _loop_3 = function(id) {
+                handler = function () {
+                    Model.state.buyPerson(id);
+                    Controller.updateHUD();
+                };
+                var type = Data.People.Types[id];
+                addItem(popup, type.name, type.description, type.shopImage, !hasBarracks, type.cost, handler);
+                popup.show();
+            };
+            var handler;
+            for (var id in Data.People.Types) {
+                _loop_3(id);
+            }
+        }
     })(Shop = Controller.Shop || (Controller.Shop = {}));
 })(Controller || (Controller = {}));
 "use strict";
@@ -190,19 +208,35 @@ var Data;
     var Animals;
     (function (Animals) {
         var Type = (function () {
-            function Type(cost, shopImage, name, description, health, attack, defense) {
+            function Type(health, attack, defense, cost, shopImage, name, description) {
+                this.health = health;
+                this.attack = attack;
+                this.defense = defense;
                 this.cost = cost;
                 this.shopImage = shopImage;
                 this.name = name;
                 this.description = description;
-                this.health = health;
-                this.attack = attack;
-                this.defense = defense;
             }
             return Type;
         }());
         Animals.Type = Type;
     })(Animals = Data.Animals || (Data.Animals = {}));
+    var People;
+    (function (People) {
+        var Type = (function () {
+            function Type(health, attack, defense, cost, shopImage, name, description) {
+                this.health = health;
+                this.attack = attack;
+                this.defense = defense;
+                this.cost = cost;
+                this.shopImage = shopImage;
+                this.name = name;
+                this.description = description;
+            }
+            return Type;
+        }());
+        People.Type = Type;
+    })(People = Data.People || (Data.People = {}));
     var Buildings;
     (function (Buildings) {
         var Level = (function () {
@@ -338,6 +372,7 @@ var Model;
             this.money = 1000;
             this.buildings = new Model.Buildings.State();
             this.animals = [];
+            this.people = [];
         }
         State.prototype.update = function (seconds) {
             var changed = this.buildings.update(seconds);
@@ -359,6 +394,12 @@ var Model;
             Util.assert(id in Data.Animals.Types);
             this.spendMoney(Data.Animals.Types[id].cost);
             this.animals.push(new Model.Animal(id));
+            Model.saveState();
+        };
+        State.prototype.buyPerson = function (id) {
+            Util.assert(id in Data.People.Types);
+            this.spendMoney(Data.People.Types[id].cost);
+            this.people.push(new Model.Person(id));
             Model.saveState();
         };
         State.key = "state.v2";
@@ -385,6 +426,19 @@ var Model;
         localStorage.removeItem(State.key);
     }
     Model.resetState = resetState;
+})(Model || (Model = {}));
+"use strict";
+var Model;
+(function (Model) {
+    var Person = (function () {
+        function Person(id) {
+            this.id = id;
+            var type = Data.People.Types[id];
+            this.health = type.health;
+        }
+        return Person;
+    }());
+    Model.Person = Person;
 })(Model || (Model = {}));
 "use strict";
 var Point = (function () {
@@ -428,6 +482,77 @@ var Util;
     }
     Util.assert = assert;
 })(Util || (Util = {}));
+"use strict";
+var View;
+(function (View) {
+    var Popup = (function () {
+        function Popup(title) {
+            this.div = document.createElement('div');
+            if (title) {
+                var template = document.createElement('template');
+                template.innerHTML = '<h3 style="margin:1vmin; text-align: center">' + title + '</h3>';
+                this.div.appendChild(template.content.firstChild);
+            }
+        }
+        Popup.hideCurrent = function () {
+            document.getElementById('container').className = '';
+            document.getElementById('popup').className = '';
+            document.getElementById('container').innerHTML = '';
+        };
+        Popup.prototype.show = function () {
+            var container = document.getElementById('container');
+            container.innerHTML = '';
+            container.appendChild(this.div);
+            container.className = 'show';
+            document.getElementById('popup').className = 'show';
+        };
+        return Popup;
+    }());
+    View.Popup = Popup;
+    var ListPopup = (function (_super) {
+        __extends(ListPopup, _super);
+        function ListPopup(title) {
+            _super.call(this, title);
+            this.tableFactory = new View.Table.Factory();
+            this.div.appendChild(this.tableFactory.element);
+        }
+        ListPopup.prototype.addItem = function (title, description, image, locked, handler) {
+            var cells = [new View.Table.TextCell('<h4>' + title + '</h4>', 20), new View.Table.ImageCell(image, 20), new View.Table.TextCell(description)];
+            this.tableFactory.addRow(cells, locked, function () {
+                Popup.hideCurrent();
+                handler();
+            });
+        };
+        return ListPopup;
+    }(Popup));
+    View.ListPopup = ListPopup;
+})(View || (View = {}));
+/// <reference path="popup.ts" />
+"use strict";
+var View;
+(function (View) {
+    var BarracksPopup = (function (_super) {
+        __extends(BarracksPopup, _super);
+        function BarracksPopup() {
+            _super.call(this, 'Barracks');
+            var tableFactory = new View.Table.Factory();
+            this.div.appendChild(tableFactory.element);
+            tableFactory.addColumnHeader('Name', 20);
+            tableFactory.addColumnHeader('Image', 20);
+            tableFactory.addColumnHeader('HP', 20);
+            tableFactory.addColumnHeader('Atk', 20);
+            tableFactory.addColumnHeader('Def');
+            for (var _i = 0, _a = Model.state.people; _i < _a.length; _i++) {
+                var person = _a[_i];
+                var type = Data.People.Types[person.id];
+                var cells = [new View.Table.TextCell('<h4>' + type.name + '</h4>'), new View.Table.ImageCell(type.shopImage), new View.Table.TextCell(person.health.toString()), new View.Table.TextCell(type.attack.toString()), new View.Table.TextCell(type.defense.toString())];
+                tableFactory.addRow(cells, false, null);
+            }
+        }
+        return BarracksPopup;
+    }(View.Popup));
+    View.BarracksPopup = BarracksPopup;
+})(View || (View = {}));
 "use strict";
 var View;
 (function (View) {
@@ -638,51 +763,6 @@ var View;
         return Canvas;
     }());
     View.Canvas = Canvas;
-})(View || (View = {}));
-"use strict";
-var View;
-(function (View) {
-    var Popup = (function () {
-        function Popup(title) {
-            this.div = document.createElement('div');
-            if (title) {
-                var template = document.createElement('template');
-                template.innerHTML = '<h3 style="margin:1vmin; text-align: center">' + title + '</h3>';
-                this.div.appendChild(template.content.firstChild);
-            }
-        }
-        Popup.hideCurrent = function () {
-            document.getElementById('container').className = '';
-            document.getElementById('popup').className = '';
-            document.getElementById('container').innerHTML = '';
-        };
-        Popup.prototype.show = function () {
-            var container = document.getElementById('container');
-            container.innerHTML = '';
-            container.appendChild(this.div);
-            container.className = 'show';
-            document.getElementById('popup').className = 'show';
-        };
-        return Popup;
-    }());
-    View.Popup = Popup;
-    var ListPopup = (function (_super) {
-        __extends(ListPopup, _super);
-        function ListPopup(title) {
-            _super.call(this, title);
-            this.tableFactory = new View.Table.Factory();
-            this.div.appendChild(this.tableFactory.element);
-        }
-        ListPopup.prototype.addItem = function (title, description, image, locked, handler) {
-            var cells = [new View.Table.TextCell('<h4>' + title + '</h4>', 20), new View.Table.ImageCell(image, 20), new View.Table.TextCell(description)];
-            this.tableFactory.addRow(cells, locked, function () {
-                Popup.hideCurrent();
-                handler();
-            });
-        };
-        return ListPopup;
-    }(Popup));
-    View.ListPopup = ListPopup;
 })(View || (View = {}));
 /// <reference path="popup.ts" />
 "use strict";

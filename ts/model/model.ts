@@ -8,11 +8,13 @@ namespace Model
         private money: number;
         buildings: Buildings.State;
         animals: Animal[];
+        people: Person[];
         constructor()
         {
             this.money = 1000;
             this.buildings = new Buildings.State();
             this.animals = [];
+            this.people = [];
         }
 
         update(seconds: number)
@@ -43,6 +45,14 @@ namespace Model
             Util.assert(id in Data.Animals.Types);
             this.spendMoney(Data.Animals.Types[id].cost);
             this.animals.push(new Animal(id));
+            Model.saveState();
+        }
+
+        buyPerson(id: string)
+        {
+            Util.assert(id in Data.People.Types);
+            this.spendMoney(Data.People.Types[id].cost);
+            this.people.push(new Person(id));
             Model.saveState();
         }
     }
