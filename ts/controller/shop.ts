@@ -4,12 +4,9 @@ namespace Controller
 {
     export namespace Shop
     {
-        class Item extends Popup.Item
+        function addItem(popup: View.ListPopup, title: string, description: string, image: string, locked: boolean, price: number, handler: any)
         {
-            constructor(title: string, description: string, image: string, locked: boolean, public price: number, public handler: any, public data?: any)
-            {
-                super(title, title + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
-            }
+            popup.addItem(title, title + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
         }
 
         function getShopTitle(name: string)
@@ -19,52 +16,53 @@ namespace Controller
 
         export function showShopsPopup()
         {
-            var items: Popup.Item[] = [];
-            items.push(new Popup.Item('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked));
-            items.push(new Popup.Item('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked));
-            items.push(new Popup.Item('People Market', 'Buy people', 'images/people.png', true));
-            items.push(new Popup.Item('Armourer', 'Buy armour', 'images/armourer.jpg', true));
-
-            Popup.show('Let\'s go shopping!', items, function (item: Popup.Item) { item.handler(); });
+            let popup = new View.ListPopup('Let\'s go shopping!');
+            popup.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
+            popup.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
+            popup.addItem('People Market', 'Buy people', 'images/people.png', true, null);
+            popup.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', true, null);
+            popup.show();
         }
 
         function onBuildersMerchantClicked()
         {
-            var items: Popup.Item[] = [];
+            let popup = new View.ListPopup(getShopTitle('Builders\' Merchant'));
 
-            for (var i = 0, id: string; id = ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'][i]; ++i)
+            for (let id of ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'])
             {
                 var level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
                 if (level)
                 {
-                    var item = new Item(level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, null, { id: id });
-                    items.push(item);
+                    var handler = function ()
+                    {
+                        Model.state.buildings.buyUpgrade(id);
+                        Controller.updateHUD();
+                        View.Canvas.updateObjects();
+                    };
+
+                    addItem(popup, level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, handler);
+                    popup.show();
                 }
             }
-
-            Popup.show(getShopTitle('Builders\' Merchant'), items, function (item: Item) 
-            {
-                Model.state.buildings.buyUpgrade(item.data.id);
-                Controller.updateHUD();
-                View.Canvas.updateObjects();
-            });
         }
 
         function onAnimalMarketClicked()
         {
-            let items: Popup.Item[] = [];
-            let kennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
+            let popup = new View.ListPopup(getShopTitle('Builders\' Merchant'));
+
+            let hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
             for (let id in Data.Animals.Types)
             {
-                let type = Data.Animals.Types[id];
-                items.push(new Item(type.name, type.description, type.shopImage, !kennels, type.cost, null, { id: id }));
-            }
+                var handler = function ()
+                {
+                    Model.state.buyAnimal(id);
+                    Controller.updateHUD();
+                };
 
-            Popup.show(getShopTitle('Animal Market'), items, function (item: Item) 
-            {
-                Model.state.buyAnimal(item.data.id);
-                Controller.updateHUD();
-            });
+                let type = Data.Animals.Types[id];
+                addItem(popup, type.name, type.description, type.shopImage, !hasKennels, type.cost, handler);
+                popup.show();
+            }
         }
     }
 }
