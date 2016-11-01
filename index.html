@@ -5,6 +5,7 @@
 	
 	<script src="app.js"></script>
 
+	<script src="data/animals.js"></script>
 	<script src="data/buildings.js"></script>
 	<script src="data/misc.js"></script>
 </head>
@@ -12,7 +13,7 @@
 	<canvas id="canvas_ludus" onclick="Controller.Canvas.onClick(event)" onmousemove="Controller.Canvas.onMouseMove(event)" onmouseout="Controller.Canvas.onMouseOut(event)"></canvas>
 	<div id="hud_div"><span id="hud_span"></span><button id="reset_btn" onclick="Controller.onResetClicked()">Reset</button> </div> 
 
-    <div id="popup" onclick="Controller.Popup.onBackgroundClicked()">
+    <div id="popup">
     	<div id="container" onclick="event.stopPropagation()"></div>
 	</div>
 </body>

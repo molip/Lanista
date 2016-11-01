@@ -58,7 +58,7 @@ namespace Model
             {
                 Util.assert(id in this.types);
                 var level = this.getNextLevel(id);
-                return level && Model.state.money >= level.cost && !this.isConstructing(id);
+                return level && Model.state.getMoney() >= level.cost && !this.isConstructing(id);
             }
 
             buyUpgrade(id: string) 

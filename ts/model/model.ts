@@ -4,13 +4,15 @@ namespace Model
 {
     export class State
     {
-        static key: string = "state.v1"
-        money: number;
-        public buildings: Buildings.State;
+        static key: string = "state.v2"
+        private money: number;
+        buildings: Buildings.State;
+        animals: Animal[];
         constructor()
         {
             this.money = 1000;
             this.buildings = new Buildings.State();
+            this.animals = [];
         }
 
         update(seconds: number)
@@ -33,6 +35,14 @@ namespace Model
         {
             Util.assert(amount >= 0);
             state.money += amount;
+            Model.saveState();
+        }
+
+        buyAnimal(id: string)
+        {
+            Util.assert(id in Data.Animals.Types);
+            this.spendMoney(Data.Animals.Types[id].cost);
+            this.animals.push(new Animal(id));
             Model.saveState();
         }
     }
