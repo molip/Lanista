@@ -6,7 +6,7 @@ namespace Controller
     {
         function addItem(popup: View.ListPopup, title: string, description: string, image: string, locked: boolean, price: number, handler: any)
         {
-            popup.addItem(title, title + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
+            popup.addItem(title, description + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
         }
 
         function getShopTitle(name: string)

@@ -131,7 +131,7 @@ var Controller;
     var Shop;
     (function (Shop) {
         function addItem(popup, title, description, image, locked, price, handler) {
-            popup.addItem(title, title + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
+            popup.addItem(title, description + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
         }
         function getShopTitle(name) {
             return name + ' (money available: ' + Util.formatMoney(Model.state.getMoney()) + ')';
