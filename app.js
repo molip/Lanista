@@ -71,6 +71,7 @@ var Controller;
             'surgery': onSurgeryTriggerClicked,
             'lab': onLabTriggerClicked,
             'merch': onMerchTriggerClicked,
+            'arena': onArenaTriggerClicked,
         };
         Util.assert(handlers[id]);
         handlers[id]();
@@ -115,6 +116,9 @@ var Controller;
     }
     function onMerchTriggerClicked() {
         View.showInfo('Merch', 'TODO.');
+    }
+    function onArenaTriggerClicked() {
+        View.showInfo('Arena', 'TODO.');
     }
     function onTownTriggerClicked() {
         Controller.Shop.showShopsPopup();
@@ -161,7 +165,7 @@ var Controller;
                 }
             };
             var level, handler;
-            for (var _i = 0, _a = ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch']; _i < _a.length; _i++) {
+            for (var _i = 0, _a = ['home', 'arena', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch']; _i < _a.length; _i++) {
                 var id = _a[_i];
                 _loop_1(id);
             }

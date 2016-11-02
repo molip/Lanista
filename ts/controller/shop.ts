@@ -28,7 +28,7 @@ namespace Controller
         {
             let popup = new View.ListPopup(getShopTitle('Builders\' Merchant'));
 
-            for (let id of ['home', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'])
+            for (let id of ['home', 'arena', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'])
             {
                 var level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
                 if (level)

@@ -34,6 +34,7 @@ namespace Controller
             'surgery': onSurgeryTriggerClicked,
             'lab': onLabTriggerClicked,
             'merch': onMerchTriggerClicked,
+            'arena': onArenaTriggerClicked,
         };
         Util.assert(handlers[id]);
         handlers[id]();
@@ -101,6 +102,11 @@ namespace Controller
         View.showInfo('Merch', 'TODO.');
     }
 
+    function onArenaTriggerClicked()
+    {
+        View.showInfo('Arena', 'TODO.');
+    }
+	
     export function onTownTriggerClicked()
     {
         Shop.showShopsPopup();

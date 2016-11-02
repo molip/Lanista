@@ -39,4 +39,8 @@
         new Data.Buildings.Level(   100,    3,      700,    575,    'images/canvas/home0.png',      'images/canvas/home0.png',      'Merch 1',      'To sell stuff'               ),
         new Data.Buildings.Level(   200,    5,      700,    575,    'images/canvas/home1.png',      'images/canvas/home1.png',      'Merch 2',      'Nice Merch'                  ),
     ],
+    'arena': [
+        new Data.Buildings.Level(   0,      3,      175,    575,    'images/canvas/home0.png',      'images/canvas/home0.png',      'Arena 1',      'To fight stuff'              ),
+        new Data.Buildings.Level(   200,    5,      175,    575,    'images/canvas/home1.png',      'images/canvas/home1.png',      'Arena 2',      'To fight more stuff'         ),
+    ],
 }
