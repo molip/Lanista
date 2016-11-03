@@ -1,11 +1,12 @@
 ﻿Data.Buildings.Levels = {       //  cost    build   map x   map y   map image                       shop image                      name            description                    
     'home': [                   //          time  
-        new Data.Buildings.Level(   0,      3,      32,     96,     'images/canvas/home0.png',      'images/canvas/home0.png',      'Shack',        'Crappy shack'                ),
+        new Data.Buildings.Level(   0,      0,      32,     96,     'images/canvas/home0.png',      'images/canvas/home0.png',      'Shack',        'Crappy shack'                ),
         new Data.Buildings.Level(   50,     5,      32,     96,     'images/canvas/home1.png',      'images/canvas/home1.png',      'House',        'Nice House'                  ),
     ],
     'barracks': [
-        new Data.Buildings.Level(   100,    3,      44,     317,    'images/canvas/barracks0.png',  'images/canvas/barracks0.png',  'Barracks 1',   'For gladiators to live in'   ),
-        new Data.Buildings.Level(   200,    5,      44,     317,    'images/canvas/barracks1.png',  'images/canvas/barracks1.png',  'Barracks 2',   'Nice Barracks'               ),
+        new Data.Buildings.Level(   0,      0,      46,     322,    'images/canvas/barracks0.png',  'images/canvas/barracks0.png',  'Tent',         'Houses one gladiator'        ),
+        new Data.Buildings.Level(   100,    5,      44,     317,    'images/canvas/barracks1.png',  'images/canvas/barracks1.png',  'Barracks 1',   'Standard Barracks'           ),
+        new Data.Buildings.Level(   200,    5,      44,     317,    'images/canvas/barracks2.png',  'images/canvas/barracks2.png',  'Barracks 2',   'Nice Barracks'               ),
     ],
     'kennels': [
         new Data.Buildings.Level(   100,    3,      350,    60,     'images/canvas/home0.png',      'images/canvas/home0.png',      'Kennels 1',    'For animals to live in'      ),
@@ -40,7 +41,7 @@
         new Data.Buildings.Level(   200,    5,      700,    575,    'images/canvas/home1.png',      'images/canvas/home1.png',      'Merch 2',      'Nice Merch'                  ),
     ],
     'arena': [
-        new Data.Buildings.Level(   0,      3,      175,    575,    'images/canvas/home0.png',      'images/canvas/home0.png',      'Arena 1',      'To fight stuff'              ),
-        new Data.Buildings.Level(   200,    5,      175,    575,    'images/canvas/home1.png',      'images/canvas/home1.png',      'Arena 2',      'To fight more stuff'         ),
+        new Data.Buildings.Level(   0,      0,      157,    552,    'images/canvas/arena0.png',      'images/canvas/arena0.png',    'Arena 1',      'To fight stuff'              ),
+        new Data.Buildings.Level(   200,    5,      156,    549,    'images/canvas/arena1.png',      'images/canvas/arena1.png',    'Arena 2',      'To fight more stuff'         ),
     ],
 }

@@ -4,7 +4,7 @@ namespace Model
 {
     export class State
     {
-        static key: string = "state.v2"
+        static key: string = "state.v3"
         private money: number;
         buildings: Buildings.State;
         animals: Animal[];

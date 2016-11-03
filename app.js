@@ -406,7 +406,7 @@ var Model;
             this.people.push(new Model.Person(id));
             Model.saveState();
         };
-        State.key = "state.v2";
+        State.key = "state.v3";
         return State;
     }());
     Model.State = State;
