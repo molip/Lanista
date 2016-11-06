@@ -9,11 +9,11 @@
         new Data.Buildings.Level(   200,    5,      44,     317,    'images/canvas/barracks2.png',  'images/canvas/barracks2.png',  'Barracks 2',   'Nice Barracks'               ),
     ],
     'kennels': [
-        new Data.Buildings.Level(   100,    3,      350,    60,     'images/canvas/home0.png',      'images/canvas/home0.png',      'Kennels 1',    'For animals to live in'      ),
+        new Data.Buildings.Level(   100,    3,      350,    60,     'images/canvas/kennels0.png',   'images/canvas/kennels0.png',   'Kennels 1',    'For animals to live in'      ),
         new Data.Buildings.Level(   200,    5,      350,    60,     'images/canvas/home1.png',      'images/canvas/home1.png',      'Kennels 2',    'Nice Kennels'                ),
     ],
     'storage': [
-        new Data.Buildings.Level(   100,    3,      350,    317,    'images/canvas/home0.png',      'images/canvas/home0.png',      'Storage 1',    'For stuff to live in.'       ),
+        new Data.Buildings.Level(   100,    3,      350,    317,    'images/canvas/storage0.png',   'images/canvas/storage0.png',   'Storage 1',    'For stuff to live in.'       ),
         new Data.Buildings.Level(   200,    5,      350,    317,    'images/canvas/home1.png',      'images/canvas/home1.png',      'Storage 2',    'Nice Storage'                ),
     ],
     'weapon': [
@@ -25,7 +25,7 @@
         new Data.Buildings.Level(   200,    5,      1100,   50,     'images/canvas/home1.png',      'images/canvas/home1.png',      'Armour 2',     'Nice Armour'                 ),
     ],
     'training': [
-        new Data.Buildings.Level(   100,    3,      700,    300,    'images/canvas/home0.png',      'images/canvas/home0.png',      'Training 1',   'To train gladiators'         ),
+        new Data.Buildings.Level(   100,    3,      700,    300,    'images/canvas/training0.png',  'images/canvas/training0.png',  'Training 1',   'To train gladiators'         ),
         new Data.Buildings.Level(   200,    5,      700,    300,    'images/canvas/home1.png',      'images/canvas/home1.png',      'Training 2',   'Nice Training'               ),
     ],
     'surgery': [
