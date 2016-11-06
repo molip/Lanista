@@ -1,0 +1,6 @@
+{
+  "name": "Lanista",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "landscape"
+}
