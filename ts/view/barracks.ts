@@ -17,9 +17,9 @@ namespace View
             tableFactory.addColumnHeader('Atk', 20);
             tableFactory.addColumnHeader('Def');
 
-            for (let person of Model.state.people)
+            for (let person of Model.state.getPeople())
             {
-                let type = Data.People.Types[person.id];
+                let type = Data.People.Types[person.typeID];
                 let cells = [new Table.TextCell('<h4>' + type.name + '</h4>'), new Table.ImageCell(type.shopImage), new Table.TextCell(person.health.toString()), new Table.TextCell(type.attack.toString()), new Table.TextCell(type.defense.toString())];
                 tableFactory.addRow(cells, false, null);
             }

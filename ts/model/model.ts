@@ -4,17 +4,18 @@ namespace Model
 {
     export class State
     {
-        static key: string = "state.v3"
+        static key: string = "state.v4"
         private money: number;
         buildings: Buildings.State;
-        animals: Animal[];
-        people: Person[];
+        fighters: { [id: string]: Fighter };
+        nextFighterID: number;
+
         constructor()
         {
             this.money = 1000;
             this.buildings = new Buildings.State();
-            this.animals = [];
-            this.people = [];
+            this.fighters = {};
+            this.nextFighterID = 1;
         }
 
         update(seconds: number)
@@ -40,20 +41,40 @@ namespace Model
             Model.saveState();
         }
 
-        buyAnimal(id: string)
+        buyAnimal(typeID: string)
         {
-            Util.assert(id in Data.Animals.Types);
-            this.spendMoney(Data.Animals.Types[id].cost);
-            this.animals.push(new Animal(id));
+            Util.assert(typeID in Data.Animals.Types);
+            this.spendMoney(Data.Animals.Types[typeID].cost);
+            this.fighters[this.nextFighterID] = new Animal(this.nextFighterID, typeID);
+            ++this.nextFighterID;
             Model.saveState();
         }
 
-        buyPerson(id: string)
+        buyPerson(typeID: string)
         {
-            Util.assert(id in Data.People.Types);
-            this.spendMoney(Data.People.Types[id].cost);
-            this.people.push(new Person(id));
+            Util.assert(typeID in Data.People.Types);
+            this.spendMoney(Data.People.Types[typeID].cost);
+            this.fighters[this.nextFighterID] = new Person(this.nextFighterID, typeID);
+            ++this.nextFighterID;
             Model.saveState();
+        }
+
+        getPeople()
+        {
+            let people: Person[] = [];
+            for (let id in this.fighters)
+                if (this.fighters[id] instanceof Person)
+                    people.push(this.fighters[id]);
+            return people;
+        }
+
+        getAnimals()
+        {
+            let animals: Animal[] = [];
+            for (let id in this.fighters)
+                if (this.fighters[id] instanceof Animal)
+                    animals.push(this.fighters[id]);
+            return animals;
         }
     }
 
@@ -67,6 +88,14 @@ namespace Model
             state = JSON.parse(str);
             state.__proto__ = State.prototype;
             state.buildings.__proto__ = Buildings.State.prototype;
+
+            for (let id in state.fighters)
+                if (state.fighters[id].type == FighterType.Animal)
+                    state.fighters[id].__proto__ = Animal.prototype;
+                else if (state.fighters[id].type == FighterType.Person)
+                    state.fighters[id].__proto__ = Person.prototype;
+                else
+                    Util.assert(false);
         }
         else
             resetState();

@@ -1,14 +1,15 @@
+/// <reference path="fighter.ts" />
+
 "use strict";
 
 namespace Model
 {
-    export class Person
+    export class Person extends Fighter
     {
-        health: number;
-        constructor(public id: string)
+        constructor(id: number, typeID: string)
         {
-            let type = Data.People.Types[id];
-            this.health = type.health;
+            let type = Data.People.Types[typeID];
+            super(id, typeID, FighterType.Person, type.name, type.health);
         }
     }
 }
