@@ -499,16 +499,19 @@ var View;
             }
         }
         Popup.hideCurrent = function () {
-            document.getElementById('container').className = '';
-            document.getElementById('popup').className = '';
-            document.getElementById('container').innerHTML = '';
+            var elem = document.getElementById('popup');
+            elem.className = '';
+            elem.innerHTML = '';
+            document.getElementById('blanket').className = '';
+            document.getElementById('overlay_div').className = 'disabled';
         };
         Popup.prototype.show = function () {
-            var container = document.getElementById('container');
-            container.innerHTML = '';
-            container.appendChild(this.div);
-            container.className = 'show';
-            document.getElementById('popup').className = 'show';
+            var elem = document.getElementById('popup');
+            elem.innerHTML = '';
+            elem.appendChild(this.div);
+            elem.className = 'show';
+            document.getElementById('blanket').className = 'show';
+            document.getElementById('overlay_div').className = '';
         };
         return Popup;
     }());
@@ -700,11 +703,12 @@ var View;
                 this.Offset = new Point((canvas.width - devWidth) / 2, 0);
                 this.Scale = sy;
             }
-            var hud = document.getElementById('hud_div');
-            hud.style.top = this.Offset.y.toString() + 'px';
-            hud.style.left = this.Offset.x.toString() + 'px';
-            hud.style.right = this.Offset.x.toString() + 'px';
-            //hud.style.right = (window.innerWidth - this.Offset.x).toString() + 'px';
+            var overlay = document.getElementById('canvas_overlay_div');
+            overlay.style.top = this.Offset.y.toString() + 'px';
+            overlay.style.bottom = this.Offset.y.toString() + 'px';
+            overlay.style.left = this.Offset.x.toString() + 'px';
+            overlay.style.right = this.Offset.x.toString() + 'px';
+            overlay.style.fontSize = (this.Scale * 20).toString() + 'px';
         };
         Canvas.draw = function () {
             if (!this.BackgroundImage.image.complete)
@@ -886,7 +890,7 @@ var View;
 (function (View) {
     function init() {
         View.Canvas.init();
-        document.getElementById("popup").addEventListener('click', View.Popup.hideCurrent);
+        document.getElementById("overlay_div").addEventListener('click', View.Popup.hideCurrent);
     }
     View.init = init;
     function getCanvas() {

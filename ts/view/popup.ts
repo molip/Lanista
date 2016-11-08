@@ -20,18 +20,21 @@ namespace View
 
         static hideCurrent()
         {
-            document.getElementById('container').className = '';
-            document.getElementById('popup').className = '';
-            document.getElementById('container').innerHTML = '';
+            let elem = document.getElementById('popup');
+            elem.className = '';
+            elem.innerHTML = '';
+            document.getElementById('blanket').className = '';
+            document.getElementById('overlay_div').className = 'disabled';
         }
 
         show()
         {
-            let container = document.getElementById('container');
-            container.innerHTML = '';
-            container.appendChild(this.div);
-            container.className = 'show';
-            document.getElementById('popup').className = 'show';
+            let elem = document.getElementById('popup');
+            elem.innerHTML = '';
+            elem.appendChild(this.div);
+            elem.className = 'show';
+            document.getElementById('blanket').className = 'show';
+            document.getElementById('overlay_div').className = '';
         }
     }
 

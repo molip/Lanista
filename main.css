@@ -11,11 +11,14 @@ table {
     width: 100%; 
 }
 
+button {
+    pointer-events:auto;
+}   
+
 tr {
 	border-style: solid;
     border-width: 1px 0 1px 0;
-    height: 10vmin;
-	font-size: 3vmin;
+    height: 2em;
     text-align: left;
 }
 
@@ -25,11 +28,28 @@ tr {
 	height:100vh;
 }
 
+#overlay_div {
+	position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+}
+
+#canvas_overlay_div {
+	position:absolute;
+}
+
 #hud_div {
 	position: absolute;
-    margin: 1vmin 1vmin 1vmin 1vmin;
-	font-size: 4vmin;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+    margin: 1% 1% 1% 1%;
+	font-size: 2em;
     color: white;
+    pointer-events:none;
 }
 
 #reset_btn
@@ -37,8 +57,8 @@ tr {
 	float:right;
 }
 
-#popup {
-	position:fixed;
+#blanket {
+	position:absolute;
 	width:100%;
 	height:100%;
 	top:0;
@@ -49,25 +69,26 @@ tr {
     opacity: 0;
 }
 
-#popup.show {
+#blanket.show {
     visibility: visible;
     opacity: 1;
-    transition: all .5s ease-in-out;
+    transition: transform .5s ease-in-out;
 }
 
-#container {
+#popup {
 	border-style: solid;
     border-width: 1px;
-	margin: auto auto; 
 	background-color: white;
     transform: scale(0);
-    width: 90vmin;
-    height: 80vmin;
-    position: relative; 
-	font-size: 3vmin;
+	left: 5.6%;
+	right: 5.6%;
+	top: 10%;
+	bottom: 10%;
+    position: absolute; 
+    pointer-events:auto;
 }
 
-#container.show {
+#popup.show {
     transform: scale(1);
     transition: opacity .5s ease-in-out, transform .5s ease-in-out;
 }
@@ -75,7 +96,7 @@ tr {
 .container_scroller {
 	overflow:auto;
 	width: 100%;
-	top: 6vh;
+	top: 2em;
 	bottom:0;
 	position: absolute;
 }

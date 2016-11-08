@@ -185,11 +185,12 @@ namespace View
                 this.Scale = sy;
             }
 
-            let hud = document.getElementById('hud_div');
-            hud.style.top = this.Offset.y.toString() + 'px';
-            hud.style.left = this.Offset.x.toString() + 'px';
-            hud.style.right = this.Offset.x.toString() + 'px';
-            //hud.style.right = (window.innerWidth - this.Offset.x).toString() + 'px';
+            let overlay = document.getElementById('canvas_overlay_div');
+            overlay.style.top = this.Offset.y.toString() + 'px';
+            overlay.style.bottom = this.Offset.y.toString() + 'px';
+            overlay.style.left = this.Offset.x.toString() + 'px';
+            overlay.style.right = this.Offset.x.toString() + 'px';
+            overlay.style.fontSize = (this.Scale * 20).toString() + 'px';
         }
 
         static draw()
