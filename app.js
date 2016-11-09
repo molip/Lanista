@@ -491,12 +491,8 @@ var View;
 (function (View) {
     var Popup = (function () {
         function Popup(title) {
+            this.title = title;
             this.div = document.createElement('div');
-            if (title) {
-                var template = document.createElement('template');
-                template.innerHTML = '<h3 style="margin:1vmin; text-align: center">' + title + '</h3>';
-                this.div.appendChild(template.content.firstChild);
-            }
         }
         Popup.hideCurrent = function () {
             var elem = document.getElementById('popup');
@@ -508,6 +504,11 @@ var View;
         Popup.prototype.show = function () {
             var elem = document.getElementById('popup');
             elem.innerHTML = '';
+            if (this.title) {
+                var title = document.createElement('p');
+                title.innerText = this.title;
+                elem.appendChild(title);
+            }
             elem.appendChild(this.div);
             elem.className = 'show';
             document.getElementById('blanket').className = 'show';
@@ -898,8 +899,8 @@ var View;
     }
     View.getCanvas = getCanvas;
     function showInfo(title, description) {
-        var popup = new View.Popup();
-        popup.div.innerHTML = '<h2 style="margin:10px">' + title + '</h2>' + '<p>' + description + '</p>';
+        var popup = new View.Popup(title);
+        popup.div.innerHTML = '<p>' + description + '</p>';
         popup.show();
     }
     View.showInfo = showInfo;

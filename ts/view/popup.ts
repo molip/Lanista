@@ -7,15 +7,9 @@ namespace View
         div: HTMLDivElement;
         static Current: Popup;
 
-        constructor(title?: string)
+        constructor(private title?: string)
         {
             this.div = document.createElement('div');
-            if (title)
-            {
-                let template = document.createElement('template');
-                template.innerHTML = '<h3 style="margin:1vmin; text-align: center">' + title + '</h3>';
-                this.div.appendChild(template.content.firstChild);
-            }
         }
 
         static hideCurrent()
@@ -31,6 +25,14 @@ namespace View
         {
             let elem = document.getElementById('popup');
             elem.innerHTML = '';
+
+            if (this.title)
+            {
+                let title = document.createElement('p');
+                title.innerText = this.title;
+                elem.appendChild(title);
+            }
+
             elem.appendChild(this.div);
             elem.className = 'show';
             document.getElementById('blanket').className = 'show';

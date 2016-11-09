@@ -15,8 +15,8 @@ namespace View
 
     export function showInfo(title: string, description: string)
     {
-        let popup = new Popup();
-        popup.div.innerHTML = '<h2 style="margin:10px">' + title + '</h2>' + '<p>' + description + '</p>';
+        let popup = new Popup(title);
+        popup.div.innerHTML = '<p>' + description + '</p>';
         popup.show();
     }
 
