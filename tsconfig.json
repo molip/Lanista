@@ -1,13 +1,13 @@
 {
-  "compileOnSave": true,
-  "compilerOptions": {
-    "outFile": "app.js",
-    "target": "es5",
-    "watch": true,
-    "emitBOM": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": true
-  },
-  "include": [ "ts/**/*" ]
+	"compileOnSave": true,
+	"compilerOptions": {
+		"outFile": "app.js",
+		"target": "es5",
+		"watch": true,
+		"emitBOM": true,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"noImplicitReturns": true
+	},
+	"include": [ "ts/**/*" ]
 }

@@ -1,25 +1,25 @@
 body {
-    font-family:'Tahoma';
-    margin:0;
-    overflow:hidden;
-    background-color: black; 
+	font-family:'Tahoma';
+	margin:0;
+	overflow:hidden;
+	background-color: black; 
 }
 
 div	{ margin:0 }
 
 table {
-    width: 100%; 
+	width: 100%; 
 }
 
 button {
-    pointer-events:auto;
-}   
+	pointer-events:auto;
+}	
 
 tr {
 	border-style: solid;
-    border-width: 1px 0 1px 0;
-    height: 2em;
-    text-align: left;
+	border-width: 1px 0 1px 0;
+	height: 2em;
+	text-align: left;
 }
 
 #canvas_ludus
@@ -30,10 +30,10 @@ tr {
 
 #overlay_div {
 	position:fixed;
-    top:0;
-    left:0;
-    width:100vw;
-    height:100vh;
+	top:0;
+	left:0;
+	width:100vw;
+	height:100vh;
 }
 
 #canvas_overlay_div {
@@ -46,10 +46,10 @@ tr {
 	right: 0;
 	top: 0;
 	bottom: 0;
-    margin: 1% 1% 1% 1%;
+	margin: 1% 1% 1% 1%;
 	font-size: 2em;
-    color: white;
-    pointer-events:none;
+	color: white;
+	pointer-events:none;
 }
 
 #reset_btn
@@ -65,45 +65,45 @@ tr {
 	left:0;
 	display: flex;
 	background-color:rgba(255, 255, 255, 0.5);
-    visibility: hidden;
-    opacity: 0;
+	visibility: hidden;
+	opacity: 0;
 }
 
 #blanket.show {
-    visibility: visible;
-    opacity: 1;
-    transition: transform .5s ease-in-out;
+	visibility: visible;
+	opacity: 1;
+	transition: transform .5s ease-in-out;
 }
 
 #popup {
 	border-style: solid;
-    border-width: 1px;
+	border-width: 1px;
 	background-color: white;
-    transform: scale(0);
+	transform: scale(0);
 	left: 5.6%;
 	right: 5.6%;
 	top: 10%;
 	bottom: 10%;
-    position: absolute; 
-    pointer-events:auto;
+	position: absolute; 
+	pointer-events:auto;
 }
 
 #popup > p {
-    margin: 0.5em; 
-    font-size: 1.5em;
-    text-align: center;
+	margin: 0.5em; 
+	font-size: 1.5em;
+	text-align: center;
 }
 
 #popup > div {
 	position: absolute;
 	width: 100%;
-    top: 3em;
-    bottom: 0;
+	top: 3em;
+	bottom: 0;
 }
 
 #popup.show {
-    transform: scale(1);
-    transition: opacity .5s ease-in-out, transform .5s ease-in-out;
+	transform: scale(1);
+	transition: opacity .5s ease-in-out, transform .5s ease-in-out;
 }
 
 .container_scroller {
