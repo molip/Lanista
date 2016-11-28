@@ -6,10 +6,10 @@ namespace Model
 {
 	export class Animal extends Fighter
 	{
-		constructor(id: number, typeID: string)
+		constructor(id: number, tag: string)
 		{
-			let type = Data.Animals.Types[typeID];
-			super(id, typeID, FighterType.Animal, type.name, type.health);
+			let type = Data.Animals.Types[tag];
+			super(id, type.species, type.name, type.shopImage);
 		}
 	}
 }

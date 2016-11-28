@@ -13,14 +13,10 @@ namespace View
 
 			tableFactory.addColumnHeader('Name', 20);
 			tableFactory.addColumnHeader('Image', 20);
-			tableFactory.addColumnHeader('HP', 20);
-			tableFactory.addColumnHeader('Atk', 20);
-			tableFactory.addColumnHeader('Def');
 
 			for (let person of Model.state.getPeople())
 			{
-				let type = Data.People.Types[person.typeID];
-				let cells = [new Table.TextCell('<h4>' + type.name + '</h4>'), new Table.ImageCell(type.shopImage), new Table.TextCell(person.health.toString()), new Table.TextCell(type.attack.toString()), new Table.TextCell(type.defense.toString())];
+				let cells = [new Table.TextCell('<h4>' + person.name + '</h4>'), new Table.ImageCell(person.image)];
 				tableFactory.addRow(cells, false, null);
 			}
 		}

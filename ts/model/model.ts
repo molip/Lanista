@@ -90,12 +90,10 @@ namespace Model
 			state.buildings.__proto__ = Buildings.State.prototype;
 
 			for (let id in state.fighters)
-				if (state.fighters[id].type == FighterType.Animal)
-					state.fighters[id].__proto__ = Animal.prototype;
-				else if (state.fighters[id].type == FighterType.Person)
+				if (state.fighters[id].species == 'human')
 					state.fighters[id].__proto__ = Person.prototype;
 				else
-					Util.assert(false);
+					state.fighters[id].__proto__ = Animal.prototype;
 		}
 		else
 			resetState();
