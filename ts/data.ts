@@ -3,11 +3,35 @@
 namespace Data
 {
 	export class Attack { constructor(public name: string, public type: string, public damage: number) { } }
+	export class WeaponSite { constructor(public name: string, public type: string, public replacesAttack: boolean) { } }
+
+	export class Site
+	{
+		constructor(public type: string, public count: number) { }
+	}
+
+	export namespace Armour
+	{
+		export class Type
+		{
+			constructor(public name: string, public defense: number, public cost: number, public image: string, public description: string, public sites: Site[]) { }
+		}
+
+		export let Types: { [key: string]: Type };
+	}
+
+	export namespace Weapons
+	{
+		export class Type
+		{
+			constructor(public name: string, public block: number, public cost: number, public image: string, public description: string, public sites: Site[], public attacks: Attack[]) { }
+		}
+		export let Types: { [key: string]: Type };
+	}
 
 	export class BodyPart
 	{
-		attack: Attack = null;
-		constructor(public health: number, public names: string[]) { }
+		constructor(public health: number, public names: string[], public attack: Attack, public weaponSite: WeaponSite) { }
 	}
 
 	export namespace Species
@@ -22,7 +46,10 @@ namespace Data
 
 	export namespace Animals
 	{
-		export class Type { constructor(public cost: number, public shopImage: string, public species: string, public name: string, public description: string) { } }
+		export class Type
+		{
+			constructor(public cost: number, public shopImage: string, public species: string, public name: string, public description: string, public armour: string[], public weapons: string[]) { }
+		}
 		export let Types: { [key: string]: Type };
 	}
 
@@ -30,7 +57,7 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public cost: number, public shopImage: string, public name: string, public description: string) { }
+			constructor(public cost: number, public shopImage: string, public name: string, public description: string, public armour: string[], public weapons: string[]) { }
 		}
 		export let Types: { [key: string]: Type };
 	}

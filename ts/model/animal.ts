@@ -9,7 +9,7 @@ namespace Model
 		constructor(id: number, tag: string)
 		{
 			let type = Data.Animals.Types[tag];
-			super(id, type.species, type.name, type.shopImage);
+			super(id, type.species, type.name, type.shopImage, type.weapons, type.armour);
 		}
 	}
 }
