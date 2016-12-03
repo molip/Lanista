@@ -3,3 +3,7 @@
 	'terminator':	new Data.People.Type(	10,		'images/people/terminator.png',	'Terminator Arnold',	"Hasta la vista, baby",												[],		[]	),
 	'predator':		new Data.People.Type(	10,		'images/people/predator.png',	'Predator Arnold',		"If it bleeds, we can kill it",										[],		[]	),
 };
+
+Data.People.Types['terminator'].weapons =	[ 'sword' ];
+Data.People.Types['predator'].weapons =		[ 'sword' ];
+Data.People.Types['predator'].armour =		[ 'leg bits' ];

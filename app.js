@@ -209,17 +209,95 @@ var Controller;
 "use strict";
 var Data;
 (function (Data) {
+    var Attack = (function () {
+        function Attack(name, type, damage) {
+            this.name = name;
+            this.type = type;
+            this.damage = damage;
+        }
+        return Attack;
+    }());
+    Data.Attack = Attack;
+    var WeaponSite = (function () {
+        function WeaponSite(name, type, replacesAttack) {
+            this.name = name;
+            this.type = type;
+            this.replacesAttack = replacesAttack;
+        }
+        return WeaponSite;
+    }());
+    Data.WeaponSite = WeaponSite;
+    var Site = (function () {
+        function Site(species, type, count) {
+            this.species = species;
+            this.type = type;
+            this.count = count;
+        }
+        return Site;
+    }());
+    Data.Site = Site;
+    var Armour;
+    (function (Armour) {
+        var Type = (function () {
+            function Type(name, defense, cost, image, description, sites) {
+                this.name = name;
+                this.defense = defense;
+                this.cost = cost;
+                this.image = image;
+                this.description = description;
+                this.sites = sites;
+            }
+            return Type;
+        }());
+        Armour.Type = Type;
+    })(Armour = Data.Armour || (Data.Armour = {}));
+    var Weapons;
+    (function (Weapons) {
+        var Type = (function () {
+            function Type(name, block, cost, image, description, sites, attacks) {
+                this.name = name;
+                this.block = block;
+                this.cost = cost;
+                this.image = image;
+                this.description = description;
+                this.sites = sites;
+                this.attacks = attacks;
+            }
+            return Type;
+        }());
+        Weapons.Type = Type;
+    })(Weapons = Data.Weapons || (Data.Weapons = {}));
+    var BodyPart = (function () {
+        function BodyPart(health, names, attack, weaponSite) {
+            this.health = health;
+            this.names = names;
+            this.attack = attack;
+            this.weaponSite = weaponSite;
+        }
+        return BodyPart;
+    }());
+    Data.BodyPart = BodyPart;
+    var Species;
+    (function (Species) {
+        var Type = (function () {
+            function Type(name) {
+                this.name = name;
+            }
+            return Type;
+        }());
+        Species.Type = Type;
+    })(Species = Data.Species || (Data.Species = {}));
     var Animals;
     (function (Animals) {
         var Type = (function () {
-            function Type(health, attack, defense, cost, shopImage, name, description) {
-                this.health = health;
-                this.attack = attack;
-                this.defense = defense;
+            function Type(cost, shopImage, species, name, description, armour, weapons) {
                 this.cost = cost;
                 this.shopImage = shopImage;
+                this.species = species;
                 this.name = name;
                 this.description = description;
+                this.armour = armour;
+                this.weapons = weapons;
             }
             return Type;
         }());
@@ -228,14 +306,13 @@ var Data;
     var People;
     (function (People) {
         var Type = (function () {
-            function Type(health, attack, defense, cost, shopImage, name, description) {
-                this.health = health;
-                this.attack = attack;
-                this.defense = defense;
+            function Type(cost, shopImage, name, description, armour, weapons) {
                 this.cost = cost;
                 this.shopImage = shopImage;
                 this.name = name;
                 this.description = description;
+                this.armour = armour;
+                this.weapons = weapons;
             }
             return Type;
         }());
@@ -270,14 +347,200 @@ var Data;
 "use strict";
 var Model;
 (function (Model) {
-    var Animal = (function () {
-        function Animal(id) {
+    var Accessory = (function () {
+        function Accessory(tag, bodyPartIDs) {
+            this.tag = tag;
+            this.bodyPartIDs = bodyPartIDs;
+        }
+        return Accessory;
+    }());
+    Model.Accessory = Accessory;
+    var Weapon = (function (_super) {
+        __extends(Weapon, _super);
+        function Weapon(tag, bodyPartIDs) {
+            _super.call(this, tag, bodyPartIDs);
+        }
+        return Weapon;
+    }(Accessory));
+    Model.Weapon = Weapon;
+    var Armour = (function (_super) {
+        __extends(Armour, _super);
+        function Armour(tag, bodyPartIDs) {
+            _super.call(this, tag, bodyPartIDs);
+        }
+        return Armour;
+    }(Accessory));
+    Model.Armour = Armour;
+})(Model || (Model = {}));
+"use strict";
+var Model;
+(function (Model) {
+    var AccessoryType;
+    (function (AccessoryType) {
+        AccessoryType[AccessoryType["Weapon"] = 0] = "Weapon";
+        AccessoryType[AccessoryType["Armour"] = 1] = "Armour";
+    })(AccessoryType || (AccessoryType = {}));
+    ;
+    var BodyPart = (function () {
+        function BodyPart(tag, index, health) {
+            this.tag = tag;
+            this.index = index;
+            this.health = health;
+        }
+        // Gets tag of armour or weapon site, if present. 
+        BodyPart.prototype.getSiteTag = function (accType, speciesData) {
+            if (accType == AccessoryType.Armour)
+                return this.tag;
+            var site = speciesData.bodyParts[this.tag].weaponSite;
+            return site ? site.type : null;
+        };
+        return BodyPart;
+    }());
+    Model.BodyPart = BodyPart;
+    var Fighter = (function () {
+        function Fighter(id, species, name, image, weapons, armour) {
             this.id = id;
-            var type = Data.Animals.Types[id];
-            this.health = type.health;
+            this.species = species;
+            this.name = name;
+            this.image = image;
+            this.bodyParts = []; // Sparse.
+            this.weapons = [];
+            this.armour = [];
+            var data = this.getSpeciesData();
+            for (var tag in data.bodyParts) {
+                var part = data.bodyParts[tag];
+                for (var i = 0, partName = ''; partName = part.names[i]; ++i)
+                    this.bodyParts.push(new BodyPart(tag, i, part.health));
+            }
+            for (var _i = 0, weapons_1 = weapons; _i < weapons_1.length; _i++) {
+                var tag = weapons_1[_i];
+                this.addWeapon(tag);
+            }
+            for (var _a = 0, armour_1 = armour; _a < armour_1.length; _a++) {
+                var tag = armour_1[_a];
+                this.addArmour(tag);
+            }
+        }
+        Fighter.prototype.isHuman = function () { return this.species == 'human'; };
+        Fighter.prototype.getAccessories = function (type) {
+            return type == AccessoryType.Weapon ? this.weapons : this.armour;
+        };
+        Fighter.prototype.getSpeciesData = function () {
+            var type = Data.Species.Types[this.species];
+            Util.assert(type != undefined);
+            return type;
+        };
+        Fighter.prototype.getOccupiedSites = function (accType) {
+            var bodyPartIDs = [];
+            for (var _i = 0, _a = this.getAccessories(accType); _i < _a.length; _i++) {
+                var acc = _a[_i];
+                bodyPartIDs = bodyPartIDs.concat(acc.bodyPartIDs);
+            }
+            return bodyPartIDs;
+        };
+        // Gets available body parts compatible with specified site. 
+        Fighter.prototype.getEmptySites = function (accType, site) {
+            if (site.species != this.species)
+                return null;
+            var bodyPartIDs = [];
+            var occupied = this.getOccupiedSites(accType);
+            var speciesData = this.getSpeciesData();
+            for (var i = 0; i < this.bodyParts.length; ++i) {
+                var part = this.bodyParts[i];
+                if (part && occupied.indexOf(i) < 0) {
+                    if (part.getSiteTag(accType, speciesData) == site.type) {
+                        bodyPartIDs.push(i);
+                        if (bodyPartIDs.length == site.count)
+                            return bodyPartIDs;
+                    }
+                }
+            }
+            return null;
+        };
+        Fighter.prototype.getEmptySitesForAccessory = function (accType, accTag) {
+            var data = accType == AccessoryType.Weapon ? Data.Weapons.Types[accTag] : Data.Armour.Types[accTag];
+            for (var _i = 0, _a = data.sites; _i < _a.length; _i++) {
+                var site = _a[_i];
+                var bodyPartIDs = this.getEmptySites(accType, site);
+                if (bodyPartIDs)
+                    return bodyPartIDs;
+            }
+            return null;
+        };
+        Fighter.prototype.canAddWeapon = function (weaponTag) {
+            return !!this.getEmptySitesForAccessory(AccessoryType.Weapon, weaponTag);
+        };
+        Fighter.prototype.canAddArmour = function (armourTag) {
+            return !!this.getEmptySitesForAccessory(AccessoryType.Armour, armourTag);
+        };
+        Fighter.prototype.addWeapon = function (weaponTag) {
+            // TODO: Choose site.
+            var bodyPartIDs = this.getEmptySitesForAccessory(AccessoryType.Weapon, weaponTag);
+            if (bodyPartIDs) {
+                this.weapons.push(new Model.Weapon(weaponTag, bodyPartIDs));
+                return;
+            }
+            Util.assert(false);
+        };
+        Fighter.prototype.addArmour = function (armourTag) {
+            // TODO: Choose site.
+            var bodyPartIDs = this.getEmptySitesForAccessory(AccessoryType.Armour, armourTag);
+            if (bodyPartIDs) {
+                this.armour.push(new Model.Armour(armourTag, bodyPartIDs));
+                return;
+            }
+            Util.assert(false);
+        };
+        Fighter.prototype.getStatus = function () {
+            var speciesData = this.getSpeciesData();
+            var rows = [];
+            var status = '';
+            for (var _i = 0, _a = this.bodyParts; _i < _a.length; _i++) {
+                var part = _a[_i];
+                if (part) {
+                    var data = speciesData.bodyParts[part.tag];
+                    var row = [];
+                    rows.push(row);
+                    row.push(data.names[part.index]);
+                    row.push(part.health.toString() + '/' + data.health);
+                    row.push(''); // Armour.
+                    row.push(''); // Weapon.
+                }
+            }
+            for (var _b = 0, _c = this.armour; _b < _c.length; _b++) {
+                var armour = _c[_b];
+                var data = Data.Armour.Types[armour.tag];
+                for (var _d = 0, _e = armour.bodyPartIDs; _d < _e.length; _d++) {
+                    var partID = _e[_d];
+                    rows[partID][2] = data.name + (armour.bodyPartIDs.length > 1 ? '*' : '');
+                }
+            }
+            for (var _f = 0, _g = this.weapons; _f < _g.length; _f++) {
+                var weapon = _g[_f];
+                var data = Data.Weapons.Types[weapon.tag];
+                for (var _h = 0, _j = weapon.bodyPartIDs; _h < _j.length; _h++) {
+                    var partID = _j[_h];
+                    rows[partID][3] = data.name + (weapon.bodyPartIDs.length > 1 ? '*' : '');
+                }
+            }
+            return rows;
+        };
+        return Fighter;
+    }());
+    Model.Fighter = Fighter;
+})(Model || (Model = {}));
+/// <reference path="fighter.ts" />
+"use strict";
+var Model;
+(function (Model) {
+    var Animal = (function (_super) {
+        __extends(Animal, _super);
+        function Animal(id, tag) {
+            var type = Data.Animals.Types[tag];
+            _super.call(this, id, type.species, type.name, type.shopImage, type.weapons, type.armour);
         }
         return Animal;
-    }());
+    }(Model.Fighter));
     Model.Animal = Animal;
 })(Model || (Model = {}));
 "use strict";
@@ -375,8 +638,8 @@ var Model;
         function State() {
             this.money = 1000;
             this.buildings = new Model.Buildings.State();
-            this.animals = [];
-            this.people = [];
+            this.fighters = {};
+            this.nextFighterID = 1;
         }
         State.prototype.update = function (seconds) {
             var changed = this.buildings.update(seconds);
@@ -394,19 +657,35 @@ var Model;
             Model.state.money += amount;
             Model.saveState();
         };
-        State.prototype.buyAnimal = function (id) {
-            Util.assert(id in Data.Animals.Types);
-            this.spendMoney(Data.Animals.Types[id].cost);
-            this.animals.push(new Model.Animal(id));
+        State.prototype.buyAnimal = function (typeID) {
+            Util.assert(typeID in Data.Animals.Types);
+            this.spendMoney(Data.Animals.Types[typeID].cost);
+            this.fighters[this.nextFighterID] = new Model.Animal(this.nextFighterID, typeID);
+            ++this.nextFighterID;
             Model.saveState();
         };
-        State.prototype.buyPerson = function (id) {
-            Util.assert(id in Data.People.Types);
-            this.spendMoney(Data.People.Types[id].cost);
-            this.people.push(new Model.Person(id));
+        State.prototype.buyPerson = function (typeID) {
+            Util.assert(typeID in Data.People.Types);
+            this.spendMoney(Data.People.Types[typeID].cost);
+            this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, typeID);
+            ++this.nextFighterID;
             Model.saveState();
         };
-        State.key = "state.v3";
+        State.prototype.getPeople = function () {
+            var people = [];
+            for (var id in this.fighters)
+                if (this.fighters[id] instanceof Model.Person)
+                    people.push(this.fighters[id]);
+            return people;
+        };
+        State.prototype.getAnimals = function () {
+            var animals = [];
+            for (var id in this.fighters)
+                if (this.fighters[id] instanceof Model.Animal)
+                    animals.push(this.fighters[id]);
+            return animals;
+        };
+        State.key = "state.v5";
         return State;
     }());
     Model.State = State;
@@ -416,6 +695,11 @@ var Model;
             Model.state = JSON.parse(str);
             Model.state.__proto__ = State.prototype;
             Model.state.buildings.__proto__ = Model.Buildings.State.prototype;
+            for (var id in Model.state.fighters)
+                if (Model.state.fighters[id].species == 'human')
+                    Model.state.fighters[id].__proto__ = Model.Person.prototype;
+                else
+                    Model.state.fighters[id].__proto__ = Model.Animal.prototype;
         }
         else
             resetState();
@@ -431,17 +715,18 @@ var Model;
     }
     Model.resetState = resetState;
 })(Model || (Model = {}));
+/// <reference path="fighter.ts" />
 "use strict";
 var Model;
 (function (Model) {
-    var Person = (function () {
-        function Person(id) {
-            this.id = id;
-            var type = Data.People.Types[id];
-            this.health = type.health;
+    var Person = (function (_super) {
+        __extends(Person, _super);
+        function Person(id, tag) {
+            var type = Data.People.Types[tag];
+            _super.call(this, id, 'human', type.name, type.shopImage, type.weapons, type.armour);
         }
         return Person;
-    }());
+    }(Model.Fighter));
     Model.Person = Person;
 })(Model || (Model = {}));
 "use strict";
@@ -485,6 +770,19 @@ var Util;
             alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
     }
     Util.assert = assert;
+    function formatRows(rows) {
+        var columns = [];
+        for (var i = 0; i < rows.length; ++i)
+            for (var j = 0; j < rows[i].length; ++j) {
+                if (i == 0)
+                    columns[j] = '<table>';
+                columns[j] += '<tr><td>' + rows[i][j] + '</tr></td>';
+                if (i == rows.length - 1)
+                    columns[j] += '</table>';
+            }
+        return columns;
+    }
+    Util.formatRows = formatRows;
 })(Util || (Util = {}));
 "use strict";
 var View;
@@ -546,14 +844,18 @@ var View;
             var tableFactory = new View.Table.Factory();
             this.div.appendChild(tableFactory.element);
             tableFactory.addColumnHeader('Name', 20);
-            tableFactory.addColumnHeader('Image', 20);
-            tableFactory.addColumnHeader('HP', 20);
-            tableFactory.addColumnHeader('Atk', 20);
-            tableFactory.addColumnHeader('Def');
-            for (var _i = 0, _a = Model.state.people; _i < _a.length; _i++) {
+            tableFactory.addColumnHeader('Image', 30);
+            tableFactory.addColumnHeader('Part', 10);
+            tableFactory.addColumnHeader('Health', 10);
+            tableFactory.addColumnHeader('Armour', 15);
+            tableFactory.addColumnHeader('Weapon', 15);
+            for (var _i = 0, _a = Model.state.getPeople(); _i < _a.length; _i++) {
                 var person = _a[_i];
-                var type = Data.People.Types[person.id];
-                var cells = [new View.Table.TextCell('<h4>' + type.name + '</h4>'), new View.Table.ImageCell(type.shopImage), new View.Table.TextCell(person.health.toString()), new View.Table.TextCell(type.attack.toString()), new View.Table.TextCell(type.defense.toString())];
+                var cells = [new View.Table.TextCell('<h4>' + person.name + '</h4>'), new View.Table.ImageCell(person.image)];
+                for (var _b = 0, _c = Util.formatRows(person.getStatus()); _b < _c.length; _b++) {
+                    var c = _c[_b];
+                    cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
+                }
                 tableFactory.addRow(cells, false, null);
             }
         }
@@ -784,14 +1086,18 @@ var View;
             var tableFactory = new View.Table.Factory();
             this.div.appendChild(tableFactory.element);
             tableFactory.addColumnHeader('Name', 20);
-            tableFactory.addColumnHeader('Image', 20);
-            tableFactory.addColumnHeader('HP', 20);
-            tableFactory.addColumnHeader('Atk', 20);
-            tableFactory.addColumnHeader('Def');
-            for (var _i = 0, _a = Model.state.animals; _i < _a.length; _i++) {
+            tableFactory.addColumnHeader('Image', 30);
+            tableFactory.addColumnHeader('Part', 10);
+            tableFactory.addColumnHeader('Health', 10);
+            tableFactory.addColumnHeader('Armour', 15);
+            tableFactory.addColumnHeader('Weapon', 15);
+            for (var _i = 0, _a = Model.state.getAnimals(); _i < _a.length; _i++) {
                 var animal = _a[_i];
-                var type = Data.Animals.Types[animal.id];
-                var cells = [new View.Table.TextCell('<h4>' + type.name + '</h4>'), new View.Table.ImageCell(type.shopImage), new View.Table.TextCell(animal.health.toString()), new View.Table.TextCell(type.attack.toString()), new View.Table.TextCell(type.defense.toString())];
+                var cells = [new View.Table.TextCell('<h4>' + animal.name + '</h4>'), new View.Table.ImageCell(animal.image)];
+                for (var _b = 0, _c = Util.formatRows(animal.getStatus()); _b < _c.length; _b++) {
+                    var c = _c[_b];
+                    cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
+                }
                 tableFactory.addRow(cells, false, null);
             }
         }
