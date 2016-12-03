@@ -3,26 +3,31 @@
 
 namespace View 
 {
-    export class KennelsPopup extends Popup
-    {
-        constructor()
-        {
-            super('Kennels');
-            let tableFactory = new Table.Factory();
-            this.div.appendChild(tableFactory.element);
+	export class KennelsPopup extends Popup
+	{
+		constructor()
+		{
+			super('Kennels');
+			let tableFactory = new Table.Factory();
+			this.div.appendChild(tableFactory.element);
 
-            tableFactory.addColumnHeader('Name', 20);
-            tableFactory.addColumnHeader('Image', 20);
-            tableFactory.addColumnHeader('HP', 20);
-            tableFactory.addColumnHeader('Atk', 20);
-            tableFactory.addColumnHeader('Def');
+			tableFactory.addColumnHeader('Name', 20);
+			tableFactory.addColumnHeader('Image', 30);
 
-            for (let animal of Model.state.animals)
-            {
-                let type = Data.Animals.Types[animal.id];
-                let cells = [new Table.TextCell('<h4>' + type.name + '</h4>'), new Table.ImageCell(type.shopImage), new Table.TextCell(animal.health.toString()), new Table.TextCell(type.attack.toString()), new Table.TextCell(type.defense.toString())];
-                tableFactory.addRow(cells, false, null);
-            }
-        }
-    }
+			tableFactory.addColumnHeader('Part', 10);
+			tableFactory.addColumnHeader('Health', 10);
+			tableFactory.addColumnHeader('Armour', 15);
+			tableFactory.addColumnHeader('Weapon', 15);
+
+			for (let animal of Model.state.getAnimals())
+			{
+				let cells = [new Table.TextCell('<h4>' + animal.name + '</h4>'), new Table.ImageCell(animal.image)];
+
+				for (let c of Util.formatRows(animal.getStatus()))
+					cells.push(new Table.TextCell('<small>' + c + '</small>'));
+
+				tableFactory.addRow(cells, false, null);
+			}
+		}
+	}
 }

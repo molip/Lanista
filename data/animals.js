@@ -1,3 +1,6 @@
-﻿Data.Animals.Types = { //               health  attack  defense cost    shop image                      name            description             
-    'rabbit': new Data.Animals.Type(    3,      1,      7,      10,     'images/animals/rabbit.png',    'Rabbit',       'Ferocious and fluffy'  ),
+﻿Data.Animals.Types = { //				cost	shop image						species		name			description				armour	weapons
+	'rabbit': new Data.Animals.Type(	10,		'images/animals/rabbit.png',	'rabbit',	'Rabbit',		'Ferocious and fluffy', [],		[]	),
 };
+
+Data.Animals.Types['rabbit'].armour =	[ 'rabbit helmet' ];
+Data.Animals.Types['rabbit'].weapons =	[ 'laser' ];
