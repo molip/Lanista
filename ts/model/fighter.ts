@@ -134,5 +134,38 @@ namespace Model
 			}
 			Util.assert(false);
 		}
+
+		getStatus()
+		{
+			let speciesData = this.getSpeciesData()
+			let rows: string[][] = [];
+			let status = '';
+			for (let part of this.bodyParts)
+			{
+				if (part)
+				{
+					let data = speciesData.bodyParts[part.tag];
+					let row: string[] = [];
+					rows.push(row);
+					row.push(data.names[part.index]);
+					row.push(part.health.toString() + '/' + data.health);
+					row.push(''); // Armour.
+					row.push(''); // Weapon.
+				}
+			}
+			for (let armour of this.armour)
+			{
+				let data = Data.Armour.Types[armour.tag];
+				for (let partID of armour.bodyPartIDs)
+					rows[partID][2] = data.name + (armour.bodyPartIDs.length > 1 ? '*' : '');
+			}
+			for (let weapon of this.weapons)
+			{
+				let data = Data.Weapons.Types[weapon.tag];
+				for (let partID of weapon.bodyPartIDs)
+					rows[partID][3] = data.name + (weapon.bodyPartIDs.length > 1 ? '*' : '');
+			}
+			return rows;
+		}
 	}
 }

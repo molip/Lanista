@@ -18,4 +18,21 @@ namespace Util
 		if (!condition)
 			alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
 	}
+
+	export function formatRows(rows: string[][])
+	{
+		let columns: string[] = [];
+		for (let i = 0; i < rows.length; ++i)
+			for (let j = 0; j < rows[i].length; ++j)
+			{
+				if (i == 0)
+					columns[j] = '<table>';
+
+				columns[j] += '<tr><td>' + rows[i][j] + '</tr></td>';
+
+				if (i == rows.length - 1)
+					columns[j] += '</table>';
+			}
+		return columns;
+	}
 }
