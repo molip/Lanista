@@ -13,16 +13,16 @@ Data.Species.Types['human'].bodyParts = {
 }
 
 Data.Species.Types['rabbit'].bodyParts = {
-	'rabbit head':	new Data.BodyPart(		3,		['Head'],	null, null),
-	'rabbit body':	new Data.BodyPart(		5,		['Body'],	null, null),
+	'head':	new Data.BodyPart(		3,		['Head'],	null, null),
+	'body':	new Data.BodyPart(		5,		['Body'],	null, null),
 }
 
 
 // Attacks																	name		type		damage
 Data.Species.Types['human'].bodyParts['arm'].attack		= new Data.Attack(	'Punch',	'impact',	1	)
 Data.Species.Types['human'].bodyParts['leg'].attack		= new Data.Attack(	'Kick',		'impact',	2	)
-Data.Species.Types['rabbit'].bodyParts['rabbit head'].attack	= new Data.Attack(	'Bite',		'blade',	1	)
+Data.Species.Types['rabbit'].bodyParts['head'].attack	= new Data.Attack(	'Bite',		'blade',	1	)
 
 // Weapon sites																		name			type		replacesAttack
 Data.Species.Types['human'].bodyParts['arm'].weaponSite		= new Data.WeaponSite(	'Hand',			'hand',		true	)
-Data.Species.Types['rabbit'].bodyParts['rabbit head'].weaponSite	= new Data.WeaponSite(	'Head mount',	'mount',	false	)
+Data.Species.Types['rabbit'].bodyParts['head'].weaponSite	= new Data.WeaponSite(	'Head mount',	'mount',	false	)

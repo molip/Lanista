@@ -7,7 +7,7 @@ namespace Data
 
 	export class Site
 	{
-		constructor(public type: string, public count: number) { }
+		constructor(public species: string, public type: string, public count: number) { }
 	}
 
 	export namespace Armour

@@ -8,6 +8,7 @@ namespace Model
 	{
 		constructor(public tag: string, public index: number, public health: number) { }
 
+		// Gets tag of armour or weapon site, if present. 
 		getSiteTag(accType: AccessoryType, speciesData: Data.Species.Type)
 		{
 			if (accType == AccessoryType.Armour) // We are our own armour site.
@@ -62,8 +63,12 @@ namespace Model
 			return bodyPartIDs;	
 		}
 
-		getEmptySites(accType: AccessoryType, siteTag: string, required: number)
+		// Gets available body parts compatible with specified site. 
+		getEmptySites(accType: AccessoryType, site: Data.Site)
 		{
+			if (site.species != this.species)
+				return null;
+
 			let bodyPartIDs: number[] = [];
 
 			let occupied = this.getOccupiedSites(accType);
@@ -73,10 +78,10 @@ namespace Model
 				let part = this.bodyParts[i];
 				if (part && occupied.indexOf(i) < 0)
 				{
-					if (part.getSiteTag(accType, speciesData) == siteTag)
+					if (part.getSiteTag(accType, speciesData) == site.type)
 					{
 						bodyPartIDs.push(i);
-						if (bodyPartIDs.length == required)
+						if (bodyPartIDs.length == site.count)
 							return bodyPartIDs;
 					}
 				}
@@ -89,7 +94,7 @@ namespace Model
 			let data = accType == AccessoryType.Weapon ? Data.Weapons.Types[accTag] : Data.Armour.Types[accTag];
 			for (let site of data.sites)
 			{
-				let bodyPartIDs = this.getEmptySites(accType, site.type, site.count);
+				let bodyPartIDs = this.getEmptySites(accType, site);
 				if (bodyPartIDs)
 					return bodyPartIDs;
 			}
