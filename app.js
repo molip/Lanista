@@ -45,6 +45,7 @@ var Controller;
 var Controller;
 (function (Controller) {
     function onLoad() {
+        Data.validate();
         Model.init();
         View.init();
         View.Canvas.initObjects();
@@ -247,6 +248,14 @@ var Data;
                 this.description = description;
                 this.sites = sites;
             }
+            Type.prototype.validate = function () {
+                for (var _i = 0, _a = this.sites; _i < _a.length; _i++) {
+                    var site = _a[_i];
+                    var speciesData = Species.Types[site.species];
+                    if (!(speciesData && speciesData.bodyParts && speciesData.bodyParts[site.type]))
+                        console.log('Armour: "%s" site references unknown body part "%s/%s"', this.name, site.species, site.type);
+                }
+            };
             return Type;
         }());
         Armour.Type = Type;
@@ -263,6 +272,24 @@ var Data;
                 this.sites = sites;
                 this.attacks = attacks;
             }
+            Type.prototype.validate = function () {
+                for (var _i = 0, _a = this.sites; _i < _a.length; _i++) {
+                    var site = _a[_i];
+                    var found = false;
+                    var speciesData = Species.Types[site.species];
+                    if (speciesData) {
+                        for (var id in speciesData.bodyParts) {
+                            var weaponSite = speciesData.bodyParts[id].weaponSite;
+                            if (weaponSite && weaponSite.type == site.type) {
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!found)
+                        console.log('Weapon: "%s" site references unknown weapon site "%s/%s"', this.name, site.species, site.type);
+                }
+            };
             return Type;
         }());
         Weapons.Type = Type;
@@ -299,6 +326,22 @@ var Data;
                 this.armour = armour;
                 this.weapons = weapons;
             }
+            Type.prototype.validate = function () {
+                if (!Species.Types[this.species])
+                    console.log('Animal: "%s" references unknown species "%s"', this.name, this.species);
+                if (!Species.Types[this.species].bodyParts)
+                    console.log('Animal: "%s" has no body parts', this.name);
+                for (var _i = 0, _a = this.weapons; _i < _a.length; _i++) {
+                    var weapon = _a[_i];
+                    if (!Weapons.Types[weapon])
+                        console.log('Animal: "%s" references unknown weapon "%s"', this.name, weapon);
+                }
+                for (var _b = 0, _c = this.armour; _b < _c.length; _b++) {
+                    var armour = _c[_b];
+                    if (!Armour.Types[armour])
+                        console.log('Animal: "%s" references unknown armour "%s"', this.name, armour);
+                }
+            };
             return Type;
         }());
         Animals.Type = Type;
@@ -314,6 +357,18 @@ var Data;
                 this.armour = armour;
                 this.weapons = weapons;
             }
+            Type.prototype.validate = function () {
+                for (var _i = 0, _a = this.weapons; _i < _a.length; _i++) {
+                    var weapon = _a[_i];
+                    if (!Weapons.Types[weapon])
+                        console.log('People: "%s" references unknown weapon "%s"', this.name, weapon);
+                }
+                for (var _b = 0, _c = this.armour; _b < _c.length; _b++) {
+                    var armour = _c[_b];
+                    if (!Armour.Types[armour])
+                        console.log('People: "%s" references unknown armour "%s"', this.name, armour);
+                }
+            };
             return Type;
         }());
         People.Type = Type;
@@ -340,6 +395,19 @@ var Data;
         }
         Buildings.getLevel = getLevel;
     })(Buildings = Data.Buildings || (Data.Buildings = {}));
+    function validate() {
+        console.log('Validating data...');
+        for (var id in Armour.Types)
+            Armour.Types[id].validate();
+        for (var id in Weapons.Types)
+            Weapons.Types[id].validate();
+        for (var id in Animals.Types)
+            Animals.Types[id].validate();
+        for (var id in People.Types)
+            People.Types[id].validate();
+        console.log('Validating finished.');
+    }
+    Data.validate = validate;
     var Misc;
     (function (Misc) {
     })(Misc = Data.Misc || (Data.Misc = {}));

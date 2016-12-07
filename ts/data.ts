@@ -15,6 +15,15 @@ namespace Data
 		export class Type
 		{
 			constructor(public name: string, public defense: number, public cost: number, public image: string, public description: string, public sites: Site[]) { }
+			validate()
+			{
+				for (let site of this.sites)
+				{
+					let speciesData = Species.Types[site.species];
+					if (!(speciesData && speciesData.bodyParts && speciesData.bodyParts[site.type]))
+						console.log('Armour: "%s" site references unknown body part "%s/%s"', this.name, site.species, site.type);
+				}
+			}
 		}
 
 		export let Types: { [key: string]: Type };
@@ -25,6 +34,28 @@ namespace Data
 		export class Type
 		{
 			constructor(public name: string, public block: number, public cost: number, public image: string, public description: string, public sites: Site[], public attacks: Attack[]) { }
+			validate()
+			{
+				for (let site of this.sites)
+				{
+					let found = false;
+					let speciesData = Species.Types[site.species];
+					if (speciesData)
+					{
+						for (let id in speciesData.bodyParts)
+						{
+							let weaponSite = speciesData.bodyParts[id].weaponSite;
+							if (weaponSite && weaponSite.type == site.type)
+							{
+								found = true;
+								break;
+							}
+						}
+					}
+					if (!found) 
+						console.log('Weapon: "%s" site references unknown weapon site "%s/%s"', this.name, site.species, site.type);
+				}
+			}
 		}
 		export let Types: { [key: string]: Type };
 	}
@@ -49,6 +80,22 @@ namespace Data
 		export class Type
 		{
 			constructor(public cost: number, public shopImage: string, public species: string, public name: string, public description: string, public armour: string[], public weapons: string[]) { }
+			validate()
+			{
+				if (!Species.Types[this.species])
+					console.log('Animal: "%s" references unknown species "%s"', this.name, this.species);
+
+				if (!Species.Types[this.species].bodyParts)
+					console.log('Animal: "%s" has no body parts', this.name);
+
+				for (let weapon of this.weapons)
+					if (!Weapons.Types[weapon])
+						console.log('Animal: "%s" references unknown weapon "%s"', this.name, weapon);
+
+				for (let armour of this.armour)
+					if (!Armour.Types[armour])
+						console.log('Animal: "%s" references unknown armour "%s"', this.name, armour);
+			}
 		}
 		export let Types: { [key: string]: Type };
 	}
@@ -58,6 +105,16 @@ namespace Data
 		export class Type
 		{
 			constructor(public cost: number, public shopImage: string, public name: string, public description: string, public armour: string[], public weapons: string[]) { }
+			validate()
+			{
+				for (let weapon of this.weapons)
+					if (!Weapons.Types[weapon])
+						console.log('People: "%s" references unknown weapon "%s"', this.name, weapon);
+
+				for (let armour of this.armour)
+					if (!Armour.Types[armour])
+						console.log('People: "%s" references unknown armour "%s"', this.name, armour);
+			}
 		}
 		export let Types: { [key: string]: Type };
 	}
@@ -72,6 +129,22 @@ namespace Data
 			Util.assert(id in Levels);
 			return index >= 0 && index < Levels[id].length ? Levels[id][index] : null;
 		}
+	}
+
+	export function validate()
+	{
+		console.log('Validating data...');
+
+		for (let id in Armour.Types)
+			Armour.Types[id].validate();
+		for (let id in Weapons.Types)
+			Weapons.Types[id].validate();
+		for (let id in Animals.Types)
+			Animals.Types[id].validate();
+		for (let id in People.Types)
+			People.Types[id].validate();
+
+		console.log('Validating finished.');
 	}
 
 	export namespace Misc

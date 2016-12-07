@@ -4,6 +4,7 @@ namespace Controller
 {
 	export function onLoad()
 	{
+		Data.validate();
 		Model.init();
 		View.init();
 		View.Canvas.initObjects();
