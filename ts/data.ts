@@ -14,7 +14,7 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public name: string, public defense: number, public cost: number, public image: string, public description: string, public sites: Site[]) { }
+			constructor(public name: string, public cost: number, public image: string, public description: string, public sites: Site[], public defence: { [key: string]: number }) { }
 			validate()
 			{
 				for (let site of this.sites)
