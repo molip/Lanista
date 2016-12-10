@@ -21,7 +21,8 @@ namespace Model
 
 	export class Fighter
 	{
-		bodyParts: BodyPart[] = []; // Sparse.
+		bodyParts: { [id: string]: BodyPart } = {};
+		nextBodyPartID: number = 1;
 		weapons: Weapon[] = [];
 		armour: Armour[] = [];
 		constructor(public id: number, public species: string, public name: string, public image: string, weapons: string[], armour: string[])
@@ -31,7 +32,7 @@ namespace Model
 			{
 				let part = data.bodyParts[tag];
 				for (let i = 0, partName = ''; partName = part.names[i]; ++i)
-					this.bodyParts.push(new BodyPart(tag, i, part.health));
+					this.bodyParts[this.nextBodyPartID++] = new BodyPart(tag, i, part.health);
 			}
 
 			for (let tag of weapons)
@@ -57,7 +58,7 @@ namespace Model
 		
 		getOccupiedSites(accType: AccessoryType) 
 		{
-			let bodyPartIDs: number[] = [];
+			let bodyPartIDs: string[] = [];
 			for (let acc of this.getAccessories(accType))
 				bodyPartIDs = bodyPartIDs.concat(acc.bodyPartIDs);
 			return bodyPartIDs;	
@@ -69,18 +70,18 @@ namespace Model
 			if (site.species != this.species)
 				return null;
 
-			let bodyPartIDs: number[] = [];
+			let bodyPartIDs: string[] = [];
 
 			let occupied = this.getOccupiedSites(accType);
 			let speciesData = this.getSpeciesData()
-			for (let i = 0; i < this.bodyParts.length; ++i)
+			for (let id in this.bodyParts)
 			{
-				let part = this.bodyParts[i];
-				if (part && occupied.indexOf(i) < 0)
+				let part = this.bodyParts[id];
+				if (occupied.indexOf(id) < 0)
 				{
 					if (part.getSiteTag(accType, speciesData) == site.type)
 					{
-						bodyPartIDs.push(i);
+						bodyPartIDs.push(id);
 						if (bodyPartIDs.length == site.count)
 							return bodyPartIDs;
 					}
@@ -137,33 +138,37 @@ namespace Model
 
 		getStatus()
 		{
-			let speciesData = this.getSpeciesData()
-			let rows: string[][] = [];
-			let status = '';
-			for (let part of this.bodyParts)
-			{
-				if (part)
-				{
-					let data = speciesData.bodyParts[part.tag];
-					let row: string[] = [];
-					rows.push(row);
-					row.push(data.names[part.index]);
-					row.push(part.health.toString() + '/' + data.health);
-					row.push(''); // Armour.
-					row.push(''); // Weapon.
-				}
-			}
+			// Get armour string for each body part.
+			let partArmour: { [id: string]: string } = {};
 			for (let armour of this.armour)
 			{
 				let data = Data.Armour.Types[armour.tag];
 				for (let partID of armour.bodyPartIDs)
-					rows[partID][2] = data.name + (armour.bodyPartIDs.length > 1 ? '*' : '');
+					partArmour[partID] = data.name + (armour.bodyPartIDs.length > 1 ? '*' : '');
 			}
+
+			// Get weapon string for each body part.
+			let partWeapons: { [id: string]: string } = {};
 			for (let weapon of this.weapons)
 			{
 				let data = Data.Weapons.Types[weapon.tag];
 				for (let partID of weapon.bodyPartIDs)
-					rows[partID][3] = data.name + (weapon.bodyPartIDs.length > 1 ? '*' : '');
+					partWeapons[partID] = data.name + (weapon.bodyPartIDs.length > 1 ? '*' : '');
+			}
+
+			let speciesData = this.getSpeciesData()
+			let rows: string[][] = [];
+			let status = '';
+			for (let id in this.bodyParts)
+			{
+				let part = this.bodyParts[id];
+				let data = speciesData.bodyParts[part.tag];
+				let row: string[] = [];
+				rows.push(row);
+				row.push(data.names[part.index]);
+				row.push(part.health.toString() + '/' + data.health);
+				row.push(partArmour[id] ? partArmour[id] : '');
+				row.push(partWeapons[id] ? partWeapons[id] : '');
 			}
 			return rows;
 		}
