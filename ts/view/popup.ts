@@ -5,20 +5,28 @@ namespace View
 	export class Popup
 	{
 		div: HTMLDivElement;
-		static Current: Popup;
+		static Current: Popup = null;
 
 		constructor(private title?: string)
 		{
+			Util.assert(Popup.Current == null);
+			Popup.Current = this;
+
 			this.div = document.createElement('div');
 		}
 
 		static hideCurrent()
 		{
-			let elem = document.getElementById('popup');
-			elem.className = '';
-			elem.innerHTML = '';
-			document.getElementById('blanket').className = '';
-			document.getElementById('overlay_div').className = 'disabled';
+			if (Popup.Current && Popup.Current.onClose())
+			{
+				Popup.Current = null;
+
+				let elem = document.getElementById('popup');
+				elem.className = '';
+				elem.innerHTML = '';
+				document.getElementById('blanket').className = '';
+				document.getElementById('overlay_div').className = 'disabled';
+			}
 		}
 
 		show()
@@ -38,6 +46,9 @@ namespace View
 			document.getElementById('blanket').className = 'show';
 			document.getElementById('overlay_div').className = '';
 		}
+
+		onClose() { return true; }
+		onTick() { } 
 	}
 
 	export class ListPopup extends Popup

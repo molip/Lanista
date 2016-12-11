@@ -4,9 +4,10 @@ namespace Model
 {
 	export class State
 	{
-		static key: string = "state.v5"
+		static key: string = "state.v6"
 		private money: number;
 		buildings: Buildings.State;
+		fight: Fight.State;
 		fighters: { [id: string]: Fighter };
 		nextFighterID: number;
 
@@ -14,6 +15,7 @@ namespace Model
 		{
 			this.money = 1000;
 			this.buildings = new Buildings.State();
+			this.fight = null;
 			this.fighters = {};
 			this.nextFighterID = 1;
 		}
@@ -76,6 +78,18 @@ namespace Model
 					animals.push(this.fighters[id]);
 			return animals;
 		}
+
+		startFight(teamA: Fight.Team, teamB: Fight.Team)
+		{
+			Util.assert(this.fight == null);
+			this.fight = new Fight.State(teamA, teamB);
+		}
+
+		endFight()
+		{
+			Util.assert(this.fight && this.fight.finished);
+			this.fight = null;
+		}
 	}
 
 	export let state: State;
@@ -88,12 +102,19 @@ namespace Model
 			state = JSON.parse(str);
 			state.__proto__ = State.prototype;
 			state.buildings.__proto__ = Buildings.State.prototype;
+			if (state.fight)
+				state.fight.__proto__ = Fight.State.prototype;
 
 			for (let id in state.fighters)
-				if (state.fighters[id].species == 'human')
-					state.fighters[id].__proto__ = Person.prototype;
+			{
+				let fighter = state.fighters[id];
+				if (fighter.species == 'human')
+					fighter.__proto__ = Person.prototype;
 				else
-					state.fighters[id].__proto__ = Animal.prototype;
+					fighter.__proto__ = Animal.prototype;
+
+				fighter.onLoad();
+			}
 		}
 		else
 			resetState();

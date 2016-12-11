@@ -11,6 +11,9 @@ namespace Controller
 		updateHUD();
 
 		window.setInterval(Controller.onTick, 100);
+
+		if (Model.state.fight)
+			onArenaTriggerClicked();
 	}
 
 	export function onTick()
@@ -20,6 +23,9 @@ namespace Controller
 			View.Canvas.updateObjects();
 			updateHUD();
 		}
+
+		if (View.Popup.Current != null)
+			View.Popup.Current.onTick();
 	}
 
 	export function onBuildingTriggerClicked(id: string)
@@ -105,7 +111,8 @@ namespace Controller
 
 	function onArenaTriggerClicked()
 	{
-		View.showInfo('Arena', 'TODO.');
+		let popup = new View.ArenaPopup();
+		popup.show();
 	}
 	
 	export function onTownTriggerClicked()

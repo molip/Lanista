@@ -62,7 +62,7 @@ namespace View
 				this.element = document.createElement('div');
 				this.table = document.createElement('table');
 				this.element.appendChild(this.table);
-				this.element.className = 'container_scroller';
+				this.element.className = 'scroller';
 			}
 
 			addColumnHeader(name: string, width?: number)

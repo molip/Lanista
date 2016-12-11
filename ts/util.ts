@@ -35,4 +35,9 @@ namespace Util
 			}
 		return columns;
 	}
+
+	export function getRandomInt(max: number) // Return a random int in the range [0, max).
+	{
+		return Math.floor(Math.random() * max);
+	}
 }

@@ -24,6 +24,11 @@ namespace Data
 						console.log('Armour: "%s" site references unknown body part "%s/%s"', this.name, site.species, site.type);
 				}
 			}
+
+			getDefense(attackType: string)
+			{
+				return this.defence[attackType] ? this.defence[attackType] : 0;
+			}
 		}
 
 		export let Types: { [key: string]: Type };

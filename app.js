@@ -51,6 +51,8 @@ var Controller;
         View.Canvas.initObjects();
         updateHUD();
         window.setInterval(Controller.onTick, 100);
+        if (Model.state.fight)
+            onArenaTriggerClicked();
     }
     Controller.onLoad = onLoad;
     function onTick() {
@@ -58,6 +60,8 @@ var Controller;
             View.Canvas.updateObjects();
             updateHUD();
         }
+        if (View.Popup.Current != null)
+            View.Popup.Current.onTick();
     }
     Controller.onTick = onTick;
     function onBuildingTriggerClicked(id) {
@@ -119,7 +123,8 @@ var Controller;
         View.showInfo('Merch', 'TODO.');
     }
     function onArenaTriggerClicked() {
-        View.showInfo('Arena', 'TODO.');
+        var popup = new View.ArenaPopup();
+        popup.show();
     }
     function onTownTriggerClicked() {
         Controller.Shop.showShopsPopup();
@@ -240,13 +245,13 @@ var Data;
     var Armour;
     (function (Armour) {
         var Type = (function () {
-            function Type(name, defense, cost, image, description, sites) {
+            function Type(name, cost, image, description, sites, defence) {
                 this.name = name;
-                this.defense = defense;
                 this.cost = cost;
                 this.image = image;
                 this.description = description;
                 this.sites = sites;
+                this.defence = defence;
             }
             Type.prototype.validate = function () {
                 for (var _i = 0, _a = this.sites; _i < _a.length; _i++) {
@@ -255,6 +260,9 @@ var Data;
                     if (!(speciesData && speciesData.bodyParts && speciesData.bodyParts[site.type]))
                         console.log('Armour: "%s" site references unknown body part "%s/%s"', this.name, site.species, site.type);
                 }
+            };
+            Type.prototype.getDefense = function (attackType) {
+                return this.defence[attackType] ? this.defence[attackType] : 0;
             };
             return Type;
         }());
@@ -450,16 +458,23 @@ var Model;
     })(AccessoryType || (AccessoryType = {}));
     ;
     var BodyPart = (function () {
-        function BodyPart(tag, index, health) {
+        function BodyPart(id, tag, index, health) {
+            this.id = id;
             this.tag = tag;
             this.index = index;
             this.health = health;
         }
-        // Gets tag of armour or weapon site, if present. 
+        BodyPart.prototype.getData = function (speciesData) {
+            return speciesData.bodyParts[this.tag];
+        };
+        BodyPart.prototype.getName = function (speciesData) {
+            return this.getData(speciesData).names[this.index];
+        };
+        // Gets tag of armour or weapon site, if present.
         BodyPart.prototype.getSiteTag = function (accType, speciesData) {
             if (accType == AccessoryType.Armour)
                 return this.tag;
-            var site = speciesData.bodyParts[this.tag].weaponSite;
+            var site = this.getData(speciesData).weaponSite;
             return site ? site.type : null;
         };
         return BodyPart;
@@ -471,14 +486,17 @@ var Model;
             this.species = species;
             this.name = name;
             this.image = image;
-            this.bodyParts = []; // Sparse.
+            this.bodyParts = {};
+            this.nextBodyPartID = 1;
             this.weapons = [];
             this.armour = [];
             var data = this.getSpeciesData();
             for (var tag in data.bodyParts) {
                 var part = data.bodyParts[tag];
-                for (var i = 0, partName = ''; partName = part.names[i]; ++i)
-                    this.bodyParts.push(new BodyPart(tag, i, part.health));
+                for (var i = 0, partName = ''; partName = part.names[i]; ++i) {
+                    this.bodyParts[this.nextBodyPartID] = new BodyPart(this.nextBodyPartID.toString(), tag, i, part.health);
+                    ++this.nextBodyPartID;
+                }
             }
             for (var _i = 0, weapons_1 = weapons; _i < weapons_1.length; _i++) {
                 var tag = weapons_1[_i];
@@ -489,6 +507,18 @@ var Model;
                 this.addArmour(tag);
             }
         }
+        Fighter.prototype.onLoad = function () {
+            for (var id in this.bodyParts)
+                this.bodyParts[id].__proto__ = BodyPart.prototype;
+            for (var _i = 0, _a = this.weapons; _i < _a.length; _i++) {
+                var weapon = _a[_i];
+                weapon.__proto__ = Model.Weapon.prototype;
+            }
+            for (var _b = 0, _c = this.armour; _b < _c.length; _b++) {
+                var armour = _c[_b];
+                armour.__proto__ = Model.Armour.prototype;
+            }
+        };
         Fighter.prototype.isHuman = function () { return this.species == 'human'; };
         Fighter.prototype.getAccessories = function (type) {
             return type == AccessoryType.Weapon ? this.weapons : this.armour;
@@ -513,11 +543,11 @@ var Model;
             var bodyPartIDs = [];
             var occupied = this.getOccupiedSites(accType);
             var speciesData = this.getSpeciesData();
-            for (var i = 0; i < this.bodyParts.length; ++i) {
-                var part = this.bodyParts[i];
-                if (part && occupied.indexOf(i) < 0) {
+            for (var id in this.bodyParts) {
+                var part = this.bodyParts[id];
+                if (occupied.indexOf(id) < 0) {
                     if (part.getSiteTag(accType, speciesData) == site.type) {
-                        bodyPartIDs.push(i);
+                        bodyPartIDs.push(id);
                         if (bodyPartIDs.length == site.count)
                             return bodyPartIDs;
                     }
@@ -559,39 +589,74 @@ var Model;
             }
             Util.assert(false);
         };
+        Fighter.prototype.getBodyPartArmour = function (bodyPartID) {
+            for (var _i = 0, _a = this.armour; _i < _a.length; _i++) {
+                var armour = _a[_i];
+                for (var _b = 0, _c = armour.bodyPartIDs; _b < _c.length; _b++) {
+                    var id = _c[_b];
+                    if (id == bodyPartID)
+                        return armour;
+                }
+            }
+            return null;
+        };
         Fighter.prototype.getStatus = function () {
+            // Get armour string for each body part.
+            var partArmour = {};
+            for (var _i = 0, _a = this.armour; _i < _a.length; _i++) {
+                var armour = _a[_i];
+                var data = Data.Armour.Types[armour.tag];
+                for (var _b = 0, _c = armour.bodyPartIDs; _b < _c.length; _b++) {
+                    var partID = _c[_b];
+                    partArmour[partID] = data.name + (armour.bodyPartIDs.length > 1 ? '*' : '');
+                }
+            }
+            // Get weapon string for each body part.
+            var partWeapons = {};
+            for (var _d = 0, _e = this.weapons; _d < _e.length; _d++) {
+                var weapon = _e[_d];
+                var data = Data.Weapons.Types[weapon.tag];
+                for (var _f = 0, _g = weapon.bodyPartIDs; _f < _g.length; _f++) {
+                    var partID = _g[_f];
+                    partWeapons[partID] = data.name + (weapon.bodyPartIDs.length > 1 ? '*' : '');
+                }
+            }
             var speciesData = this.getSpeciesData();
             var rows = [];
             var status = '';
-            for (var _i = 0, _a = this.bodyParts; _i < _a.length; _i++) {
-                var part = _a[_i];
-                if (part) {
-                    var data = speciesData.bodyParts[part.tag];
-                    var row = [];
-                    rows.push(row);
-                    row.push(data.names[part.index]);
-                    row.push(part.health.toString() + '/' + data.health);
-                    row.push(''); // Armour.
-                    row.push(''); // Weapon.
-                }
-            }
-            for (var _b = 0, _c = this.armour; _b < _c.length; _b++) {
-                var armour = _c[_b];
-                var data = Data.Armour.Types[armour.tag];
-                for (var _d = 0, _e = armour.bodyPartIDs; _d < _e.length; _d++) {
-                    var partID = _e[_d];
-                    rows[partID][2] = data.name + (armour.bodyPartIDs.length > 1 ? '*' : '');
-                }
-            }
-            for (var _f = 0, _g = this.weapons; _f < _g.length; _f++) {
-                var weapon = _g[_f];
-                var data = Data.Weapons.Types[weapon.tag];
-                for (var _h = 0, _j = weapon.bodyPartIDs; _h < _j.length; _h++) {
-                    var partID = _j[_h];
-                    rows[partID][3] = data.name + (weapon.bodyPartIDs.length > 1 ? '*' : '');
-                }
+            for (var id in this.bodyParts) {
+                var part = this.bodyParts[id];
+                var data = speciesData.bodyParts[part.tag];
+                var row = [];
+                rows.push(row);
+                row.push(part.getName(speciesData));
+                row.push(part.health.toString() + '/' + data.health);
+                row.push(partArmour[id] ? partArmour[id] : '');
+                row.push(partWeapons[id] ? partWeapons[id] : '');
             }
             return rows;
+        };
+        Fighter.prototype.getAttacks = function () {
+            var attacks = [];
+            var speciesData = this.getSpeciesData();
+            for (var id in this.bodyParts) {
+                var part = this.bodyParts[id];
+                var data = speciesData.bodyParts[part.tag];
+                if (data.attack)
+                    attacks.push(data.attack); // TODO: Check body part health.
+            }
+            for (var _i = 0, _a = this.weapons; _i < _a.length; _i++) {
+                var weapon = _a[_i];
+                var data = Data.Weapons.Types[weapon.tag];
+                attacks = attacks.concat(data.attacks); // TODO: Check body part health.
+            }
+            return attacks;
+        };
+        Fighter.prototype.getBodyParts = function () {
+            var parts = [];
+            for (var id in this.bodyParts)
+                parts.push(this.bodyParts[id]); // TODO: Check body part health ? 
+            return parts;
         };
         return Fighter;
     }());
@@ -702,10 +767,59 @@ var Model;
 "use strict";
 var Model;
 (function (Model) {
+    var Fight;
+    (function (Fight) {
+        var State = (function () {
+            function State(teamA, teamB) {
+                this.teams = [teamA, teamB];
+                this.text = '';
+                this.nextTeamIndex = 0;
+                this.steps = 0;
+                this.finished = false;
+            }
+            State.prototype.step = function () {
+                // Assume 2 teams of 1 fighter each. 
+                var attacker = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
+                this.nextTeamIndex = (this.nextTeamIndex + 1) % this.teams.length;
+                var defender = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
+                this.text += this.attack(attacker, defender) + '<br>';
+                if (++this.steps == 25) {
+                    this.text += 'Finished';
+                    this.finished = true;
+                }
+                return this.finished;
+            };
+            State.prototype.attack = function (attacker, defender) {
+                var attacks = attacker.getAttacks();
+                var attackData = attacks[Util.getRandomInt(attacks.length)];
+                var defenderSpeciesData = defender.getSpeciesData();
+                var targets = defender.getBodyParts();
+                var target = targets[Util.getRandomInt(targets.length)];
+                var targetData = target.getData(defenderSpeciesData);
+                var armour = defender.getBodyPartArmour(target.id);
+                var armourData = armour ? Data.Armour.Types[armour.tag] : null;
+                var defense = armourData ? armourData.getDefense(attackData.type) : 0;
+                var damage = attackData.damage * (100 - defense) / 100;
+                var oldHealth = targetData.health;
+                targetData.health = Math.max(0, targetData.health - damage);
+                var msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.names[target.index] + '. ';
+                msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
+                msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + targetData.health.toFixed(1) + '. ';
+                return msg;
+            };
+            return State;
+        }());
+        Fight.State = State;
+    })(Fight = Model.Fight || (Model.Fight = {}));
+})(Model || (Model = {}));
+"use strict";
+var Model;
+(function (Model) {
     var State = (function () {
         function State() {
             this.money = 1000;
             this.buildings = new Model.Buildings.State();
+            this.fight = null;
             this.fighters = {};
             this.nextFighterID = 1;
         }
@@ -753,7 +867,15 @@ var Model;
                     animals.push(this.fighters[id]);
             return animals;
         };
-        State.key = "state.v5";
+        State.prototype.startFight = function (teamA, teamB) {
+            Util.assert(this.fight == null);
+            this.fight = new Model.Fight.State(teamA, teamB);
+        };
+        State.prototype.endFight = function () {
+            Util.assert(this.fight && this.fight.finished);
+            this.fight = null;
+        };
+        State.key = "state.v6";
         return State;
     }());
     Model.State = State;
@@ -763,11 +885,16 @@ var Model;
             Model.state = JSON.parse(str);
             Model.state.__proto__ = State.prototype;
             Model.state.buildings.__proto__ = Model.Buildings.State.prototype;
-            for (var id in Model.state.fighters)
-                if (Model.state.fighters[id].species == 'human')
-                    Model.state.fighters[id].__proto__ = Model.Person.prototype;
+            if (Model.state.fight)
+                Model.state.fight.__proto__ = Model.Fight.State.prototype;
+            for (var id in Model.state.fighters) {
+                var fighter = Model.state.fighters[id];
+                if (fighter.species == 'human')
+                    fighter.__proto__ = Model.Person.prototype;
                 else
-                    Model.state.fighters[id].__proto__ = Model.Animal.prototype;
+                    fighter.__proto__ = Model.Animal.prototype;
+                fighter.onLoad();
+            }
         }
         else
             resetState();
@@ -851,6 +978,10 @@ var Util;
         return columns;
     }
     Util.formatRows = formatRows;
+    function getRandomInt(max) {
+        return Math.floor(Math.random() * max);
+    }
+    Util.getRandomInt = getRandomInt;
 })(Util || (Util = {}));
 "use strict";
 var View;
@@ -858,14 +989,19 @@ var View;
     var Popup = (function () {
         function Popup(title) {
             this.title = title;
+            Util.assert(Popup.Current == null);
+            Popup.Current = this;
             this.div = document.createElement('div');
         }
         Popup.hideCurrent = function () {
-            var elem = document.getElementById('popup');
-            elem.className = '';
-            elem.innerHTML = '';
-            document.getElementById('blanket').className = '';
-            document.getElementById('overlay_div').className = 'disabled';
+            if (Popup.Current && Popup.Current.onClose()) {
+                Popup.Current = null;
+                var elem = document.getElementById('popup');
+                elem.className = '';
+                elem.innerHTML = '';
+                document.getElementById('blanket').className = '';
+                document.getElementById('overlay_div').className = 'disabled';
+            }
         };
         Popup.prototype.show = function () {
             var elem = document.getElementById('popup');
@@ -880,6 +1016,9 @@ var View;
             document.getElementById('blanket').className = 'show';
             document.getElementById('overlay_div').className = '';
         };
+        Popup.prototype.onClose = function () { return true; };
+        Popup.prototype.onTick = function () { };
+        Popup.Current = null;
         return Popup;
     }());
     View.Popup = Popup;
@@ -900,6 +1039,69 @@ var View;
         return ListPopup;
     }(Popup));
     View.ListPopup = ListPopup;
+})(View || (View = {}));
+/// <reference path="popup.ts" />
+"use strict";
+var View;
+(function (View) {
+    var ArenaPopup = (function (_super) {
+        __extends(ArenaPopup, _super);
+        function ArenaPopup() {
+            _super.call(this, 'Arena');
+            this.ticks = 0;
+            this.para = document.createElement('p');
+            this.para.style.margin = '0';
+            this.scroller = document.createElement('div');
+            this.scroller.className = 'scroller';
+            this.scroller.style.bottom = '5%';
+            this.scroller.appendChild(this.para);
+            this.button = document.createElement('button');
+            this.button.innerText = 'Start';
+            this.button.style.top = '95%';
+            this.button.style.bottom = '0';
+            this.button.style.position = 'absolute';
+            this.button.addEventListener('click', this.onStartButton);
+            this.div.appendChild(this.scroller);
+            this.div.appendChild(this.button);
+            this.update();
+        }
+        ArenaPopup.prototype.onClose = function () {
+            return Model.state.fight == null;
+        };
+        ArenaPopup.prototype.onStartButton = function () {
+            var teams = [];
+            for (var id in Model.state.fighters) {
+                var team = [];
+                team.push(id);
+                teams.push(team);
+                if (teams.length == 2)
+                    break;
+            }
+            if (teams.length == 2)
+                Model.state.startFight(teams[0], teams[1]);
+        };
+        ArenaPopup.prototype.onTick = function () {
+            ++this.ticks;
+            if (this.ticks % 1 == 0) {
+                if (Model.state.fight) {
+                    var finished = Model.state.fight.step();
+                    this.update();
+                    if (finished)
+                        Model.state.endFight();
+                }
+            }
+        };
+        ArenaPopup.prototype.update = function () {
+            if (!Model.state.fight)
+                return;
+            var atEnd = Math.abs(this.scroller.scrollTop + this.scroller.clientHeight - this.scroller.scrollHeight) <= 10;
+            this.para.innerHTML = Model.state.fight.text;
+            if (atEnd)
+                this.scroller.scrollTop = this.scroller.scrollHeight;
+        };
+        return ArenaPopup;
+    }(View.Popup));
+    View.ArenaPopup = ArenaPopup;
 })(View || (View = {}));
 /// <reference path="popup.ts" />
 "use strict";
@@ -1229,7 +1431,7 @@ var View;
                 this.element = document.createElement('div');
                 this.table = document.createElement('table');
                 this.element.appendChild(this.table);
-                this.element.className = 'container_scroller';
+                this.element.className = 'scroller';
             }
             Factory.prototype.addColumnHeader = function (name, width) {
                 if (!this.headerRow) {

@@ -6,15 +6,25 @@ namespace Model
 
 	export class BodyPart
 	{
-		constructor(public tag: string, public index: number, public health: number) { }
+		constructor(public id: string, public tag: string, public index: number, public health: number) { }
 
-		// Gets tag of armour or weapon site, if present. 
+		getData(speciesData: Data.Species.Type)
+		{
+			return speciesData.bodyParts[this.tag];
+		}
+
+		getName(speciesData: Data.Species.Type)
+		{
+			return this.getData(speciesData).names[this.index];
+		}
+
+		// Gets tag of armour or weapon site, if present.
 		getSiteTag(accType: AccessoryType, speciesData: Data.Species.Type)
 		{
 			if (accType == AccessoryType.Armour) // We are our own armour site.
 				return this.tag;
 
-			let site = speciesData.bodyParts[this.tag].weaponSite;
+			let site = this.getData(speciesData).weaponSite;
 			return site ? site.type : null;
 		}
 	}
@@ -32,7 +42,10 @@ namespace Model
 			{
 				let part = data.bodyParts[tag];
 				for (let i = 0, partName = ''; partName = part.names[i]; ++i)
-					this.bodyParts[this.nextBodyPartID++] = new BodyPart(tag, i, part.health);
+				{
+					this.bodyParts[this.nextBodyPartID] = new BodyPart(this.nextBodyPartID.toString(), tag, i, part.health);
+					++this.nextBodyPartID;
+				}
 			}
 
 			for (let tag of weapons)
@@ -40,6 +53,16 @@ namespace Model
 
 			for (let tag of armour)
 				this.addArmour(tag);
+		}
+
+		onLoad()
+		{
+			for (let id in this.bodyParts)
+				this.bodyParts[id].__proto__ = BodyPart.prototype;
+			for (let weapon of this.weapons)
+				weapon.__proto__ = Weapon.prototype;
+			for (let armour of this.armour)
+				armour.__proto__ = Armour.prototype;
 		}
 
 		isHuman() { return this.species == 'human'; }
@@ -136,6 +159,15 @@ namespace Model
 			Util.assert(false);
 		}
 
+		getBodyPartArmour(bodyPartID: string)
+		{
+			for (let armour of this.armour)
+				for (let id of armour.bodyPartIDs)
+					if (id == bodyPartID)
+						return armour;
+			return null;
+		}
+
 		getStatus()
 		{
 			// Get armour string for each body part.
@@ -165,12 +197,42 @@ namespace Model
 				let data = speciesData.bodyParts[part.tag];
 				let row: string[] = [];
 				rows.push(row);
-				row.push(data.names[part.index]);
+				row.push(part.getName(speciesData));
 				row.push(part.health.toString() + '/' + data.health);
 				row.push(partArmour[id] ? partArmour[id] : '');
 				row.push(partWeapons[id] ? partWeapons[id] : '');
 			}
 			return rows;
+		}
+
+		getAttacks()
+		{
+			let attacks: Data.Attack[] = [];
+
+			let speciesData = this.getSpeciesData()
+			for (let id in this.bodyParts)
+			{
+				let part = this.bodyParts[id];
+				let data = speciesData.bodyParts[part.tag];
+				if (data.attack)
+					attacks.push(data.attack); // TODO: Check body part health.
+			}
+
+			for (let weapon of this.weapons)
+			{
+				let data = Data.Weapons.Types[weapon.tag];
+				attacks = attacks.concat(data.attacks); // TODO: Check body part health.
+			}
+
+			return attacks;
+		}
+
+		getBodyParts()
+		{
+			let parts: BodyPart[] = [];
+			for (let id in this.bodyParts)
+				parts.push(this.bodyParts[id]); // TODO: Check body part health ? 
+			return parts;
 		}
 	}
 }
