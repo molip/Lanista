@@ -6,10 +6,10 @@ namespace Model
 {
 	export class Person extends Fighter
 	{
-		constructor(id: number, tag: string)
+		constructor(id: number, tag: string, name: string)
 		{
 			let type = Data.People.Types[tag];
-			super(id, 'human', type.name, type.shopImage, type.weapons, type.armour);
+			super(id, 'human', name, type.shopImage, type.weapons, type.armour);
 		}
 	}
 }

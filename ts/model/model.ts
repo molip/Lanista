@@ -43,20 +43,20 @@ namespace Model
 			Model.saveState();
 		}
 
-		buyAnimal(typeID: string)
+		buyAnimal(tag: string)
 		{
-			Util.assert(typeID in Data.Animals.Types);
-			this.spendMoney(Data.Animals.Types[typeID].cost);
-			this.fighters[this.nextFighterID] = new Animal(this.nextFighterID, typeID);
+			Util.assert(tag in Data.Animals.Types);
+			this.spendMoney(Data.Animals.Types[tag].cost);
+			this.fighters[this.nextFighterID] = new Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
 			++this.nextFighterID;
 			Model.saveState();
 		}
 
-		buyPerson(typeID: string)
+		buyPerson(tag: string)
 		{
-			Util.assert(typeID in Data.People.Types);
-			this.spendMoney(Data.People.Types[typeID].cost);
-			this.fighters[this.nextFighterID] = new Person(this.nextFighterID, typeID);
+			Util.assert(tag in Data.People.Types);
+			this.spendMoney(Data.People.Types[tag].cost);
+			this.fighters[this.nextFighterID] = new Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
 			++this.nextFighterID;
 			Model.saveState();
 		}
@@ -97,6 +97,28 @@ namespace Model
 		{
 			Util.assert(this.fight && this.fight.finished);
 			this.fight = null;
+		}
+
+		private getUniqueFighterName(name: string)
+		{
+			let find = (name: string) =>
+			{
+				for (let id in this.fighters)
+					if (this.fighters[id].name == name)
+						return true;
+				return false;
+			}
+
+			let tryName = '';
+
+			let i = 1;
+			while (true)
+			{
+				let tryName = name + ' ' + i.toString();
+				if (!find(tryName))
+					return tryName;
+				++i;
+			}
 		}
 	}
 

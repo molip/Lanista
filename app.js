@@ -668,9 +668,9 @@ var Model;
 (function (Model) {
     var Animal = (function (_super) {
         __extends(Animal, _super);
-        function Animal(id, tag) {
+        function Animal(id, tag, name) {
             var type = Data.Animals.Types[tag];
-            _super.call(this, id, type.species, type.name, type.shopImage, type.weapons, type.armour);
+            _super.call(this, id, type.species, name, type.shopImage, type.weapons, type.armour);
         }
         return Animal;
     }(Model.Fighter));
@@ -839,17 +839,17 @@ var Model;
             Model.state.money += amount;
             Model.saveState();
         };
-        State.prototype.buyAnimal = function (typeID) {
-            Util.assert(typeID in Data.Animals.Types);
-            this.spendMoney(Data.Animals.Types[typeID].cost);
-            this.fighters[this.nextFighterID] = new Model.Animal(this.nextFighterID, typeID);
+        State.prototype.buyAnimal = function (tag) {
+            Util.assert(tag in Data.Animals.Types);
+            this.spendMoney(Data.Animals.Types[tag].cost);
+            this.fighters[this.nextFighterID] = new Model.Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
             ++this.nextFighterID;
             Model.saveState();
         };
-        State.prototype.buyPerson = function (typeID) {
-            Util.assert(typeID in Data.People.Types);
-            this.spendMoney(Data.People.Types[typeID].cost);
-            this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, typeID);
+        State.prototype.buyPerson = function (tag) {
+            Util.assert(tag in Data.People.Types);
+            this.spendMoney(Data.People.Types[tag].cost);
+            this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
             ++this.nextFighterID;
             Model.saveState();
         };
@@ -880,6 +880,23 @@ var Model;
         State.prototype.endFight = function () {
             Util.assert(this.fight && this.fight.finished);
             this.fight = null;
+        };
+        State.prototype.getUniqueFighterName = function (name) {
+            var _this = this;
+            var find = function (name) {
+                for (var id in _this.fighters)
+                    if (_this.fighters[id].name == name)
+                        return true;
+                return false;
+            };
+            var tryName = '';
+            var i = 1;
+            while (true) {
+                var tryName_1 = name + ' ' + i.toString();
+                if (!find(tryName_1))
+                    return tryName_1;
+                ++i;
+            }
         };
         State.key = "state.v6";
         return State;
@@ -922,9 +939,9 @@ var Model;
 (function (Model) {
     var Person = (function (_super) {
         __extends(Person, _super);
-        function Person(id, tag) {
+        function Person(id, tag, name) {
             var type = Data.People.Types[tag];
-            _super.call(this, id, 'human', type.name, type.shopImage, type.weapons, type.armour);
+            _super.call(this, id, 'human', name, type.shopImage, type.weapons, type.armour);
         }
         return Person;
     }(Model.Fighter));
