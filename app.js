@@ -782,11 +782,9 @@ var Model;
                 var attacker = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
                 this.nextTeamIndex = (this.nextTeamIndex + 1) % this.teams.length;
                 var defender = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
-                this.text += this.attack(attacker, defender) + '<br>';
-                if (++this.steps == 25) {
-                    this.text += 'Finished';
-                    this.finished = true;
-                }
+                var result = this.attack(attacker, defender);
+                this.text += result.text + '<br>';
+                this.finished = result.dead;
                 return this.finished;
             };
             State.prototype.attack = function (attacker, defender) {
@@ -805,7 +803,7 @@ var Model;
                 var msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.names[target.index] + '. ';
                 msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
                 msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + targetData.health.toFixed(1) + '. ';
-                return msg;
+                return { text: msg, dead: targetData.health == 0 };
             };
             return State;
         }());

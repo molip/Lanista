@@ -28,13 +28,11 @@ namespace Model
 				this.nextTeamIndex = (this.nextTeamIndex + 1) % this.teams.length;
 				let defender = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
 
-				this.text += this.attack(attacker, defender) + '<br>';
+				let result = this.attack(attacker, defender);
 
-				if (++this.steps == 25)
-				{
-					this.text += 'Finished';
-					this.finished = true;
-				}
+				this.text += result.text + '<br>';
+				this.finished = result.dead;
+
 				return this.finished;
 			}
 
@@ -60,7 +58,7 @@ namespace Model
 				let msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.names[target.index] + '. ';
 				msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
 				msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + targetData.health.toFixed(1) + '. ';
-				return msg;
+				return { text: msg, dead: targetData.health == 0 };
 			}
 		}
 	}
