@@ -13,6 +13,11 @@ table {
 
 button {
 	pointer-events:auto;
+	font-size:1em;
+}	
+
+select {
+	font-size:1em;
 }	
 
 tr {
@@ -55,6 +60,7 @@ tr {
 #reset_btn
 {
 	float:right;
+	font-size: 0.5em;
 }
 
 #blanket {

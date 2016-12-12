@@ -79,6 +79,14 @@ namespace Model
 			return animals;
 		}
 
+		getFighterIDs()
+		{
+			let ids: string[] = [];
+			for (let id in this.fighters)
+				ids.push(id);
+			return ids;
+		}
+
 		startFight(teamA: Fight.Team, teamB: Fight.Team)
 		{
 			Util.assert(this.fight == null);

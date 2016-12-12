@@ -867,6 +867,12 @@ var Model;
                     animals.push(this.fighters[id]);
             return animals;
         };
+        State.prototype.getFighterIDs = function () {
+            var ids = [];
+            for (var id in this.fighters)
+                ids.push(id);
+            return ids;
+        };
         State.prototype.startFight = function (teamA, teamB) {
             Util.assert(this.fight == null);
             this.fight = new Model.Fight.State(teamA, teamB);
@@ -1047,38 +1053,60 @@ var View;
     var ArenaPopup = (function (_super) {
         __extends(ArenaPopup, _super);
         function ArenaPopup() {
+            var _this = this;
             _super.call(this, 'Arena');
+            this.onStartButton = function () {
+                var teams = [];
+                var fighterIDs = Model.state.getFighterIDs();
+                teams.push([fighterIDs[_this.selectA.selectedIndex]]);
+                teams.push([fighterIDs[_this.selectB.selectedIndex]]);
+                Model.state.startFight(teams[0], teams[1]);
+                _this.button.disabled = _this.selectA.disabled = _this.selectB.disabled = true;
+            };
+            this.updateStartButton = function () {
+                var a = _this.selectA.selectedIndex;
+                var b = _this.selectB.selectedIndex;
+                _this.button.disabled = !!Model.state.fight || a < 0 || b < 0 || a == b;
+            };
             this.ticks = 0;
+            var topDiv = document.createElement('div');
+            topDiv.style.top = '0%';
+            topDiv.style.bottom = '95%';
+            topDiv.style.position = 'absolute';
+            this.selectA = document.createElement('select');
+            this.selectB = document.createElement('select');
+            this.selectA.addEventListener('change', this.updateStartButton);
+            this.selectB.addEventListener('change', this.updateStartButton);
+            var makeOption = function (id) {
+                var option = document.createElement('option');
+                option.text = Model.state.fighters[id].name;
+                return option;
+            };
+            for (var id in Model.state.fighters) {
+                this.selectB.options.add(makeOption(id));
+                this.selectA.options.add(makeOption(id));
+            }
+            if (this.selectB.options.length > 1)
+                this.selectB.selectedIndex = 1;
+            this.button = document.createElement('button');
+            this.button.innerText = 'Start';
+            this.button.addEventListener('click', this.onStartButton);
+            topDiv.appendChild(this.selectA);
+            topDiv.appendChild(this.selectB);
+            topDiv.appendChild(this.button);
             this.para = document.createElement('p');
             this.para.style.margin = '0';
             this.scroller = document.createElement('div');
             this.scroller.className = 'scroller';
-            this.scroller.style.bottom = '5%';
+            this.scroller.style.top = '5%';
             this.scroller.appendChild(this.para);
-            this.button = document.createElement('button');
-            this.button.innerText = 'Start';
-            this.button.style.top = '95%';
-            this.button.style.bottom = '0';
-            this.button.style.position = 'absolute';
-            this.button.addEventListener('click', this.onStartButton);
+            this.div.appendChild(topDiv);
             this.div.appendChild(this.scroller);
-            this.div.appendChild(this.button);
             this.update();
+            this.updateStartButton();
         }
         ArenaPopup.prototype.onClose = function () {
             return Model.state.fight == null;
-        };
-        ArenaPopup.prototype.onStartButton = function () {
-            var teams = [];
-            for (var id in Model.state.fighters) {
-                var team = [];
-                team.push(id);
-                teams.push(team);
-                if (teams.length == 2)
-                    break;
-            }
-            if (teams.length == 2)
-                Model.state.startFight(teams[0], teams[1]);
         };
         ArenaPopup.prototype.onTick = function () {
             ++this.ticks;

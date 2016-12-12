@@ -8,6 +8,8 @@ namespace View
 		para: HTMLParagraphElement;
 		scroller: HTMLDivElement;
 		button: HTMLButtonElement;
+		selectA: HTMLSelectElement;
+		selectB: HTMLSelectElement;
 		ticks: number;
 
 		constructor()
@@ -16,25 +18,54 @@ namespace View
 
 			this.ticks = 0;
 
+			let topDiv = document.createElement('div');
+			topDiv.style.top = '0%';
+			topDiv.style.bottom = '95%';
+			topDiv.style.position = 'absolute';
+
+			this.selectA = document.createElement('select');
+			this.selectB = document.createElement('select');
+
+			this.selectA.addEventListener('change', this.updateStartButton);
+			this.selectB.addEventListener('change', this.updateStartButton);
+
+			let makeOption = function(id: string)
+			{
+				let option = document.createElement('option');
+				option.text = Model.state.fighters[id].name;
+				return option;
+			};
+
+			for (let id in Model.state.fighters)
+			{
+				this.selectB.options.add(makeOption(id));
+				this.selectA.options.add(makeOption(id));
+			}
+
+			if (this.selectB.options.length > 1)
+				this.selectB.selectedIndex = 1;
+
+			this.button = document.createElement('button');
+			this.button.innerText = 'Start';
+			this.button.addEventListener('click', this.onStartButton);
+
+			topDiv.appendChild(this.selectA);
+			topDiv.appendChild(this.selectB);
+			topDiv.appendChild(this.button);
+
 			this.para = document.createElement('p');
 			this.para.style.margin = '0';
 			
 			this.scroller = document.createElement('div');
 			this.scroller.className = 'scroller';
-			this.scroller.style.bottom = '5%';
+			this.scroller.style.top = '5%';
 			this.scroller.appendChild(this.para);
 
-			this.button = document.createElement('button');
-			this.button.innerText = 'Start';
-			this.button.style.top = '95%';
-			this.button.style.bottom = '0';
-			this.button.style.position = 'absolute';
-			this.button.addEventListener('click', this.onStartButton);
-
+			this.div.appendChild(topDiv);
 			this.div.appendChild(this.scroller);
-			this.div.appendChild(this.button);
 
 			this.update();
+			this.updateStartButton();
 		}
 
 		onClose()
@@ -42,20 +73,18 @@ namespace View
 			return Model.state.fight == null;
 		}
 
-		onStartButton()
+		onStartButton = () =>
 		{
 			let teams: Model.Fight.Team[] = [];
-			for (let id in Model.state.fighters)
-			{
-				let team: Model.Fight.Team = [];
-				team.push(id);
-				teams.push(team);
-				if (teams.length == 2)
-					break;
-			}
 
-			if (teams.length == 2)
-				Model.state.startFight(teams[0], teams[1]);
+			let fighterIDs = Model.state.getFighterIDs();
+
+			teams.push([fighterIDs[this.selectA.selectedIndex]]);
+			teams.push([fighterIDs[this.selectB.selectedIndex]]);
+
+			Model.state.startFight(teams[0], teams[1]);
+
+			this.button.disabled = this.selectA.disabled = this.selectB.disabled = true;
 		}
 
 		onTick()
@@ -73,6 +102,13 @@ namespace View
 						Model.state.endFight();
 				}
 			}
+		}
+
+		updateStartButton = () =>
+		{
+			let a = this.selectA.selectedIndex;
+			let b = this.selectB.selectedIndex;
+			this.button.disabled = !!Model.state.fight || a < 0 || b < 0 || a == b;
 		}
 
 		update()
