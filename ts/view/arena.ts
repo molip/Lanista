@@ -3,7 +3,7 @@
 
 namespace View 
 {
-	export class ArenaPopup extends Popup
+	export class ArenaPage extends Page
 	{
 		para: HTMLParagraphElement;
 		scroller: HTMLDivElement;

@@ -14,9 +14,9 @@ namespace View
 
 	export function showInfo(title: string, description: string)
 	{
-		let popup = new Popup(title);
-		popup.div.innerHTML = '<p>' + description + '</p>';
-		popup.show();
+		let page = new Page(title);
+		page.div.innerHTML = '<p>' + description + '</p>';
+		page.show();
 	}
 
 	export function setHUDText(text: string)

@@ -3,7 +3,7 @@
 
 namespace View 
 {
-	export class BarracksPopup extends Popup
+	export class BarracksPage extends Page
 	{
 		constructor()
 		{
