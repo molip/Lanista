@@ -1062,7 +1062,7 @@ var View;
     }(Page));
     View.ListPage = ListPage;
 })(View || (View = {}));
-/// <reference path="popup.ts" />
+/// <reference path="page.ts" />
 "use strict";
 var View;
 (function (View) {
@@ -1147,7 +1147,7 @@ var View;
     }(View.Page));
     View.ArenaPage = ArenaPage;
 })(View || (View = {}));
-/// <reference path="popup.ts" />
+/// <reference path="page.ts" />
 "use strict";
 var View;
 (function (View) {
@@ -1389,7 +1389,7 @@ var View;
     }());
     View.Canvas = Canvas;
 })(View || (View = {}));
-/// <reference path="popup.ts" />
+/// <reference path="page.ts" />
 "use strict";
 var View;
 (function (View) {
