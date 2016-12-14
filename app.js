@@ -1017,25 +1017,26 @@ var View;
         Popup.hideCurrent = function () {
             if (Popup.Current && Popup.Current.onClose()) {
                 Popup.Current = null;
-                var elem = document.getElementById('popup');
+                var elem = document.getElementById('page');
                 elem.className = '';
                 elem.innerHTML = '';
-                document.getElementById('blanket').className = '';
-                document.getElementById('overlay_div').className = 'disabled';
             }
         };
         Popup.prototype.show = function () {
-            var elem = document.getElementById('popup');
+            var elem = document.getElementById('page');
             elem.innerHTML = '';
             if (this.title) {
                 var title = document.createElement('p');
                 title.innerText = this.title;
                 elem.appendChild(title);
             }
+            var backButton = document.createElement('button');
+            backButton.id = 'back_button';
+            backButton.innerText = 'Back';
+            backButton.addEventListener('click', Popup.hideCurrent);
+            elem.appendChild(backButton);
             elem.appendChild(this.div);
             elem.className = 'show';
-            document.getElementById('blanket').className = 'show';
-            document.getElementById('overlay_div').className = '';
         };
         Popup.prototype.onClose = function () { return true; };
         Popup.prototype.onTick = function () { };
@@ -1510,7 +1511,6 @@ var View;
 (function (View) {
     function init() {
         View.Canvas.init();
-        document.getElementById("overlay_div").addEventListener('click', View.Popup.hideCurrent);
     }
     View.init = init;
     function getCanvas() {

@@ -21,17 +21,15 @@ namespace View
 			{
 				Popup.Current = null;
 
-				let elem = document.getElementById('popup');
+				let elem = document.getElementById('page');
 				elem.className = '';
 				elem.innerHTML = '';
-				document.getElementById('blanket').className = '';
-				document.getElementById('overlay_div').className = 'disabled';
 			}
 		}
 
 		show()
 		{
-			let elem = document.getElementById('popup');
+			let elem = document.getElementById('page');
 			elem.innerHTML = '';
 
 			if (this.title)
@@ -41,10 +39,14 @@ namespace View
 				elem.appendChild(title);
 			}
 
+			let backButton = document.createElement('button');
+			backButton.id = 'back_button';
+			backButton.innerText = 'Back';
+			backButton.addEventListener('click', Popup.hideCurrent);
+
+			elem.appendChild(backButton);
 			elem.appendChild(this.div);
 			elem.className = 'show';
-			document.getElementById('blanket').className = 'show';
-			document.getElementById('overlay_div').className = '';
 		}
 
 		onClose() { return true; }

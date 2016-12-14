@@ -5,7 +5,6 @@ namespace View
 	export function init()
 	{
 		View.Canvas.init();
-		document.getElementById("overlay_div").addEventListener('click', Popup.hideCurrent);
 	}
 
 	export function getCanvas(): HTMLCanvasElement
