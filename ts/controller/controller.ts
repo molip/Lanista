@@ -12,6 +12,8 @@ namespace Controller
 
 		window.setInterval(Controller.onTick, 100);
 
+		window.addEventListener('keydown', Controller.onKeyDown);
+
 		if (Model.state.fight)
 			onArenaTriggerClicked();
 	}
@@ -24,8 +26,8 @@ namespace Controller
 			updateHUD();
 		}
 
-		if (View.Popup.Current != null)
-			View.Popup.Current.onTick();
+		if (View.Page.Current != null)
+			View.Page.Current.onTick();
 	}
 
 	export function onBuildingTriggerClicked(id: string)
@@ -64,14 +66,14 @@ namespace Controller
 
 	function onBarracksTriggerClicked()
 	{
-		let popup = new View.BarracksPopup();
-		popup.show();
+		let page = new View.BarracksPage();
+		page.show();
 	}
 
 	function onKennelsTriggerClicked()
 	{
-		let popup = new View.KennelsPopup();
-		popup.show();
+		let page = new View.KennelsPage();
+		page.show();
 	}
 
 	function onStorageTriggerClicked()
@@ -111,18 +113,24 @@ namespace Controller
 
 	function onArenaTriggerClicked()
 	{
-		let popup = new View.ArenaPopup();
-		popup.show();
+		let page = new View.ArenaPage();
+		page.show();
 	}
 	
 	export function onTownTriggerClicked()
 	{
-		Shop.showShopsPopup();
+		Shop.showShopsPage();
 	}
 
 	export function updateHUD()
 	{
 		var text = 'Money: ' + Util.formatMoney(Model.state.getMoney());
 		View.setHUDText(text);
+	}
+
+	export function onKeyDown(evt: KeyboardEvent)
+	{
+		if (evt.keyCode == 27)
+			View.Page.hideCurrent();
 	}
 }

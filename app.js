@@ -51,6 +51,7 @@ var Controller;
         View.Canvas.initObjects();
         updateHUD();
         window.setInterval(Controller.onTick, 100);
+        window.addEventListener('keydown', Controller.onKeyDown);
         if (Model.state.fight)
             onArenaTriggerClicked();
     }
@@ -60,8 +61,8 @@ var Controller;
             View.Canvas.updateObjects();
             updateHUD();
         }
-        if (View.Popup.Current != null)
-            View.Popup.Current.onTick();
+        if (View.Page.Current != null)
+            View.Page.Current.onTick();
     }
     Controller.onTick = onTick;
     function onBuildingTriggerClicked(id) {
@@ -94,12 +95,12 @@ var Controller;
         View.showInfo('Home', 'TODO: general stats etc. go here.');
     }
     function onBarracksTriggerClicked() {
-        var popup = new View.BarracksPopup();
-        popup.show();
+        var page = new View.BarracksPage();
+        page.show();
     }
     function onKennelsTriggerClicked() {
-        var popup = new View.KennelsPopup();
-        popup.show();
+        var page = new View.KennelsPage();
+        page.show();
     }
     function onStorageTriggerClicked() {
         View.showInfo('Storage', 'TODO.');
@@ -123,11 +124,11 @@ var Controller;
         View.showInfo('Merch', 'TODO.');
     }
     function onArenaTriggerClicked() {
-        var popup = new View.ArenaPopup();
-        popup.show();
+        var page = new View.ArenaPage();
+        page.show();
     }
     function onTownTriggerClicked() {
-        Controller.Shop.showShopsPopup();
+        Controller.Shop.showShopsPage();
     }
     Controller.onTownTriggerClicked = onTownTriggerClicked;
     function updateHUD() {
@@ -135,29 +136,34 @@ var Controller;
         View.setHUDText(text);
     }
     Controller.updateHUD = updateHUD;
+    function onKeyDown(evt) {
+        if (evt.keyCode == 27)
+            View.Page.hideCurrent();
+    }
+    Controller.onKeyDown = onKeyDown;
 })(Controller || (Controller = {}));
 "use strict";
 var Controller;
 (function (Controller) {
     var Shop;
     (function (Shop) {
-        function addItem(popup, title, description, image, locked, price, handler) {
-            popup.addItem(title, description + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
+        function addItem(page, title, description, image, locked, price, handler) {
+            page.addItem(title, description + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
         }
         function getShopTitle(name) {
             return name + ' (money available: ' + Util.formatMoney(Model.state.getMoney()) + ')';
         }
-        function showShopsPopup() {
-            var popup = new View.ListPopup('Let\'s go shopping!');
-            popup.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
-            popup.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
-            popup.addItem('People Market', 'Buy people', 'images/people.png', false, onPeopleMarketClicked);
-            popup.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', true, null);
-            popup.show();
+        function showShopsPage() {
+            var page = new View.ListPage('Let\'s go shopping!');
+            page.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
+            page.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
+            page.addItem('People Market', 'Buy people', 'images/people.png', false, onPeopleMarketClicked);
+            page.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', true, null);
+            page.show();
         }
-        Shop.showShopsPopup = showShopsPopup;
+        Shop.showShopsPage = showShopsPage;
         function onBuildersMerchantClicked() {
-            var popup = new View.ListPopup(getShopTitle('Builders\' Merchant'));
+            var page = new View.ListPage(getShopTitle('Builders\' Merchant'));
             var _loop_1 = function(id) {
                 level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
                 if (level) {
@@ -166,8 +172,8 @@ var Controller;
                         Controller.updateHUD();
                         View.Canvas.updateObjects();
                     };
-                    addItem(popup, level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, handler);
-                    popup.show();
+                    addItem(page, level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, handler);
+                    page.show();
                 }
             };
             var level, handler;
@@ -177,7 +183,7 @@ var Controller;
             }
         }
         function onAnimalMarketClicked() {
-            var popup = new View.ListPopup(getShopTitle('Animal Market'));
+            var page = new View.ListPage(getShopTitle('Animal Market'));
             var hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
             var _loop_2 = function(id) {
                 handler = function () {
@@ -185,8 +191,8 @@ var Controller;
                     Controller.updateHUD();
                 };
                 var type = Data.Animals.Types[id];
-                addItem(popup, type.name, type.description, type.shopImage, !hasKennels, type.cost, handler);
-                popup.show();
+                addItem(page, type.name, type.description, type.shopImage, !hasKennels, type.cost, handler);
+                page.show();
             };
             var handler;
             for (var id in Data.Animals.Types) {
@@ -194,7 +200,7 @@ var Controller;
             }
         }
         function onPeopleMarketClicked() {
-            var popup = new View.ListPopup(getShopTitle('People Market'));
+            var page = new View.ListPage(getShopTitle('People Market'));
             var hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
             var _loop_3 = function(id) {
                 handler = function () {
@@ -202,8 +208,8 @@ var Controller;
                     Controller.updateHUD();
                 };
                 var type = Data.People.Types[id];
-                addItem(popup, type.name, type.description, type.shopImage, !hasBarracks, type.cost, handler);
-                popup.show();
+                addItem(page, type.name, type.description, type.shopImage, !hasBarracks, type.cost, handler);
+                page.show();
             };
             var handler;
             for (var id in Data.People.Types) {
@@ -1007,67 +1013,68 @@ var Util;
 "use strict";
 var View;
 (function (View) {
-    var Popup = (function () {
-        function Popup(title) {
+    var Page = (function () {
+        function Page(title) {
             this.title = title;
-            Util.assert(Popup.Current == null);
-            Popup.Current = this;
+            Util.assert(Page.Current == null);
+            Page.Current = this;
             this.div = document.createElement('div');
         }
-        Popup.hideCurrent = function () {
-            if (Popup.Current && Popup.Current.onClose()) {
-                Popup.Current = null;
-                var elem = document.getElementById('popup');
+        Page.hideCurrent = function () {
+            if (Page.Current && Page.Current.onClose()) {
+                Page.Current = null;
+                var elem = document.getElementById('page');
                 elem.className = '';
                 elem.innerHTML = '';
-                document.getElementById('blanket').className = '';
-                document.getElementById('overlay_div').className = 'disabled';
             }
         };
-        Popup.prototype.show = function () {
-            var elem = document.getElementById('popup');
+        Page.prototype.show = function () {
+            var elem = document.getElementById('page');
             elem.innerHTML = '';
             if (this.title) {
                 var title = document.createElement('p');
                 title.innerText = this.title;
                 elem.appendChild(title);
             }
+            var backButton = document.createElement('button');
+            backButton.id = 'back_button';
+            backButton.innerText = 'Back';
+            backButton.addEventListener('click', Page.hideCurrent);
+            elem.appendChild(backButton);
             elem.appendChild(this.div);
             elem.className = 'show';
-            document.getElementById('blanket').className = 'show';
-            document.getElementById('overlay_div').className = '';
         };
-        Popup.prototype.onClose = function () { return true; };
-        Popup.prototype.onTick = function () { };
-        Popup.Current = null;
-        return Popup;
+        Page.prototype.onClose = function () { return true; };
+        Page.prototype.onTick = function () { };
+        Page.Current = null;
+        return Page;
     }());
-    View.Popup = Popup;
-    var ListPopup = (function (_super) {
-        __extends(ListPopup, _super);
-        function ListPopup(title) {
+    View.Page = Page;
+    var ListPage = (function (_super) {
+        __extends(ListPage, _super);
+        function ListPage(title) {
             _super.call(this, title);
             this.tableFactory = new View.Table.Factory();
             this.div.appendChild(this.tableFactory.element);
         }
-        ListPopup.prototype.addItem = function (title, description, image, locked, handler) {
+        ListPage.prototype.addItem = function (title, description, image, locked, handler) {
             var cells = [new View.Table.TextCell('<h4>' + title + '</h4>', 20), new View.Table.ImageCell(image, 20), new View.Table.TextCell(description)];
             this.tableFactory.addRow(cells, locked, function () {
-                Popup.hideCurrent();
+                Page.hideCurrent();
                 handler();
             });
         };
-        return ListPopup;
-    }(Popup));
-    View.ListPopup = ListPopup;
+        return ListPage;
+    }(Page));
+    View.ListPage = ListPage;
 })(View || (View = {}));
-/// <reference path="popup.ts" />
+/// <reference path="page.ts" />
 "use strict";
 var View;
 (function (View) {
-    var ArenaPopup = (function (_super) {
-        __extends(ArenaPopup, _super);
-        function ArenaPopup() {
+    var ArenaPage = (function (_super) {
+        __extends(ArenaPage, _super);
+        function ArenaPage() {
             var _this = this;
             _super.call(this, 'Arena');
             this.onStartButton = function () {
@@ -1120,10 +1127,10 @@ var View;
             this.update();
             this.updateStartButton();
         }
-        ArenaPopup.prototype.onClose = function () {
+        ArenaPage.prototype.onClose = function () {
             return Model.state.fight == null;
         };
-        ArenaPopup.prototype.onTick = function () {
+        ArenaPage.prototype.onTick = function () {
             ++this.ticks;
             if (this.ticks % 1 == 0) {
                 if (Model.state.fight) {
@@ -1134,7 +1141,7 @@ var View;
                 }
             }
         };
-        ArenaPopup.prototype.update = function () {
+        ArenaPage.prototype.update = function () {
             if (!Model.state.fight)
                 return;
             var atEnd = Math.abs(this.scroller.scrollTop + this.scroller.clientHeight - this.scroller.scrollHeight) <= 10;
@@ -1142,17 +1149,17 @@ var View;
             if (atEnd)
                 this.scroller.scrollTop = this.scroller.scrollHeight;
         };
-        return ArenaPopup;
-    }(View.Popup));
-    View.ArenaPopup = ArenaPopup;
+        return ArenaPage;
+    }(View.Page));
+    View.ArenaPage = ArenaPage;
 })(View || (View = {}));
-/// <reference path="popup.ts" />
+/// <reference path="page.ts" />
 "use strict";
 var View;
 (function (View) {
-    var BarracksPopup = (function (_super) {
-        __extends(BarracksPopup, _super);
-        function BarracksPopup() {
+    var BarracksPage = (function (_super) {
+        __extends(BarracksPage, _super);
+        function BarracksPage() {
             _super.call(this, 'Barracks');
             var tableFactory = new View.Table.Factory();
             this.div.appendChild(tableFactory.element);
@@ -1172,9 +1179,9 @@ var View;
                 tableFactory.addRow(cells, false, null);
             }
         }
-        return BarracksPopup;
-    }(View.Popup));
-    View.BarracksPopup = BarracksPopup;
+        return BarracksPage;
+    }(View.Page));
+    View.BarracksPage = BarracksPage;
 })(View || (View = {}));
 "use strict";
 var View;
@@ -1388,13 +1395,13 @@ var View;
     }());
     View.Canvas = Canvas;
 })(View || (View = {}));
-/// <reference path="popup.ts" />
+/// <reference path="page.ts" />
 "use strict";
 var View;
 (function (View) {
-    var KennelsPopup = (function (_super) {
-        __extends(KennelsPopup, _super);
-        function KennelsPopup() {
+    var KennelsPage = (function (_super) {
+        __extends(KennelsPage, _super);
+        function KennelsPage() {
             _super.call(this, 'Kennels');
             var tableFactory = new View.Table.Factory();
             this.div.appendChild(tableFactory.element);
@@ -1414,9 +1421,9 @@ var View;
                 tableFactory.addRow(cells, false, null);
             }
         }
-        return KennelsPopup;
-    }(View.Popup));
-    View.KennelsPopup = KennelsPopup;
+        return KennelsPage;
+    }(View.Page));
+    View.KennelsPage = KennelsPage;
 })(View || (View = {}));
 "use strict";
 var View;
@@ -1510,7 +1517,6 @@ var View;
 (function (View) {
     function init() {
         View.Canvas.init();
-        document.getElementById("overlay_div").addEventListener('click', View.Popup.hideCurrent);
     }
     View.init = init;
     function getCanvas() {
@@ -1518,9 +1524,9 @@ var View;
     }
     View.getCanvas = getCanvas;
     function showInfo(title, description) {
-        var popup = new View.Popup(title);
-        popup.div.innerHTML = '<p>' + description + '</p>';
-        popup.show();
+        var page = new View.Page(title);
+        page.div.innerHTML = '<p>' + description + '</p>';
+        page.show();
     }
     View.showInfo = showInfo;
     function setHUDText(text) {

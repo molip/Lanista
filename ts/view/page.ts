@@ -2,36 +2,34 @@
 
 namespace View
 {
-	export class Popup
+	export class Page
 	{
 		div: HTMLDivElement;
-		static Current: Popup = null;
+		static Current: Page = null;
 
 		constructor(private title?: string)
 		{
-			Util.assert(Popup.Current == null);
-			Popup.Current = this;
+			Util.assert(Page.Current == null);
+			Page.Current = this;
 
 			this.div = document.createElement('div');
 		}
 
 		static hideCurrent()
 		{
-			if (Popup.Current && Popup.Current.onClose())
+			if (Page.Current && Page.Current.onClose())
 			{
-				Popup.Current = null;
+				Page.Current = null;
 
-				let elem = document.getElementById('popup');
+				let elem = document.getElementById('page');
 				elem.className = '';
 				elem.innerHTML = '';
-				document.getElementById('blanket').className = '';
-				document.getElementById('overlay_div').className = 'disabled';
 			}
 		}
 
 		show()
 		{
-			let elem = document.getElementById('popup');
+			let elem = document.getElementById('page');
 			elem.innerHTML = '';
 
 			if (this.title)
@@ -41,17 +39,21 @@ namespace View
 				elem.appendChild(title);
 			}
 
+			let backButton = document.createElement('button');
+			backButton.id = 'back_button';
+			backButton.innerText = 'Back';
+			backButton.addEventListener('click', Page.hideCurrent);
+
+			elem.appendChild(backButton);
 			elem.appendChild(this.div);
 			elem.className = 'show';
-			document.getElementById('blanket').className = 'show';
-			document.getElementById('overlay_div').className = '';
 		}
 
 		onClose() { return true; }
 		onTick() { } 
 	}
 
-	export class ListPopup extends Popup
+	export class ListPage extends Page
 	{
 		private tableFactory: Table.Factory;
 		constructor(title: string)
@@ -66,7 +68,7 @@ namespace View
 			let cells = [new Table.TextCell('<h4>' + title + '</h4>', 20), new Table.ImageCell(image, 20), new Table.TextCell(description)];
 			this.tableFactory.addRow(cells, locked, function ()
 			{
-				Popup.hideCurrent();
+				Page.hideCurrent();
 				handler();
 			});
 		}

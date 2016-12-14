@@ -1,9 +1,9 @@
-/// <reference path="popup.ts" />
+/// <reference path="page.ts" />
 "use strict";
 
 namespace View 
 {
-	export class ArenaPopup extends Popup
+	export class ArenaPage extends Page
 	{
 		para: HTMLParagraphElement;
 		scroller: HTMLDivElement;

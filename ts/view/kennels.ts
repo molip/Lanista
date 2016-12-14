@@ -1,9 +1,9 @@
-/// <reference path="popup.ts" />
+/// <reference path="page.ts" />
 "use strict";
 
 namespace View 
 {
-	export class KennelsPopup extends Popup
+	export class KennelsPage extends Page
 	{
 		constructor()
 		{

@@ -5,7 +5,6 @@ namespace View
 	export function init()
 	{
 		View.Canvas.init();
-		document.getElementById("overlay_div").addEventListener('click', Popup.hideCurrent);
 	}
 
 	export function getCanvas(): HTMLCanvasElement
@@ -15,9 +14,9 @@ namespace View
 
 	export function showInfo(title: string, description: string)
 	{
-		let popup = new Popup(title);
-		popup.div.innerHTML = '<p>' + description + '</p>';
-		popup.show();
+		let page = new Page(title);
+		page.div.innerHTML = '<p>' + description + '</p>';
+		page.show();
 	}
 
 	export function setHUDText(text: string)

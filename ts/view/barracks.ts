@@ -1,9 +1,9 @@
-/// <reference path="popup.ts" />
+/// <reference path="page.ts" />
 "use strict";
 
 namespace View 
 {
-	export class BarracksPopup extends Popup
+	export class BarracksPage extends Page
 	{
 		constructor()
 		{
