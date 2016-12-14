@@ -12,6 +12,8 @@ namespace Controller
 
 		window.setInterval(Controller.onTick, 100);
 
+		window.addEventListener('keydown', Controller.onKeyDown);
+
 		if (Model.state.fight)
 			onArenaTriggerClicked();
 	}
@@ -124,5 +126,11 @@ namespace Controller
 	{
 		var text = 'Money: ' + Util.formatMoney(Model.state.getMoney());
 		View.setHUDText(text);
+	}
+
+	export function onKeyDown(evt: KeyboardEvent)
+	{
+		if (evt.keyCode == 27)
+			View.Page.hideCurrent();
 	}
 }

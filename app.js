@@ -51,6 +51,7 @@ var Controller;
         View.Canvas.initObjects();
         updateHUD();
         window.setInterval(Controller.onTick, 100);
+        window.addEventListener('keydown', Controller.onKeyDown);
         if (Model.state.fight)
             onArenaTriggerClicked();
     }
@@ -135,6 +136,11 @@ var Controller;
         View.setHUDText(text);
     }
     Controller.updateHUD = updateHUD;
+    function onKeyDown(evt) {
+        if (evt.keyCode == 27)
+            View.Page.hideCurrent();
+    }
+    Controller.onKeyDown = onKeyDown;
 })(Controller || (Controller = {}));
 "use strict";
 var Controller;
