@@ -1,9 +1,9 @@
 ﻿Data.Animals.Types = { //				cost	shop image						species		name			description				armour					weapons
 	'rabbit': new Data.Animals.Type(	10,		'images/animals/rabbit.png',	'rabbit',	'Rabbit',		'Ferocious and fluffy', [ 'rabbit helmet' ],	[ 'laser' ]	),
 	'rhino': new Data.Animals.Type(	    90,     'images/animals/rabbit.png', 	'rhino',	'Rhino',    	'Ferocious and spikey', [  ],					[  ] ),
-	'dog': new Data.Animals.Type(	    25,		'images/animals/rabbit.png',	'dog',	    'Dog',		    'Loyal but dangerous',  [  ],	                [  ] ),
+	'dog': new Data.Animals.Type(	    25,		'images/animals/dog.png',		'dog',	    'Dog',		    'Loyal but dangerous',  [  ],	                [  ] ),
 	'wolf': new Data.Animals.Type(	    30,		'images/animals/rabbit.png',	'wolf',	    'Wolf',		    'Wild',                 [  ],	                [  ] ),
-	'lynx': new Data.Animals.Type(	    35,		'images/animals/rabbit.png',	'lynx',	    'Lynx',		    'Sly',                  [  ],	                [  ] ),
+	'lynx': new Data.Animals.Type(	    35,		'images/animals/lynx.png',		'lynx',	    'Lynx',		    'Sly',                  [  ],	                [  ] ),
 	'snake': new Data.Animals.Type(	    30,		'images/animals/rabbit.png',	'snake',    'Snake',	    'Small but lethal',     [  ],	                [  ] ),
 	'boar': new Data.Animals.Type(	    25,		'images/animals/rabbit.png',	'boar',     'Boar',	        'A solid angry beast',  [  ],	                [  ] ),
 	'bear': new Data.Animals.Type(	    90,		'images/animals/rabbit.png',	'bear',     'Bear',	        'A furry killer',       [  ],	                [  ] ),
