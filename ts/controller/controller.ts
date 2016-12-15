@@ -13,9 +13,15 @@ namespace Controller
 		window.setInterval(Controller.onTick, 100);
 
 		window.addEventListener('keydown', Controller.onKeyDown);
+		window.addEventListener('resize', View.updateLayout);
 
 		if (Model.state.fight)
 			onArenaTriggerClicked();
+	}
+
+	export function onResize()
+	{
+		View.updateLayout();
 	}
 
 	export function onTick()

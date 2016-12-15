@@ -16,10 +16,10 @@
 	<script src="data/buildings.js"></script>
 	<script src="data/misc.js"></script>
 </head>
-<body onload="Controller.onLoad()" onresize="View.Canvas.onResize()">
-	<canvas id="canvas_ludus" onclick="Controller.Canvas.onClick(event)" onmousemove="Controller.Canvas.onMouseMove(event)" onmouseout="Controller.Canvas.onMouseOut(event)"></canvas>
-	<div id="canvas_overlay_div" class="disabled">
-		<div id="hud_div"><span id="hud_span"></span><button id="reset_btn" onclick="Controller.onResetClicked()">Reset</button> </div>
+<body onload="Controller.onLoad()">
+	<div id="master_div">
+		<canvas id="canvas_ludus" onclick="Controller.Canvas.onClick(event)" onmousemove="Controller.Canvas.onMouseMove(event)" onmouseout="Controller.Canvas.onMouseOut(event)"></canvas>
+		<div id="hud_div" class=""><span id="hud_span"></span><button id="reset_btn" onclick="Controller.onResetClicked()">Reset</button> </div>
 		<div id="page" onclick="event.stopPropagation()"></div>
 	</div>
 </body>

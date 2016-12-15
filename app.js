@@ -52,10 +52,15 @@ var Controller;
         updateHUD();
         window.setInterval(Controller.onTick, 100);
         window.addEventListener('keydown', Controller.onKeyDown);
+        window.addEventListener('resize', View.updateLayout);
         if (Model.state.fight)
             onArenaTriggerClicked();
     }
     Controller.onLoad = onLoad;
+    function onResize() {
+        View.updateLayout();
+    }
+    Controller.onResize = onResize;
     function onTick() {
         if (Model.state.update(0.1)) {
             View.Canvas.updateObjects();
@@ -1297,55 +1302,22 @@ var View;
         Canvas.init = function () {
             Canvas.BackgroundImage = new CanvasImage();
             Canvas.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage);
-        };
-        Canvas.onResize = function () {
-            this.updateTransform();
-            this.draw();
+            var canvas = View.getCanvas();
+            View.getCanvas().width = View.Width;
+            View.getCanvas().height = View.Height;
         };
         Canvas.devToLog = function (x, y) {
-            return new Point((x - this.Offset.x) / this.Scale, (y - this.Offset.y) / this.Scale);
-        };
-        Canvas.updateTransform = function () {
             var canvas = View.getCanvas();
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-            if (!this.BackgroundImage.image.complete) {
-                this.Offset = new Point(0, 0);
-                this.Scale = 1;
-            }
-            var sx = canvas.width / this.BackgroundImage.image.width;
-            var sy = canvas.height / this.BackgroundImage.image.height;
-            var imageAspect = this.BackgroundImage.image.width / this.BackgroundImage.image.height;
-            if (sx < sy) {
-                var devHeight = canvas.width / imageAspect;
-                this.Offset = new Point(0, (canvas.height - devHeight) / 2);
-                this.Scale = sx;
-            }
-            else {
-                var devWidth = canvas.height * imageAspect;
-                this.Offset = new Point((canvas.width - devWidth) / 2, 0);
-                this.Scale = sy;
-            }
-            var overlay = document.getElementById('canvas_overlay_div');
-            overlay.style.top = this.Offset.y.toString() + 'px';
-            overlay.style.bottom = this.Offset.y.toString() + 'px';
-            overlay.style.left = this.Offset.x.toString() + 'px';
-            overlay.style.right = this.Offset.x.toString() + 'px';
-            overlay.style.fontSize = (this.Scale * 20).toString() + 'px';
+            var scale = canvas.clientWidth / canvas.width;
+            return new Point(x / scale, y / scale);
         };
         Canvas.draw = function () {
             if (!this.BackgroundImage.image.complete)
                 return;
-            if (!this.hasDrawn) {
-                this.hasDrawn = true;
-                this.updateTransform();
-            }
             var canvas = View.getCanvas();
             var ctx = canvas.getContext("2d");
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.translate(this.Offset.x, this.Offset.y);
-            ctx.scale(this.Scale, this.Scale);
             this.BackgroundImage.draw(ctx);
             for (var i = 0, obj; obj = this.Objects[i]; ++i) {
                 obj.draw(ctx);
@@ -1389,8 +1361,6 @@ var View;
         };
         Canvas.Objects = [];
         Canvas.Buildings = {};
-        Canvas.Scale = 1;
-        Canvas.Offset = new Point(0, 0);
         return Canvas;
     }());
     View.Canvas = Canvas;
@@ -1515,8 +1485,11 @@ var View;
 "use strict";
 var View;
 (function (View) {
+    View.Width = 1280;
+    View.Height = 720;
     function init() {
         View.Canvas.init();
+        View.updateLayout();
     }
     View.init = init;
     function getCanvas() {
@@ -1533,4 +1506,31 @@ var View;
         document.getElementById('hud_span').innerText = text;
     }
     View.setHUDText = setHUDText;
+    function updateLayout() {
+        var width = document.documentElement.clientWidth;
+        var height = document.documentElement.clientHeight;
+        var offset = new Point(0, 0);
+        var scale = 1;
+        var sx = width / View.Width;
+        var sy = height / View.Height;
+        var imageAspect = View.Width / View.Height;
+        if (sx < sy) {
+            var devHeight = width / imageAspect;
+            offset = new Point(0, (height - devHeight) / 2);
+            scale = sx;
+        }
+        else {
+            var devWidth = height * imageAspect;
+            offset = new Point((width - devWidth) / 2, 0);
+            scale = sy;
+        }
+        var div = document.getElementById('master_div');
+        div.style.top = offset.y.toString() + 'px';
+        div.style.bottom = offset.y.toString() + 'px';
+        div.style.left = offset.x.toString() + 'px';
+        div.style.right = offset.x.toString() + 'px';
+        div.style.fontSize = (scale * 20).toString() + 'px';
+        View.Canvas.draw();
+    }
+    View.updateLayout = updateLayout;
 })(View || (View = {}));
