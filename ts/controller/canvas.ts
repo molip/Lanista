@@ -6,6 +6,14 @@ namespace Controller
 	{
 		export let HotObject: View.CanvasObject = null;
 
+		export function init()
+		{
+			var canvas = View.getCanvas();
+			canvas.addEventListener('click', Controller.Canvas.onClick);
+			canvas.addEventListener('mousemove', Controller.Canvas.onMouseMove);
+			canvas.addEventListener('mouseout', Controller.Canvas.onMouseOut);
+		}
+
 		function hitTestObjects(x: number, y: number): View.CanvasObject
 		{
 			for (let obj of View.Canvas.Objects)

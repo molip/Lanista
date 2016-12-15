@@ -9,6 +9,13 @@ var Controller;
     var Canvas;
     (function (Canvas) {
         Canvas.HotObject = null;
+        function init() {
+            var canvas = View.getCanvas();
+            canvas.addEventListener('click', Controller.Canvas.onClick);
+            canvas.addEventListener('mousemove', Controller.Canvas.onMouseMove);
+            canvas.addEventListener('mouseout', Controller.Canvas.onMouseOut);
+        }
+        Canvas.init = init;
         function hitTestObjects(x, y) {
             for (var _i = 0, _a = View.Canvas.Objects; _i < _a.length; _i++) {
                 var obj = _a[_i];
@@ -48,11 +55,13 @@ var Controller;
         Data.validate();
         Model.init();
         View.init();
+        Controller.Canvas.init();
         View.Canvas.initObjects();
         updateHUD();
         window.setInterval(Controller.onTick, 100);
         window.addEventListener('keydown', Controller.onKeyDown);
         window.addEventListener('resize', View.updateLayout);
+        document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
         if (Model.state.fight)
             onArenaTriggerClicked();
     }

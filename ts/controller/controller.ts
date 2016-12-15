@@ -7,6 +7,8 @@ namespace Controller
 		Data.validate();
 		Model.init();
 		View.init();
+		Controller.Canvas.init();
+
 		View.Canvas.initObjects();
 		updateHUD();
 
@@ -14,6 +16,8 @@ namespace Controller
 
 		window.addEventListener('keydown', Controller.onKeyDown);
 		window.addEventListener('resize', View.updateLayout);
+
+		document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
 
 		if (Model.state.fight)
 			onArenaTriggerClicked();
