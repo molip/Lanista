@@ -2,19 +2,19 @@
 
 namespace Data
 {
-	export class Attack { constructor(public name: string, public type: string, public damage: number) { } }
-	export class WeaponSite { constructor(public name: string, public type: string, public replacesAttack: boolean) { } }
+	export class Attack { constructor(public readonly name: string, public readonly type: string, public readonly damage: number) { } }
+	export class WeaponSite { constructor(public readonly name: string, public readonly type: string, public readonly replacesAttack: boolean) { } }
 
 	export class Site
 	{
-		constructor(public species: string, public type: string, public count: number) { }
+		constructor(public readonly species: string, public readonly type: string, public readonly count: number) { }
 	}
 
 	export namespace Armour
 	{
 		export class Type
 		{
-			constructor(public name: string, public cost: number, public image: string, public description: string, public sites: Site[], public defence: { [key: string]: number }) { }
+			constructor(public readonly name: string, public readonly cost: number, public readonly image: string, public readonly description: string, public readonly sites: Site[], public readonly defence: { [key: string]: number }) { }
 			validate()
 			{
 				for (let site of this.sites)
@@ -38,7 +38,7 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public name: string, public block: number, public cost: number, public image: string, public description: string, public sites: Site[], public attacks: Attack[]) { }
+			constructor(public readonly name: string, public readonly block: number, public readonly cost: number, public readonly image: string, public readonly description: string, public readonly sites: Site[], public readonly attacks: Attack[]) { }
 			validate()
 			{
 				for (let site of this.sites)
@@ -67,7 +67,7 @@ namespace Data
 
 	export class BodyPart
 	{
-		constructor(public health: number, public names: string[], public attack: Attack, public weaponSite: WeaponSite) { }
+		constructor(public readonly health: number, public readonly names: string[], public readonly attack: Attack, public readonly weaponSite: WeaponSite) { }
 	}
 
 	export namespace Species
@@ -75,7 +75,7 @@ namespace Data
 		export class Type
 		{
 			bodyParts: { [key: string]: BodyPart };
-			constructor(public name: string) { }
+			constructor(public readonly name: string) { }
 		}
 		export let Types: { [key: string]: Type };
 	}
@@ -84,7 +84,7 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public cost: number, public shopImage: string, public species: string, public name: string, public description: string, public armour: string[], public weapons: string[]) { }
+			constructor(public readonly cost: number, public readonly shopImage: string, public readonly species: string, public readonly name: string, public readonly description: string, public readonly armour: string[], public readonly weapons: string[]) { }
 			validate()
 			{
 				if (!Species.Types[this.species])
