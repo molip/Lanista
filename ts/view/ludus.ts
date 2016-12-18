@@ -180,6 +180,9 @@ namespace View
 					ctx.stroke();
 				}
 			}
+
+			if (Page.Current && Page.Current.draw)
+				Page.Current.draw();
 		}
 
 		static initObjects()
