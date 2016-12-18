@@ -10,14 +10,14 @@ var Controller;
     (function (Canvas) {
         Canvas.HotObject = null;
         function init() {
-            var canvas = View.getCanvas();
+            var canvas = View.ludus.element;
             canvas.addEventListener('click', Controller.Canvas.onClick);
             canvas.addEventListener('mousemove', Controller.Canvas.onMouseMove);
             canvas.addEventListener('mouseout', Controller.Canvas.onMouseOut);
         }
         Canvas.init = init;
         function hitTestObjects(x, y) {
-            for (var _i = 0, _a = View.Canvas.Objects; _i < _a.length; _i++) {
+            for (var _i = 0, _a = View.ludus.Objects; _i < _a.length; _i++) {
                 var obj = _a[_i];
                 if (obj.isEnabled() && obj.getRect().pointInRect(new Point(x, y)))
                     return obj;
@@ -30,19 +30,19 @@ var Controller;
         }
         Canvas.onClick = onClick;
         function onMouseMove(e) {
-            var devPos = Util.getEventPos(e, View.getCanvas());
-            var logPos = View.Canvas.devToLog(devPos.x, devPos.y);
+            var devPos = Util.getEventPos(e, View.ludus.element);
+            var logPos = View.ludus.devToLog(devPos.x, devPos.y);
             var obj = hitTestObjects(logPos.x, logPos.y);
             if (obj != Canvas.HotObject) {
                 Canvas.HotObject = obj;
-                View.Canvas.draw();
+                View.ludus.draw();
             }
         }
         Canvas.onMouseMove = onMouseMove;
         function onMouseOut() {
             if (Canvas.HotObject) {
                 Canvas.HotObject = null;
-                View.Canvas.draw();
+                View.ludus.draw();
             }
         }
         Canvas.onMouseOut = onMouseOut;
@@ -56,7 +56,6 @@ var Controller;
         Model.init();
         View.init();
         Controller.Canvas.init();
-        View.Canvas.initObjects();
         updateHUD();
         window.setInterval(Controller.onTick, 100);
         window.addEventListener('keydown', Controller.onKeyDown);
@@ -72,7 +71,7 @@ var Controller;
     Controller.onResize = onResize;
     function onTick() {
         if (Model.state.update(0.1)) {
-            View.Canvas.updateObjects();
+            View.ludus.updateObjects();
             updateHUD();
         }
         if (View.Page.Current != null)
@@ -101,7 +100,7 @@ var Controller;
         if (confirm('Reset game?')) {
             Model.resetState();
             updateHUD();
-            View.Canvas.initObjects();
+            View.ludus.initObjects();
         }
     }
     Controller.onResetClicked = onResetClicked;
@@ -184,7 +183,7 @@ var Controller;
                     handler = function () {
                         Model.state.buildings.buyUpgrade(id);
                         Controller.updateHUD();
-                        View.Canvas.updateObjects();
+                        View.ludus.updateObjects();
                     };
                     addItem(page, level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, handler);
                     page.show();
@@ -1027,6 +1026,58 @@ var Util;
 "use strict";
 var View;
 (function (View) {
+    var Animation = (function () {
+        function Animation(duration) {
+            this.duration = duration;
+            this.startTime = 0;
+            this.progress = 0;
+        }
+        Animation.prototype.start = function () {
+            this.startTime = new Date().getTime();
+        };
+        Animation.prototype.update = function () {
+            var now = new Date().getTime();
+            this.progress = (now - this.startTime) / this.duration;
+            if (this.progress >= 1) {
+                this.progress = 1;
+                return false;
+            }
+            return true;
+        };
+        Animation.prototype.draw = function (ctx) { };
+        return Animation;
+    }());
+    View.Animation = Animation;
+    var Sequence = (function () {
+        function Sequence() {
+            this.items = [];
+        }
+        Sequence.prototype.start = function () {
+            if (this.items.length) {
+                this.items[0].start();
+                return true;
+            }
+            return false;
+        };
+        Sequence.prototype.update = function () {
+            if (this.items.length) {
+                if (this.items[0].update())
+                    return true;
+                this.items.shift(); // Finished.
+            }
+            return this.start();
+        };
+        Sequence.prototype.draw = function (ctx) {
+            if (this.items.length)
+                this.items[0].draw(ctx);
+        };
+        return Sequence;
+    }());
+    View.Sequence = Sequence;
+})(View || (View = {}));
+"use strict";
+var View;
+(function (View) {
     var Page = (function () {
         function Page(title) {
             this.title = title;
@@ -1212,13 +1263,15 @@ var View;
     View.CanvasObject = CanvasObject;
     var CanvasImage = (function (_super) {
         __extends(CanvasImage, _super);
-        function CanvasImage() {
+        function CanvasImage(canvas) {
             _super.call(this);
+            this.canvas = canvas;
             this.pos = new Point(0, 0);
         }
         CanvasImage.prototype.loadImage = function (path) {
+            var _this = this;
             this.image = new Image();
-            this.image.onload = function () { View.Canvas.draw.call(View.Canvas); };
+            this.image.onload = function () { _this.canvas.draw(); };
             this.image.src = path;
         };
         CanvasImage.prototype.draw = function (ctx) {
@@ -1230,10 +1283,57 @@ var View;
         return CanvasImage;
     }(CanvasObject));
     View.CanvasImage = CanvasImage;
+    var Canvas = (function () {
+        function Canvas(element) {
+            this.element = element;
+        }
+        Canvas.prototype.devToLog = function (x, y) {
+            var scale = this.element.clientWidth / this.element.width;
+            return new Point(x / scale, y / scale);
+        };
+        Canvas.prototype.draw = function () {
+        };
+        return Canvas;
+    }());
+    View.Canvas = Canvas;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    var KennelsPage = (function (_super) {
+        __extends(KennelsPage, _super);
+        function KennelsPage() {
+            _super.call(this, 'Kennels');
+            var tableFactory = new View.Table.Factory();
+            this.div.appendChild(tableFactory.element);
+            tableFactory.addColumnHeader('Name', 20);
+            tableFactory.addColumnHeader('Image', 30);
+            tableFactory.addColumnHeader('Part', 10);
+            tableFactory.addColumnHeader('Health', 10);
+            tableFactory.addColumnHeader('Armour', 15);
+            tableFactory.addColumnHeader('Weapon', 15);
+            for (var _i = 0, _a = Model.state.getAnimals(); _i < _a.length; _i++) {
+                var animal = _a[_i];
+                var cells = [new View.Table.TextCell('<h4>' + animal.name + '</h4>'), new View.Table.ImageCell(animal.image)];
+                for (var _b = 0, _c = Util.formatRows(animal.getStatus()); _b < _c.length; _b++) {
+                    var c = _c[_b];
+                    cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
+                }
+                tableFactory.addRow(cells, false, null);
+            }
+        }
+        return KennelsPage;
+    }(View.Page));
+    View.KennelsPage = KennelsPage;
+})(View || (View = {}));
+"use strict";
+var View;
+(function (View) {
     var Trigger = (function (_super) {
         __extends(Trigger, _super);
         function Trigger(id, handler) {
-            _super.call(this);
+            _super.call(this, View.ludus);
             this.id = id;
             this.handler = handler;
         }
@@ -1242,7 +1342,7 @@ var View;
                 this.handler(this.id);
         };
         return Trigger;
-    }(CanvasImage));
+    }(View.CanvasImage));
     View.Trigger = Trigger;
     var Building = (function (_super) {
         __extends(Building, _super);
@@ -1305,28 +1405,24 @@ var View;
         return Building;
     }(Trigger));
     View.Building = Building;
-    var Canvas = (function () {
-        function Canvas() {
+    var Ludus = (function (_super) {
+        __extends(Ludus, _super);
+        function Ludus() {
+            _super.call(this, document.getElementById('canvas_ludus'));
+            this.Objects = [];
+            this.Buildings = {};
+            this.BackgroundImage = new View.CanvasImage(this);
+            this.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage);
+            this.element.width = View.Width;
+            this.element.height = View.Height;
+            this.initObjects();
         }
-        Canvas.init = function () {
-            Canvas.BackgroundImage = new CanvasImage();
-            Canvas.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage);
-            var canvas = View.getCanvas();
-            View.getCanvas().width = View.Width;
-            View.getCanvas().height = View.Height;
-        };
-        Canvas.devToLog = function (x, y) {
-            var canvas = View.getCanvas();
-            var scale = canvas.clientWidth / canvas.width;
-            return new Point(x / scale, y / scale);
-        };
-        Canvas.draw = function () {
+        Ludus.prototype.draw = function () {
             if (!this.BackgroundImage.image.complete)
                 return;
-            var canvas = View.getCanvas();
-            var ctx = canvas.getContext("2d");
+            var ctx = this.element.getContext("2d");
             ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, this.element.width, this.element.height);
             this.BackgroundImage.draw(ctx);
             for (var i = 0, obj; obj = this.Objects[i]; ++i) {
                 obj.draw(ctx);
@@ -1340,7 +1436,7 @@ var View;
                 }
             }
         };
-        Canvas.initObjects = function () {
+        Ludus.prototype.initObjects = function () {
             this.Objects.length = 0;
             this.Buildings = {};
             var town = Data.Misc.TownTrigger;
@@ -1351,7 +1447,7 @@ var View;
             this.updateObjects();
             this.draw();
         };
-        Canvas.updateObjects = function () {
+        Ludus.prototype.updateObjects = function () {
             var redraw = false;
             for (var id in Data.Buildings.Levels) {
                 if (Model.state.buildings.getCurrentLevelIndex(id) >= 0 || Model.state.buildings.isConstructing(id)) {
@@ -1368,41 +1464,9 @@ var View;
             if (redraw)
                 this.draw();
         };
-        Canvas.Objects = [];
-        Canvas.Buildings = {};
-        return Canvas;
-    }());
-    View.Canvas = Canvas;
-})(View || (View = {}));
-/// <reference path="page.ts" />
-"use strict";
-var View;
-(function (View) {
-    var KennelsPage = (function (_super) {
-        __extends(KennelsPage, _super);
-        function KennelsPage() {
-            _super.call(this, 'Kennels');
-            var tableFactory = new View.Table.Factory();
-            this.div.appendChild(tableFactory.element);
-            tableFactory.addColumnHeader('Name', 20);
-            tableFactory.addColumnHeader('Image', 30);
-            tableFactory.addColumnHeader('Part', 10);
-            tableFactory.addColumnHeader('Health', 10);
-            tableFactory.addColumnHeader('Armour', 15);
-            tableFactory.addColumnHeader('Weapon', 15);
-            for (var _i = 0, _a = Model.state.getAnimals(); _i < _a.length; _i++) {
-                var animal = _a[_i];
-                var cells = [new View.Table.TextCell('<h4>' + animal.name + '</h4>'), new View.Table.ImageCell(animal.image)];
-                for (var _b = 0, _c = Util.formatRows(animal.getStatus()); _b < _c.length; _b++) {
-                    var c = _c[_b];
-                    cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
-                }
-                tableFactory.addRow(cells, false, null);
-            }
-        }
-        return KennelsPage;
-    }(View.Page));
-    View.KennelsPage = KennelsPage;
+        return Ludus;
+    }(View.Canvas));
+    View.Ludus = Ludus;
 })(View || (View = {}));
 "use strict";
 var View;
@@ -1497,14 +1561,10 @@ var View;
     View.Width = 1280;
     View.Height = 720;
     function init() {
-        View.Canvas.init();
+        View.ludus = new View.Ludus();
         View.updateLayout();
     }
     View.init = init;
-    function getCanvas() {
-        return document.getElementById("canvas_ludus");
-    }
-    View.getCanvas = getCanvas;
     function showInfo(title, description) {
         var page = new View.Page(title);
         page.div.innerHTML = '<p>' + description + '</p>';
@@ -1539,7 +1599,7 @@ var View;
         div.style.left = offset.x.toString() + 'px';
         div.style.right = offset.x.toString() + 'px';
         div.style.fontSize = (scale * 20).toString() + 'px';
-        View.Canvas.draw();
+        View.ludus.draw();
     }
     View.updateLayout = updateLayout;
 })(View || (View = {}));

@@ -4,16 +4,12 @@ namespace View
 {
 	export let Width = 1280;
 	export let Height = 720;
+	export let ludus: Ludus;
 
 	export function init()
 	{
-		View.Canvas.init();
+		View.ludus = new Ludus();
 		View.updateLayout();
-	}
-
-	export function getCanvas(): HTMLCanvasElement
-	{
-		return <HTMLCanvasElement>document.getElementById("canvas_ludus");
 	}
 
 	export function showInfo(title: string, description: string)
@@ -59,6 +55,6 @@ namespace View
 		div.style.right = offset.x.toString() + 'px';
 		div.style.fontSize = (scale * 20).toString() + 'px';
 
-		View.Canvas.draw();
+		View.ludus.draw();
 	}
 }

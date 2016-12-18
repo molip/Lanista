@@ -8,7 +8,7 @@ namespace Controller
 
 		export function init()
 		{
-			var canvas = View.getCanvas();
+			var canvas = View.ludus.element;
 			canvas.addEventListener('click', Controller.Canvas.onClick);
 			canvas.addEventListener('mousemove', Controller.Canvas.onMouseMove);
 			canvas.addEventListener('mouseout', Controller.Canvas.onMouseOut);
@@ -16,7 +16,7 @@ namespace Controller
 
 		function hitTestObjects(x: number, y: number): View.CanvasObject
 		{
-			for (let obj of View.Canvas.Objects)
+			for (let obj of View.ludus.Objects)
 				if (obj.isEnabled() && obj.getRect().pointInRect(new Point(x, y)))
 					return obj;
 			return null;
@@ -30,13 +30,13 @@ namespace Controller
 
 		export function onMouseMove(e: MouseEvent)
 		{
-			let devPos: Point = Util.getEventPos(e, View.getCanvas());
-			let logPos: Point = View.Canvas.devToLog(devPos.x, devPos.y);
+			let devPos: Point = Util.getEventPos(e, View.ludus.element);
+			let logPos: Point = View.ludus.devToLog(devPos.x, devPos.y);
 			let obj: View.CanvasObject = hitTestObjects(logPos.x, logPos.y);
 			if (obj != HotObject)
 			{
 				HotObject = obj;
-				View.Canvas.draw();
+				View.ludus.draw();
 			}
 		}
 
@@ -45,7 +45,7 @@ namespace Controller
 			if (HotObject)
 			{
 				HotObject = null;
-				View.Canvas.draw();
+				View.ludus.draw();
 			}
 		}
 	}

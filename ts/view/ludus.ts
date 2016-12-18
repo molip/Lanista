@@ -2,44 +2,6 @@
 
 namespace View 
 {
-	export class CanvasObject
-	{
-		constructor() { }
-		draw(ctx: CanvasRenderingContext2D) { }
-		getRect(): Rect { return null; }
-		onClick() {}
-		isEnabled() { return true; }
-	}
-
-	export class CanvasImage extends CanvasObject
-	{
-		image: HTMLImageElement;
-		pos: Point;
-
-		constructor()
-		{
-			super();
-			this.pos = new Point(0, 0);
-		}
-
-		loadImage(path: string)
-		{
-			this.image = new Image();
-			this.image.onload = function () { View.Canvas.draw.call(View.Canvas); };
-			this.image.src = path;
-		}
-
-		draw(ctx: CanvasRenderingContext2D)
-		{
-			ctx.drawImage(this.image, this.pos.x, this.pos.y);
-		}
-
-		getRect()
-		{
-			return new Rect(this.pos.x, this.pos.y, this.pos.x + this.image.width, this.pos.y + this.image.height);
-		}
-	}
-
 	export class Trigger extends CanvasImage
 	{
 		constructor(public id: string, public handler: (id: string) => void)
@@ -78,7 +40,7 @@ namespace View
 			if (index < 0 && !this.image)
 			{
 				let level = Data.Buildings.getLevel(this.id, 0);
-				this.loadImage(Data.Misc.ConstructionImage);
+				this.loadImage(Data.Misc.ConstructionImage, () => { this.onload() });
 				this.pos = new Point(level.mapX, level.mapY);
 				changed = true;
 			}
@@ -86,7 +48,7 @@ namespace View
 			{
 				this.levelIndex = index;
 				var level = Data.Buildings.getLevel(this.id, index);
-				this.loadImage(level.mapImage);
+				this.loadImage(level.mapImage, () => { this.onload() });
 				this.pos = new Point(level.mapX, level.mapY);
 				changed = true;
 			}
@@ -101,6 +63,11 @@ namespace View
 				changed = true;
 
 			return changed;
+		}
+
+		onload()
+		{
+			View.ludus.draw();
 		}
 
 		draw(ctx: CanvasRenderingContext2D)
@@ -130,39 +97,33 @@ namespace View
 			super.draw(ctx);
 		}
 	}
-	export class Canvas
+	export class Ludus extends Canvas
 	{
-		static Objects: CanvasObject[] = [];
-		static Buildings: { [key: string]: Building } = {};
-		static BackgroundImage: CanvasImage;
+		Objects: CanvasObject[] = [];
+		Buildings: { [key: string]: Building } = {};
+		BackgroundImage: CanvasImage;
 
-		static init()
+		constructor()
 		{
-			Canvas.BackgroundImage = new CanvasImage();
-			Canvas.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage);
+			super(<HTMLCanvasElement>document.getElementById('canvas_ludus'));
 
-			var canvas = View.getCanvas();
-			View.getCanvas().width = View.Width;
-			View.getCanvas().height = View.Height;
+			this.BackgroundImage = new CanvasImage();
+			this.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage, () => { this.draw() });
+
+			this.element.width = View.Width;
+			this.element.height = View.Height;
+			this.initObjects();
 		}
 
-		static devToLog(x: number, y: number): Point
-		{
-			let canvas = View.getCanvas();
-			let scale = canvas.clientWidth / canvas.width;
-			return new Point(x / scale, y / scale);
-		}
-
-		static draw()
+		draw()
 		{
 			if (!this.BackgroundImage.image.complete)
 				return;
 
-			var canvas = View.getCanvas();
-			var ctx = canvas.getContext("2d");
+			var ctx = this.element.getContext("2d");
 
 			ctx.setTransform(1, 0, 0, 1, 0, 0)
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.clearRect(0, 0, this.element.width, this.element.height);
 
 			this.BackgroundImage.draw(ctx);
 
@@ -180,19 +141,16 @@ namespace View
 					ctx.stroke();
 				}
 			}
-
-			if (Page.Current && Page.Current.draw)
-				Page.Current.draw();
 		}
 
-		static initObjects()
+		initObjects()
 		{
 			this.Objects.length = 0;
 			this.Buildings = {};
 
 			let town = Data.Misc.TownTrigger;
 			let trigger = new View.Trigger('town', Controller.onTownTriggerClicked);
-			trigger.loadImage(town.mapImage);
+			trigger.loadImage(town.mapImage, () => { this.draw() });
 			trigger.pos = new Point(town.mapX, town.mapY);
 			this.Objects.push(trigger);
 
@@ -200,7 +158,7 @@ namespace View
 			this.draw();
 		}
 
-		static updateObjects()
+		updateObjects()
 		{
 			let redraw = false;
 			for (var id in Data.Buildings.Levels)

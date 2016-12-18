@@ -37,7 +37,7 @@ namespace Controller
 					{
 						Model.state.buildings.buyUpgrade(id);
 						Controller.updateHUD();
-						View.Canvas.updateObjects();
+						View.ludus.updateObjects();
 					};
 
 					addItem(page, level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, handler);

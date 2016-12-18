@@ -9,7 +9,6 @@ namespace Controller
 		View.init();
 		Controller.Canvas.init();
 
-		View.Canvas.initObjects();
 		updateHUD();
 
 		window.setInterval(Controller.onTick, 100);
@@ -32,7 +31,7 @@ namespace Controller
 	{
 		if (Model.state.update(0.1))
 		{
-			View.Canvas.updateObjects();
+			View.ludus.updateObjects();
 			updateHUD();
 		}
 
@@ -65,7 +64,7 @@ namespace Controller
 		{
 			Model.resetState();
 			updateHUD();
-			View.Canvas.initObjects();
+			View.ludus.initObjects();
 		}
 	}
 
