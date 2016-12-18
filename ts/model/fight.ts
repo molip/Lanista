@@ -52,13 +52,13 @@ namespace Model
 				let defense = armourData ? armourData.getDefense(attackData.type) : 0;
 				let damage = attackData.damage * (100 - defense) / 100;
 
-				let oldHealth = targetData.health;
-				targetData.health = Math.max(0, targetData.health - damage);
+				let oldHealth = target.health;
+				target.health = Math.max(0, oldHealth - damage);
 
 				let msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.names[target.index] + '. ';
 				msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
-				msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + targetData.health.toFixed(1) + '. ';
-				return { text: msg, dead: targetData.health == 0 };
+				msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + target.health.toFixed(1) + '. ';
+				return { text: msg, dead: target.health == 0 };
 			}
 		}
 	}
