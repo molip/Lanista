@@ -34,9 +34,6 @@ namespace Controller
 			View.ludus.updateObjects();
 			updateHUD();
 		}
-
-		if (View.Page.Current != null)
-			View.Page.Current.onTick();
 	}
 
 	export function onBuildingTriggerClicked(id: string)

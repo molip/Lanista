@@ -4,6 +4,11 @@ namespace Model
 {
 	export namespace Fight
 	{
+		export class AttackResult
+		{
+			constructor(public name: string, public description: string, public attackDamage: number, public defense: number) { }
+		}
+
 		export type Team = string[]; // Fighter IDs. 
 		export class State
 		{
@@ -30,10 +35,12 @@ namespace Model
 
 				let result = this.attack(attacker, defender);
 
-				this.text += result.text + '<br>';
-				this.finished = result.dead;
+				this.text += result.description + '<br>';
+				this.finished = defender.isDead();
 
-				return this.finished;
+				Model.saveState();
+
+				return result;
 			}
 
 			attack(attacker: Fighter, defender: Fighter)
@@ -58,7 +65,7 @@ namespace Model
 				let msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.names[target.index] + '. ';
 				msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
 				msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + target.health.toFixed(1) + '. ';
-				return { text: msg, dead: target.health == 0 };
+				return new AttackResult(attackData.name, msg, attackData.damage, defense); 
 			}
 		}
 	}

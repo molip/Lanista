@@ -74,8 +74,6 @@ var Controller;
             View.ludus.updateObjects();
             updateHUD();
         }
-        if (View.Page.Current != null)
-            View.Page.Current.onTick();
     }
     Controller.onTick = onTick;
     function onBuildingTriggerClicked(id) {
@@ -677,6 +675,12 @@ var Model;
                 parts.push(this.bodyParts[id]); // TODO: Check body part health ? 
             return parts;
         };
+        Fighter.prototype.isDead = function () {
+            for (var id in this.bodyParts)
+                if (this.bodyParts[id].health == 0)
+                    return true;
+            return false;
+        };
         return Fighter;
     }());
     Model.Fighter = Fighter;
@@ -788,6 +792,16 @@ var Model;
 (function (Model) {
     var Fight;
     (function (Fight) {
+        var AttackResult = (function () {
+            function AttackResult(name, description, attackDamage, defense) {
+                this.name = name;
+                this.description = description;
+                this.attackDamage = attackDamage;
+                this.defense = defense;
+            }
+            return AttackResult;
+        }());
+        Fight.AttackResult = AttackResult;
         var State = (function () {
             function State(teamA, teamB) {
                 this.teams = [teamA, teamB];
@@ -802,9 +816,10 @@ var Model;
                 this.nextTeamIndex = (this.nextTeamIndex + 1) % this.teams.length;
                 var defender = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
                 var result = this.attack(attacker, defender);
-                this.text += result.text + '<br>';
-                this.finished = result.dead;
-                return this.finished;
+                this.text += result.description + '<br>';
+                this.finished = defender.isDead();
+                Model.saveState();
+                return result;
             };
             State.prototype.attack = function (attacker, defender) {
                 var attacks = attacker.getAttacks();
@@ -817,12 +832,12 @@ var Model;
                 var armourData = armour ? Data.Armour.Types[armour.tag] : null;
                 var defense = armourData ? armourData.getDefense(attackData.type) : 0;
                 var damage = attackData.damage * (100 - defense) / 100;
-                var oldHealth = targetData.health;
-                targetData.health = Math.max(0, targetData.health - damage);
+                var oldHealth = target.health;
+                target.health = Math.max(0, oldHealth - damage);
                 var msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.names[target.index] + '. ';
                 msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
-                msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + targetData.health.toFixed(1) + '. ';
-                return { text: msg, dead: targetData.health == 0 };
+                msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + target.health.toFixed(1) + '. ';
+                return new AttackResult(attackData.name, msg, attackData.damage, defense);
             };
             return State;
         }());
@@ -842,7 +857,8 @@ var Model;
         }
         State.prototype.update = function (seconds) {
             var changed = this.buildings.update(seconds);
-            Model.saveState();
+            if (changed)
+                Model.saveState();
             return changed;
         };
         State.prototype.getMoney = function () { return Model.state.money; };
@@ -893,10 +909,12 @@ var Model;
         State.prototype.startFight = function (teamA, teamB) {
             Util.assert(this.fight == null);
             this.fight = new Model.Fight.State(teamA, teamB);
+            Model.saveState();
         };
         State.prototype.endFight = function () {
-            Util.assert(this.fight && this.fight.finished);
+            Util.assert(!!this.fight);
             this.fight = null;
+            Model.saveState();
         };
         State.prototype.getUniqueFighterName = function (name) {
             var _this = this;
@@ -970,6 +988,8 @@ var Point = (function () {
         this.x = x;
         this.y = y;
     }
+    Point.prototype.translate = function (ctx) { ctx.translate(this.x, this.y); };
+    ;
     return Point;
 }());
 var Rect = (function () {
@@ -981,10 +1001,17 @@ var Rect = (function () {
     }
     Rect.prototype.width = function () { return this.right - this.left; };
     Rect.prototype.height = function () { return this.bottom - this.top; };
+    Rect.prototype.centre = function () { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); };
     Rect.prototype.path = function (ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); };
     ;
     Rect.prototype.pointInRect = function (point) {
         return point.x >= this.left && point.y >= this.top && point.x < this.right && point.y < this.bottom;
+    };
+    Rect.prototype.offset = function (dx, dy) {
+        this.left += dx;
+        this.right += dx;
+        this.top += dy;
+        this.bottom += dy;
     };
     return Rect;
 }());
@@ -1022,6 +1049,14 @@ var Util;
         return Math.floor(Math.random() * max);
     }
     Util.getRandomInt = getRandomInt;
+    function lerp(start, end, param) {
+        return start + (end - start) * param;
+    }
+    Util.lerp = lerp;
+    function querp(start, end, param) {
+        return start + (end - start) * param * param;
+    }
+    Util.querp = querp;
 })(Util || (Util = {}));
 "use strict";
 var View;
@@ -1068,8 +1103,10 @@ var View;
             return this.start();
         };
         Sequence.prototype.draw = function (ctx) {
-            if (this.items.length)
+            if (this.items.length) {
+                ctx.save();
                 this.items[0].draw(ctx);
+            }
         };
         return Sequence;
     }());
@@ -1108,9 +1145,10 @@ var View;
             elem.appendChild(backButton);
             elem.appendChild(this.div);
             elem.className = 'show';
+            this.onShow();
         };
+        Page.prototype.onShow = function () { };
         Page.prototype.onClose = function () { return true; };
-        Page.prototype.onTick = function () { };
         Page.Current = null;
         return Page;
     }());
@@ -1137,36 +1175,148 @@ var View;
 "use strict";
 var View;
 (function (View) {
+    function drawAttack(name, ctx) {
+        ctx.textAlign = "center";
+        ctx.textBaseline = 'middle';
+        ctx.font = '50px Arial';
+        ctx.fillStyle = '#ff0000';
+        ctx.fillText(name, 0, 0);
+    }
+    var GrowAnimation = (function (_super) {
+        __extends(GrowAnimation, _super);
+        function GrowAnimation(name, point) {
+            _super.call(this, 300);
+            this.name = name;
+            this.point = point;
+        }
+        GrowAnimation.prototype.draw = function (ctx) {
+            var scale = Util.querp(0, 1, this.progress);
+            ctx.translate(this.point.x, this.point.y);
+            ctx.scale(scale, scale);
+            drawAttack(this.name, ctx);
+        };
+        return GrowAnimation;
+    }(View.Animation));
+    //class ExplodeAnimation extends Animation
+    //{
+    //	constructor(private name: string, private point: Point)
+    //	{
+    //		super(300);
+    //	}
+    //	draw(ctx: CanvasRenderingContext2D)
+    //	{
+    //		let scale = Util.lerp(1, 15, this.progress); 
+    //		ctx.translate(this.point.x, this.point.y);
+    //		ctx.scale(scale, scale);
+    //		ctx.globalAlpha = 1 - this.progress;
+    //		drawAttack(this.name, ctx);
+    //		ctx.globalAlpha = 1;
+    //	}
+    //}
+    var DamageAnimation = (function (_super) {
+        __extends(DamageAnimation, _super);
+        function DamageAnimation(name, point) {
+            _super.call(this, 1000);
+            this.name = name;
+            this.point = point;
+        }
+        DamageAnimation.prototype.draw = function (ctx) {
+            var offset = Util.querp(0, 100, this.progress);
+            ctx.translate(this.point.x, this.point.y - offset);
+            ctx.globalAlpha = 1 - this.progress * this.progress;
+            drawAttack(this.name, ctx);
+            ctx.globalAlpha = 1;
+        };
+        return DamageAnimation;
+    }(View.Animation));
+    var PauseAnimation = (function (_super) {
+        __extends(PauseAnimation, _super);
+        function PauseAnimation(name, point, duration) {
+            _super.call(this, duration);
+            this.name = name;
+            this.point = point;
+        }
+        PauseAnimation.prototype.draw = function (ctx) {
+            ctx.translate(this.point.x, this.point.y);
+            drawAttack(this.name, ctx);
+        };
+        return PauseAnimation;
+    }(View.Animation));
+    var MoveAnimation = (function (_super) {
+        __extends(MoveAnimation, _super);
+        function MoveAnimation(name, pointA, pointB) {
+            _super.call(this, 500);
+            this.name = name;
+            this.pointA = pointA;
+            this.pointB = pointB;
+        }
+        MoveAnimation.prototype.draw = function (ctx) {
+            var x = Util.querp(this.pointA.x, this.pointB.x, this.progress);
+            var y = Util.querp(this.pointA.y, this.pointB.y, this.progress);
+            ctx.translate(x, y);
+            ctx.rotate(2 * Math.PI * this.progress * 2 * (this.pointA.x > this.pointB.x ? -1 : 1));
+            drawAttack(this.name, ctx);
+        };
+        return MoveAnimation;
+    }(View.Animation));
     var ArenaPage = (function (_super) {
         __extends(ArenaPage, _super);
         function ArenaPage() {
             var _this = this;
             _super.call(this, 'Arena');
+            this.backgroundImage = new View.CanvasImage();
+            this.imageA = new View.CanvasImage();
+            this.imageB = new View.CanvasImage();
+            this.sequence = null;
+            this.timer = 0;
+            this.scale = 0.8;
             this.onStartButton = function () {
+                if (Model.state.fight) {
+                    Model.state.endFight();
+                    _this.updateStartButton();
+                    _this.sequence = null;
+                    _this.draw();
+                    return;
+                }
                 var teams = [];
                 var fighterIDs = Model.state.getFighterIDs();
                 teams.push([fighterIDs[_this.selectA.selectedIndex]]);
                 teams.push([fighterIDs[_this.selectB.selectedIndex]]);
                 Model.state.startFight(teams[0], teams[1]);
-                _this.button.disabled = _this.selectA.disabled = _this.selectB.disabled = true;
+                _this.selectA.disabled = _this.selectB.disabled = true;
+                _this.updateStartButton();
+                _this.doAttack();
             };
-            this.updateStartButton = function () {
-                var a = _this.selectA.selectedIndex;
-                var b = _this.selectB.selectedIndex;
-                _this.button.disabled = !!Model.state.fight || a < 0 || b < 0 || a == b;
+            this.onTick = function () {
+                if (_this.sequence) {
+                    if (_this.sequence.update()) {
+                        _this.draw();
+                    }
+                    else {
+                        _this.sequence = null;
+                        if (Model.state.fight)
+                            _this.doAttack();
+                        else
+                            window.clearInterval(_this.timer);
+                    }
+                }
+            };
+            this.onFightersChanged = function () {
+                _this.updateStartButton();
+                _this.updateImages();
             };
             this.ticks = 0;
             var topDiv = document.createElement('div');
-            topDiv.style.top = '0%';
-            topDiv.style.bottom = '95%';
-            topDiv.style.position = 'absolute';
+            topDiv.id = 'arena_top_div';
             this.selectA = document.createElement('select');
             this.selectB = document.createElement('select');
-            this.selectA.addEventListener('change', this.updateStartButton);
-            this.selectB.addEventListener('change', this.updateStartButton);
+            this.selectA.addEventListener('change', this.onFightersChanged);
+            this.selectB.addEventListener('change', this.onFightersChanged);
             var makeOption = function (id) {
                 var option = document.createElement('option');
                 option.text = Model.state.fighters[id].name;
+                if (Model.state.fighters[id].isDead())
+                    option.text += ' (x_x)';
                 return option;
             };
             for (var id in Model.state.fighters) {
@@ -1176,7 +1326,6 @@ var View;
             if (this.selectB.options.length > 1)
                 this.selectB.selectedIndex = 1;
             this.button = document.createElement('button');
-            this.button.innerText = 'Start';
             this.button.addEventListener('click', this.onStartButton);
             topDiv.appendChild(this.selectA);
             topDiv.appendChild(this.selectB);
@@ -1184,27 +1333,72 @@ var View;
             this.para = document.createElement('p');
             this.para.style.margin = '0';
             this.scroller = document.createElement('div');
+            this.scroller.id = 'arena_scroller';
             this.scroller.className = 'scroller';
-            this.scroller.style.top = '5%';
             this.scroller.appendChild(this.para);
+            var canvas = document.createElement('canvas');
+            canvas.id = 'arena_canvas';
+            this.canvas = new View.Canvas(canvas);
             this.div.appendChild(topDiv);
+            this.div.appendChild(canvas);
             this.div.appendChild(this.scroller);
+            this.backgroundImage.loadImage(Data.Misc.LudusBackgroundImage, function () { _this.draw(); });
             this.update();
             this.updateStartButton();
+            this.updateImages();
         }
+        ArenaPage.prototype.onShow = function () {
+            this.canvas.element.width = View.Width;
+            this.canvas.element.height = View.Width * this.canvas.element.clientHeight / this.canvas.element.clientWidth;
+            if (Model.state.fight) {
+                var fighterIDs = Model.state.getFighterIDs();
+                this.selectA.selectedIndex = fighterIDs.indexOf(Model.state.fight.teams[0][0]);
+                this.selectB.selectedIndex = fighterIDs.indexOf(Model.state.fight.teams[1][0]);
+                this.doAttack();
+            }
+            this.draw();
+        };
         ArenaPage.prototype.onClose = function () {
             return Model.state.fight == null;
         };
-        ArenaPage.prototype.onTick = function () {
-            ++this.ticks;
-            if (this.ticks % 1 == 0) {
-                if (Model.state.fight) {
-                    var finished = Model.state.fight.step();
-                    this.update();
-                    if (finished)
-                        Model.state.endFight();
-                }
+        ArenaPage.prototype.doAttack = function () {
+            Util.assert(!!Model.state.fight);
+            if (!this.timer)
+                this.timer = window.setInterval(this.onTick, 40);
+            var attackerIndex = Model.state.fight.nextTeamIndex;
+            var result = Model.state.fight.step();
+            var defenderIndex = Model.state.fight.nextTeamIndex;
+            this.update();
+            if (Model.state.fight.finished) {
+                Model.state.endFight();
+                this.updateStartButton();
             }
+            this.sequence = new View.Sequence();
+            var pointA = this.getImageRect(attackerIndex).centre();
+            var pointB = this.getImageRect(defenderIndex).centre();
+            this.sequence.items.push(new GrowAnimation(result.name, pointA));
+            this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
+            this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
+            var damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
+            this.sequence.items.push(new DamageAnimation(damageString, pointB));
+            this.sequence.items.push(new View.Animation(1000));
+            this.sequence.start();
+        };
+        ArenaPage.prototype.getFighters = function () {
+            var fighterIDs = Model.state.getFighterIDs();
+            var fighterA = this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]];
+            var fighterB = this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]];
+            return [fighterA, fighterB];
+        };
+        ArenaPage.prototype.updateStartButton = function () {
+            if (Model.state.fight) {
+                this.button.innerText = 'Stop';
+                this.button.disabled = false;
+                return;
+            }
+            this.button.innerText = 'Start';
+            var fighters = this.getFighters();
+            this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
         };
         ArenaPage.prototype.update = function () {
             if (!Model.state.fight)
@@ -1213,6 +1407,48 @@ var View;
             this.para.innerHTML = Model.state.fight.text;
             if (atEnd)
                 this.scroller.scrollTop = this.scroller.scrollHeight;
+        };
+        ArenaPage.prototype.updateImages = function () {
+            var _this = this;
+            var fighters = this.getFighters();
+            if (fighters.indexOf(null) >= 0)
+                return;
+            this.imageA.loadImage(fighters[0].image, function () { _this.draw(); });
+            this.imageB.loadImage(fighters[1].image, function () { _this.draw(); });
+            this.draw();
+        };
+        ArenaPage.prototype.getImageRect = function (index) {
+            var image = index ? this.imageB : this.imageA;
+            var rect = new Rect(0, 0, image.image.width * this.scale, image.image.height * this.scale);
+            var x = this.canvas.element.width / 2 + (index ? 50 : -50 - rect.width());
+            var y = this.canvas.element.height - rect.height();
+            rect.offset(x, y);
+            return rect;
+        };
+        ArenaPage.prototype.draw = function () {
+            if (!this.backgroundImage.image.complete)
+                return;
+            var ctx = this.canvas.element.getContext("2d");
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, this.canvas.element.width, this.canvas.element.height);
+            this.backgroundImage.draw(ctx);
+            if (this.selectA.selectedIndex < 0 || this.selectB.selectedIndex < 0)
+                return;
+            ctx.save();
+            var rectA = this.getImageRect(0);
+            ctx.translate(rectA.left, rectA.top);
+            ctx.scale(this.scale, this.scale);
+            this.imageA.draw(ctx);
+            ctx.restore();
+            ctx.save();
+            var rectB = this.getImageRect(1);
+            ctx.translate(rectB.right, rectB.top);
+            ctx.scale(-1, 1);
+            ctx.scale(this.scale, this.scale);
+            this.imageB.draw(ctx);
+            ctx.restore();
+            if (this.sequence)
+                this.sequence.draw(ctx);
         };
         return ArenaPage;
     }(View.Page));
@@ -1263,15 +1499,13 @@ var View;
     View.CanvasObject = CanvasObject;
     var CanvasImage = (function (_super) {
         __extends(CanvasImage, _super);
-        function CanvasImage(canvas) {
+        function CanvasImage() {
             _super.call(this);
-            this.canvas = canvas;
             this.pos = new Point(0, 0);
         }
-        CanvasImage.prototype.loadImage = function (path) {
-            var _this = this;
+        CanvasImage.prototype.loadImage = function (path, onLoad) {
             this.image = new Image();
-            this.image.onload = function () { _this.canvas.draw(); };
+            this.image.onload = function () { onLoad(); };
             this.image.src = path;
         };
         CanvasImage.prototype.draw = function (ctx) {
@@ -1292,6 +1526,7 @@ var View;
             return new Point(x / scale, y / scale);
         };
         Canvas.prototype.draw = function () {
+            Util.assert(false);
         };
         return Canvas;
     }());
@@ -1333,7 +1568,7 @@ var View;
     var Trigger = (function (_super) {
         __extends(Trigger, _super);
         function Trigger(id, handler) {
-            _super.call(this, View.ludus);
+            _super.call(this);
             this.id = id;
             this.handler = handler;
         }
@@ -1356,18 +1591,19 @@ var View;
             return Model.state.buildings.getCurrentLevelIndex(this.id) >= 0;
         };
         Building.prototype.update = function () {
+            var _this = this;
             var changed = false;
             var index = Model.state.buildings.getCurrentLevelIndex(this.id);
             if (index < 0 && !this.image) {
                 var level_1 = Data.Buildings.getLevel(this.id, 0);
-                this.loadImage(Data.Misc.ConstructionImage);
+                this.loadImage(Data.Misc.ConstructionImage, function () { _this.onload(); });
                 this.pos = new Point(level_1.mapX, level_1.mapY);
                 changed = true;
             }
             else if (this.levelIndex != index) {
                 this.levelIndex = index;
                 var level = Data.Buildings.getLevel(this.id, index);
-                this.loadImage(level.mapImage);
+                this.loadImage(level.mapImage, function () { _this.onload(); });
                 this.pos = new Point(level.mapX, level.mapY);
                 changed = true;
             }
@@ -1379,6 +1615,9 @@ var View;
             if (this.progress != oldProgress)
                 changed = true;
             return changed;
+        };
+        Building.prototype.onload = function () {
+            View.ludus.draw();
         };
         Building.prototype.draw = function (ctx) {
             if (this.progress >= 0) {
@@ -1408,11 +1647,12 @@ var View;
     var Ludus = (function (_super) {
         __extends(Ludus, _super);
         function Ludus() {
+            var _this = this;
             _super.call(this, document.getElementById('canvas_ludus'));
             this.Objects = [];
             this.Buildings = {};
-            this.BackgroundImage = new View.CanvasImage(this);
-            this.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage);
+            this.BackgroundImage = new View.CanvasImage();
+            this.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage, function () { _this.draw(); });
             this.element.width = View.Width;
             this.element.height = View.Height;
             this.initObjects();
@@ -1437,11 +1677,12 @@ var View;
             }
         };
         Ludus.prototype.initObjects = function () {
+            var _this = this;
             this.Objects.length = 0;
             this.Buildings = {};
             var town = Data.Misc.TownTrigger;
             var trigger = new View.Trigger('town', Controller.onTownTriggerClicked);
-            trigger.loadImage(town.mapImage);
+            trigger.loadImage(town.mapImage, function () { _this.draw(); });
             trigger.pos = new Point(town.mapX, town.mapY);
             this.Objects.push(trigger);
             this.updateObjects();

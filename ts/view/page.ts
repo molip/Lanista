@@ -47,10 +47,12 @@ namespace View
 			elem.appendChild(backButton);
 			elem.appendChild(this.div);
 			elem.className = 'show';
+
+			this.onShow();
 		}
 
+		onShow() { }
 		onClose() { return true; }
-		onTick() { } 
 	}
 
 	export class ListPage extends Page

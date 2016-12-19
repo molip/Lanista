@@ -40,4 +40,14 @@ namespace Util
 	{
 		return Math.floor(Math.random() * max);
 	}
+
+	export function lerp(start: number, end: number, param: number)
+	{
+		return start + (end - start) * param;
+	}
+
+	export function querp(start: number, end: number, param: number)
+	{
+		return start + (end - start) * param * param;
+	}
 }

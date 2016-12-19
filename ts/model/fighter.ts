@@ -234,5 +234,14 @@ namespace Model
 				parts.push(this.bodyParts[id]); // TODO: Check body part health ? 
 			return parts;
 		}
+
+		isDead()
+		{
+			for (let id in this.bodyParts)
+				if (this.bodyParts[id].health == 0)
+					return true;
+
+			return false;
+		}
 	}
 }

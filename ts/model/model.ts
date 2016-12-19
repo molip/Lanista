@@ -23,7 +23,8 @@ namespace Model
 		update(seconds: number)
 		{
 			let changed = this.buildings.update(seconds);
-			Model.saveState();
+			if (changed)
+				Model.saveState();
 			return changed;
 		}
 
@@ -91,12 +92,14 @@ namespace Model
 		{
 			Util.assert(this.fight == null);
 			this.fight = new Fight.State(teamA, teamB);
+			Model.saveState();
 		}
 
 		endFight()
 		{
-			Util.assert(this.fight && this.fight.finished);
+			Util.assert(!!this.fight);
 			this.fight = null;
+			Model.saveState();
 		}
 
 		private getUniqueFighterName(name: string)
