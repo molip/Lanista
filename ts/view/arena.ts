@@ -170,7 +170,7 @@ namespace View
 			this.div.appendChild(canvas);
 			this.div.appendChild(this.scroller);
 
-			this.backgroundImage.loadImage(Data.Misc.LudusBackgroundImage, () => { this.draw() });
+			this.backgroundImage.loadImage(Data.Misc.ArenaBackgroundImage, () => { this.draw() });
 
 			this.update();
 			this.updateStartButton();
@@ -350,7 +350,14 @@ namespace View
 			ctx.setTransform(1, 0, 0, 1, 0, 0)
 			ctx.clearRect(0, 0, this.canvas.element.width, this.canvas.element.height);
 
+			ctx.save();
+			ctx.scale(1280 / 800, 1280 / 800);
+			ctx.translate(400, 0);
+			ctx.scale(1.7, 1.7);
+			ctx.translate(-400, 0);
+			ctx.translate(0, -200);
 			this.backgroundImage.draw(ctx);
+			ctx.restore();
 
 			if (this.selectA.selectedIndex < 0 || this.selectB.selectedIndex < 0)
 				return;

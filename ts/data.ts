@@ -157,5 +157,6 @@ namespace Data
 		export let TownTrigger: { mapX: number, mapY: number, mapImage: string };
 		export let LudusBackgroundImage: string;
 		export let ConstructionImage: string
+		export let ArenaBackgroundImage: string;
 	}
 }
