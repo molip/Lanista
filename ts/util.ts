@@ -50,4 +50,11 @@ namespace Util
 	{
 		return start + (end - start) * param * param;
 	}
+
+	export function scaleCentred(ctx: CanvasRenderingContext2D, scale: number, x: number, y: number)
+	{
+		ctx.translate(x, y);
+		ctx.scale(scale, scale);
+		ctx.translate(-x, -y);
+	}
 }

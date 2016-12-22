@@ -38,6 +38,11 @@ namespace View
 		{
 			return new Rect(this.pos.x, this.pos.y, this.pos.x + this.image.width, this.pos.y + this.image.height);
 		}
+
+		isComplete()
+		{
+			return this.image && this.image.complete; 
+		}
 	}
 
 	export class Canvas

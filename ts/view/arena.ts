@@ -112,7 +112,6 @@ namespace View
 		imageB: CanvasImage = new CanvasImage();
 		sequence: Sequence = null;
 		timer: number = 0;
-		scale = 0.8;
 
 		constructor()
 		{
@@ -333,7 +332,7 @@ namespace View
 		getImageRect(index: number)
 		{
 			let image = index ? this.imageB : this.imageA;
-			let rect = new Rect(0, 0, image.image.width * this.scale, image.image.height * this.scale);
+			let rect = new Rect(0, 0, image.image.width, image.image.height);
 			let x = this.canvas.element.width / 2 + (index ? 50 : - 50 - rect.width());
 			let y = this.canvas.element.height - rect.height();
 			rect.offset(x, y);
@@ -345,35 +344,48 @@ namespace View
 			if (!this.backgroundImage.image.complete)
 				return;
 
-			var ctx = this.canvas.element.getContext("2d");
-
+			let ctx = this.canvas.element.getContext("2d");
+			let width = this.canvas.element.width;
+			let height = this.canvas.element.height;
 			ctx.setTransform(1, 0, 0, 1, 0, 0)
-			ctx.clearRect(0, 0, this.canvas.element.width, this.canvas.element.height);
+			ctx.clearRect(0, 0, width, height);
+
+			let gotImages = this.imageA.isComplete() && this.imageB.isComplete();
+			let rectA: Rect, rectB: Rect;
+
+			if (gotImages)
+			{
+				rectA = this.getImageRect(0);
+				rectB = this.getImageRect(1);
+
+				// Scale to fit.
+				let scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
+				let scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
+				let scale = Math.max(scaleX, scaleY);
+				Util.scaleCentred(ctx, 1 / scale, 640, height);
+			}
 
 			ctx.save();
 			ctx.scale(1280 / 800, 1280 / 800);
-			ctx.translate(400, 0);
-			ctx.scale(1.7, 1.7);
-			ctx.translate(-400, 0);
-			ctx.translate(0, -200);
+			Util.scaleCentred(ctx, 1.5, 400, 0);
+			ctx.translate(-12, -200);
 			this.backgroundImage.draw(ctx);
 			ctx.restore();
 
-			if (this.selectA.selectedIndex < 0 || this.selectB.selectedIndex < 0)
+			if (!gotImages)
 				return;
 
+			// Scale because all the animals are too big. 
+			Util.scaleCentred(ctx, 0.4, 640, height);
+
 			ctx.save();
-			let rectA = this.getImageRect(0);
 			ctx.translate(rectA.left, rectA.top);
-			ctx.scale(this.scale, this.scale);
 			this.imageA.draw(ctx);
 			ctx.restore();
 
 			ctx.save();
-			let rectB = this.getImageRect(1);
 			ctx.translate(rectB.right, rectB.top);
 			ctx.scale(-1, 1);
-			ctx.scale(this.scale, this.scale);
 			this.imageB.draw(ctx);
 			ctx.restore();
 

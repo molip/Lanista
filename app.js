@@ -1057,6 +1057,12 @@ var Util;
         return start + (end - start) * param * param;
     }
     Util.querp = querp;
+    function scaleCentred(ctx, scale, x, y) {
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.translate(-x, -y);
+    }
+    Util.scaleCentred = scaleCentred;
 })(Util || (Util = {}));
 "use strict";
 var View;
@@ -1269,7 +1275,6 @@ var View;
             this.imageB = new View.CanvasImage();
             this.sequence = null;
             this.timer = 0;
-            this.scale = 0.8;
             this.onStartButton = function () {
                 if (Model.state.fight) {
                     Model.state.endFight();
@@ -1419,7 +1424,7 @@ var View;
         };
         ArenaPage.prototype.getImageRect = function (index) {
             var image = index ? this.imageB : this.imageA;
-            var rect = new Rect(0, 0, image.image.width * this.scale, image.image.height * this.scale);
+            var rect = new Rect(0, 0, image.image.width, image.image.height);
             var x = this.canvas.element.width / 2 + (index ? 50 : -50 - rect.width());
             var y = this.canvas.element.height - rect.height();
             rect.offset(x, y);
@@ -1429,29 +1434,38 @@ var View;
             if (!this.backgroundImage.image.complete)
                 return;
             var ctx = this.canvas.element.getContext("2d");
+            var width = this.canvas.element.width;
+            var height = this.canvas.element.height;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.clearRect(0, 0, this.canvas.element.width, this.canvas.element.height);
+            ctx.clearRect(0, 0, width, height);
+            var gotImages = this.imageA.isComplete() && this.imageB.isComplete();
+            var rectA, rectB;
+            if (gotImages) {
+                rectA = this.getImageRect(0);
+                rectB = this.getImageRect(1);
+                // Scale to fit.
+                var scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
+                var scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
+                var scale = Math.max(scaleX, scaleY);
+                Util.scaleCentred(ctx, 1 / scale, 640, height);
+            }
             ctx.save();
             ctx.scale(1280 / 800, 1280 / 800);
-            ctx.translate(400, 0);
-            ctx.scale(1.7, 1.7);
-            ctx.translate(-400, 0);
-            ctx.translate(0, -200);
+            Util.scaleCentred(ctx, 1.5, 400, 0);
+            ctx.translate(-12, -200);
             this.backgroundImage.draw(ctx);
             ctx.restore();
-            if (this.selectA.selectedIndex < 0 || this.selectB.selectedIndex < 0)
+            if (!gotImages)
                 return;
+            // Scale because all the animals are too big. 
+            Util.scaleCentred(ctx, 0.4, 640, height);
             ctx.save();
-            var rectA = this.getImageRect(0);
             ctx.translate(rectA.left, rectA.top);
-            ctx.scale(this.scale, this.scale);
             this.imageA.draw(ctx);
             ctx.restore();
             ctx.save();
-            var rectB = this.getImageRect(1);
             ctx.translate(rectB.right, rectB.top);
             ctx.scale(-1, 1);
-            ctx.scale(this.scale, this.scale);
             this.imageB.draw(ctx);
             ctx.restore();
             if (this.sequence)
@@ -1520,6 +1534,9 @@ var View;
         };
         CanvasImage.prototype.getRect = function () {
             return new Rect(this.pos.x, this.pos.y, this.pos.x + this.image.width, this.pos.y + this.image.height);
+        };
+        CanvasImage.prototype.isComplete = function () {
+            return this.image && this.image.complete;
         };
         return CanvasImage;
     }(CanvasObject));
