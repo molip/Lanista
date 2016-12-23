@@ -61,6 +61,7 @@ var Controller;
         window.addEventListener('keydown', Controller.onKeyDown);
         window.addEventListener('resize', View.updateLayout);
         document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
+        document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
         if (Model.state.fight)
             onArenaTriggerClicked();
     }
@@ -102,6 +103,10 @@ var Controller;
         }
     }
     Controller.onResetClicked = onResetClicked;
+    function onDebugClicked() {
+        new View.DebugPage().show();
+    }
+    Controller.onDebugClicked = onDebugClicked;
     function onHomeTriggerClicked() {
         View.showInfo('Home', 'TODO: general stats etc. go here.');
     }
@@ -689,6 +694,13 @@ var Model;
                 if (this.bodyParts[id].health == 0)
                     return true;
             return false;
+        };
+        Fighter.prototype.resetHealth = function () {
+            for (var _i = 0, _a = this.getBodyParts(); _i < _a.length; _i++) {
+                var part = _a[_i];
+                part.health = part.getData(this.getSpeciesData()).health;
+            }
+            Model.saveState();
         };
         return Fighter;
     }());
@@ -1663,6 +1675,39 @@ var View;
         return Canvas;
     }());
     View.Canvas = Canvas;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    var DebugPage = (function (_super) {
+        __extends(DebugPage, _super);
+        function DebugPage() {
+            _super.call(this, 'Debug');
+            this.onBuyAll = function () {
+                for (var tag in Data.Animals.Types) {
+                    Model.state.addMoney(Data.Animals.Types[tag].cost);
+                    Model.state.buyAnimal(tag);
+                }
+                View.Page.hideCurrent();
+            };
+            this.onHeal = function () {
+                for (var id in Model.state.fighters)
+                    Model.state.fighters[id].resetHealth();
+                View.Page.hideCurrent();
+            };
+            this.addButton('Buy all animals', this.onBuyAll);
+            this.addButton('Heal fighters', this.onHeal);
+        }
+        DebugPage.prototype.addButton = function (caption, handler) {
+            var button = document.createElement('button');
+            button.innerText = caption;
+            button.addEventListener('click', handler);
+            this.div.appendChild(button);
+        };
+        return DebugPage;
+    }(View.Page));
+    View.DebugPage = DebugPage;
 })(View || (View = {}));
 /// <reference path="page.ts" />
 "use strict";

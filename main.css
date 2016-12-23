@@ -71,7 +71,7 @@ tr {
 	pointer-events:none;
 }
 
-#reset_btn
+#reset_btn, #debug_btn 
 {
 	float:right;
 	font-size: 0.5em;

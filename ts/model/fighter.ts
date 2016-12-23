@@ -243,5 +243,12 @@ namespace Model
 
 			return false;
 		}
+
+		resetHealth()
+		{
+			for (let part of this.getBodyParts())
+				part.health = part.getData(this.getSpeciesData()).health;
+			Model.saveState();
+		}
 	}
 }

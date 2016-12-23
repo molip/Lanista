@@ -17,6 +17,7 @@ namespace Controller
 		window.addEventListener('resize', View.updateLayout);
 
 		document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
+		document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
 
 		if (Model.state.fight)
 			onArenaTriggerClicked();
@@ -63,6 +64,11 @@ namespace Controller
 			updateHUD();
 			View.ludus.initObjects();
 		}
+	}
+
+	export function onDebugClicked()
+	{
+		new View.DebugPage().show();
 	}
 
 	function onHomeTriggerClicked()
