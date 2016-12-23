@@ -13,9 +13,9 @@ namespace Model
 			return speciesData.bodyParts[this.tag];
 		}
 
-		getName(speciesData: Data.Species.Type)
+		getInstanceData(speciesData: Data.Species.Type)
 		{
-			return this.getData(speciesData).names[this.index];
+			return this.getData(speciesData).instances[this.index];
 		}
 
 		// Gets tag of armour or weapon site, if present.
@@ -41,7 +41,7 @@ namespace Model
 			for (let tag in data.bodyParts)
 			{
 				let part = data.bodyParts[tag];
-				for (let i = 0, partName = ''; partName = part.names[i]; ++i)
+				for (let i = 0; i < part.instances.length; ++i)
 				{
 					this.bodyParts[this.nextBodyPartID] = new BodyPart(this.nextBodyPartID.toString(), tag, i, part.health);
 					++this.nextBodyPartID;
@@ -197,7 +197,7 @@ namespace Model
 				let data = speciesData.bodyParts[part.tag];
 				let row: string[] = [];
 				rows.push(row);
-				row.push(part.getName(speciesData));
+				row.push(part.getInstanceData(speciesData).name);
 				row.push(part.health.toString() + '/' + data.health);
 				row.push(partArmour[id] ? partArmour[id] : '');
 				row.push(partWeapons[id] ? partWeapons[id] : '');

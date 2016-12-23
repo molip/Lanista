@@ -6,7 +6,7 @@ namespace Model
 	{
 		export class AttackResult
 		{
-			constructor(public name: string, public description: string, public attackDamage: number, public defense: number) { }
+			constructor(public name: string, public description: string, public attackDamage: number, public defense: number, public targetIndex: number) { }
 		}
 
 		export type Team = string[]; // Fighter IDs. 
@@ -50,7 +50,8 @@ namespace Model
 
 				let defenderSpeciesData = defender.getSpeciesData();
 				let targets = defender.getBodyParts();
-				let target = targets[Util.getRandomInt(targets.length)];
+				let targetIndex = Util.getRandomInt(targets.length);
+				let target = targets[targetIndex];
 				let targetData = target.getData(defenderSpeciesData);
 
 				let armour = defender.getBodyPartArmour(target.id);
@@ -62,10 +63,10 @@ namespace Model
 				let oldHealth = target.health;
 				target.health = Math.max(0, oldHealth - damage);
 
-				let msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.names[target.index] + '. ';
+				let msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
 				msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
 				msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + target.health.toFixed(1) + '. ';
-				return new AttackResult(attackData.name, msg, attackData.damage, defense); 
+				return new AttackResult(attackData.name, msg, attackData.damage, defense, targetIndex); 
 			}
 		}
 	}

@@ -6,6 +6,7 @@ namespace View
 	{
 		startTime: number = 0;
 		progress: number = 0;
+		onStart: () => void = null;
 		constructor(public duration: number)
 		{
 		}
@@ -13,6 +14,8 @@ namespace View
 		start()
 		{
 			this.startTime = new Date().getTime();
+			if (this.onStart)
+				this.onStart();
 		}
 
 		update()
@@ -28,7 +31,7 @@ namespace View
 			return true;
 		}
 
-		draw(ctx: CanvasRenderingContext2D) {}
+		draw(ctx: CanvasRenderingContext2D, xform: Xform) { }
 	}
 
 	export class Sequence
@@ -62,12 +65,12 @@ namespace View
 			return this.start();
 		}
 
-		draw(ctx: CanvasRenderingContext2D)
+		draw(ctx: CanvasRenderingContext2D, xform?: Xform)
 		{
 			if (this.items.length)
 			{
 				ctx.save();
-				this.items[0].draw(ctx);
+				this.items[0].draw(ctx, xform ? xform : new Xform());
 			}
 		}
 	}

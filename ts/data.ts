@@ -65,9 +65,14 @@ namespace Data
 		export let Types: { [key: string]: Type };
 	}
 
+	export class BodyPartInstance
+	{
+		constructor(public readonly name: string, public readonly x: number, public readonly y: number) { }
+	}
+
 	export class BodyPart
 	{
-		constructor(public readonly health: number, public readonly names: string[], public readonly attack: Attack, public readonly weaponSite: WeaponSite) { }
+		constructor(public readonly health: number, public readonly attack: Attack, public readonly weaponSite: WeaponSite, public readonly instances: BodyPartInstance[]) { }
 	}
 
 	export namespace Species

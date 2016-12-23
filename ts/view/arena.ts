@@ -19,11 +19,12 @@ namespace View
 			super(300);
 		}
 
-		draw(ctx: CanvasRenderingContext2D)
+		draw(ctx: CanvasRenderingContext2D, xform: Xform)
 		{
 			let scale = Util.querp(0, 1, this.progress); 
 
-			ctx.translate(this.point.x, this.point.y);
+			let point = xform.transformPoint(this.point);
+			ctx.translate(point.x, point.y);
 			ctx.scale(scale, scale);
 			drawAttack(this.name, ctx);
 		}
@@ -55,11 +56,12 @@ namespace View
 			super(1000);
 		}
 
-		draw(ctx: CanvasRenderingContext2D)
+		draw(ctx: CanvasRenderingContext2D, xform: Xform)
 		{
 			let offset = Util.querp(0, 100, this.progress);
 
-			ctx.translate(this.point.x, this.point.y - offset);
+			let point = xform.transformPoint(this.point);
+			ctx.translate(point.x, point.y - offset);
 			ctx.globalAlpha = 1 - this.progress * this.progress;
 			drawAttack(this.name, ctx);
 			ctx.globalAlpha = 1;
@@ -73,9 +75,10 @@ namespace View
 			super(duration);
 		}
 
-		draw(ctx: CanvasRenderingContext2D)
+		draw(ctx: CanvasRenderingContext2D, xform: Xform)
 		{
-			ctx.translate(this.point.x, this.point.y);
+			let point = xform.transformPoint(this.point);
+			ctx.translate(point.x, point.y);
 			drawAttack(this.name, ctx);
 		}
 	}
@@ -87,13 +90,16 @@ namespace View
 			super(500);
 		}
 
-		draw(ctx: CanvasRenderingContext2D)
+		draw(ctx: CanvasRenderingContext2D, xform: Xform)
 		{
-			let x = Util.querp(this.pointA.x, this.pointB.x, this.progress);
-			let y = Util.querp(this.pointA.y, this.pointB.y, this.progress);
+			let pointA = xform.transformPoint(this.pointA);
+			let pointB = xform.transformPoint(this.pointB);
+
+			let x = Util.querp(pointA.x, pointB.x, this.progress);
+			let y = Util.querp(pointA.y, pointB.y, this.progress);
 
 			ctx.translate(x, y);
-			ctx.rotate(2 * Math.PI * this.progress * 2 * (this.pointA.x > this.pointB.x ? -1 : 1));
+			ctx.rotate(2 * Math.PI * this.progress * 2 * (pointA.x > pointB.x ? -1 : 1));
 			drawAttack(this.name, ctx);
 		}
 	}
@@ -112,6 +118,7 @@ namespace View
 		imageB: CanvasImage = new CanvasImage();
 		sequence: Sequence = null;
 		timer: number = 0;
+		healths: number[][] = [];
 
 		constructor()
 		{
@@ -173,6 +180,7 @@ namespace View
 
 			this.update();
 			this.updateStartButton();
+			this.updateHealths();
 			this.updateImages();
 		}
 
@@ -242,16 +250,21 @@ namespace View
 				this.updateStartButton();
 			}
 
+			let fighters = this.getFighters();
+			let targetPart = fighters[defenderIndex].getBodyParts()[result.targetIndex];
+
 			this.sequence = new Sequence();
 			let pointA = this.getImageRect(attackerIndex).centre();
-			let pointB = this.getImageRect(defenderIndex).centre();
+			let pointB = this.getBodyPartPoint(defenderIndex, targetPart);
 
 			this.sequence.items.push(new GrowAnimation(result.name, pointA));
 			this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
 			this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
 
 			let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
-			this.sequence.items.push(new DamageAnimation(damageString, pointB));
+			let damageAnim = new DamageAnimation(damageString, pointB);
+			damageAnim.onStart = () => { this.updateHealths(); }
+			this.sequence.items.push(damageAnim);
 			this.sequence.items.push(new Animation(1000));
 			this.sequence.start();
 		}
@@ -278,6 +291,7 @@ namespace View
 		onFightersChanged = () =>
 		{
 			this.updateStartButton();
+			this.updateHealths();
 			this.updateImages();
 		}
 
@@ -329,6 +343,18 @@ namespace View
 			this.draw();
 		}
 
+		updateHealths()
+		{
+			let fighters = this.getFighters();
+			this.healths.length = 0;
+			for (let i = 0; i < 2; ++i)
+			{
+				this.healths.push([]);
+				for (let part of fighters[i].getBodyParts())
+					this.healths[this.healths.length - 1].push(part.health);
+			}
+		}
+
 		getImageRect(index: number)
 		{
 			let image = index ? this.imageB : this.imageA;
@@ -337,6 +363,42 @@ namespace View
 			let y = this.canvas.element.height - rect.height();
 			rect.offset(x, y);
 			return rect;
+		}
+
+		getBodyPartPoint(fighterIndex: number, part: Model.BodyPart)
+		{
+			let fighter = this.getFighters()[fighterIndex];
+			let rect = this.getImageRect(fighterIndex);
+			let data = part.getInstanceData(fighter.getSpeciesData());
+			return new Point(fighterIndex ? rect.right - data.x : rect.left + data.x, rect.top + data.y);
+		}
+
+		drawHealthBar(ctx: CanvasRenderingContext2D, centre: Point, current: number, max: number)
+		{
+			let scale = 5, height = 8;
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = '#802020';
+			ctx.fillStyle = '#f08080';
+
+			let innerRect = new Rect(centre.x - scale * max / 2, centre.y - height / 2, centre.x + scale * max / 2, centre.y + height / 2);
+			let outerRect = innerRect.clone();
+			outerRect.expand(1, 1, 1, 1);
+			innerRect.right = innerRect.left + innerRect.width() * current / max;
+			innerRect.fill(ctx);
+			outerRect.stroke(ctx);
+		}
+
+		drawHealthBars(ctx: CanvasRenderingContext2D, sceneXform: Xform, fighterIndex: number)
+		{
+			let fighter = this.getFighters()[fighterIndex];
+			let parts = fighter.getBodyParts();
+			for (let i = 0; i < parts.length; ++i)
+			{
+				let part = parts[i];
+				let data = part.getData(fighter.getSpeciesData());
+				let point = this.getBodyPartPoint(fighterIndex, part);
+				this.drawHealthBar(ctx, sceneXform.transformPoint(point), this.healths[fighterIndex][i], data.health);
+			}
 		}
 
 		draw()
@@ -352,6 +414,7 @@ namespace View
 
 			let gotImages = this.imageA.isComplete() && this.imageB.isComplete();
 			let rectA: Rect, rectB: Rect;
+			let sceneXform = new Xform();
 
 			if (gotImages)
 			{
@@ -361,11 +424,15 @@ namespace View
 				// Scale to fit.
 				let scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
 				let scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
-				let scale = Math.max(scaleX, scaleY);
-				Util.scaleCentred(ctx, 1 / scale, 640, height);
+				let scale = Math.max(Math.max(scaleX, scaleY), 0.4);
+
+				sceneXform.matrix = sceneXform.matrix.translate(640, height);
+				sceneXform.matrix = sceneXform.matrix.scale(1 / scale);
+				sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
 			}
 
 			ctx.save();
+			sceneXform.apply(ctx);
 			ctx.scale(1280 / 800, 1280 / 800);
 			Util.scaleCentred(ctx, 1.5, 400, 0);
 			ctx.translate(-12, -200);
@@ -376,21 +443,32 @@ namespace View
 				return;
 
 			// Scale because all the animals are too big. 
-			Util.scaleCentred(ctx, 0.4, 640, height);
+			sceneXform.matrix = sceneXform.matrix.translate(640, height);
+			sceneXform.matrix = sceneXform.matrix.scale(0.4);
+			sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
+
+			let fighters = this.getFighters();
+			ctx.fillStyle = '#80f080';
 
 			ctx.save();
+			sceneXform.apply(ctx);
 			ctx.translate(rectA.left, rectA.top);
 			this.imageA.draw(ctx);
 			ctx.restore();
 
 			ctx.save();
+			sceneXform.apply(ctx);
 			ctx.translate(rectB.right, rectB.top);
 			ctx.scale(-1, 1);
 			this.imageB.draw(ctx);
 			ctx.restore();
 
+			this.drawHealthBars(ctx, sceneXform, 0);
+			this.drawHealthBars(ctx, sceneXform, 1);
+
+			//sceneXform.apply(ctx);
 			if (this.sequence)
-				this.sequence.draw(ctx);
+				this.sequence.draw(ctx, sceneXform);
 		}
 	}
 }

@@ -319,12 +319,21 @@ var Data;
         }());
         Weapons.Type = Type;
     })(Weapons = Data.Weapons || (Data.Weapons = {}));
+    var BodyPartInstance = (function () {
+        function BodyPartInstance(name, x, y) {
+            this.name = name;
+            this.x = x;
+            this.y = y;
+        }
+        return BodyPartInstance;
+    }());
+    Data.BodyPartInstance = BodyPartInstance;
     var BodyPart = (function () {
-        function BodyPart(health, names, attack, weaponSite) {
+        function BodyPart(health, attack, weaponSite, instances) {
             this.health = health;
-            this.names = names;
             this.attack = attack;
             this.weaponSite = weaponSite;
+            this.instances = instances;
         }
         return BodyPart;
     }());
@@ -484,8 +493,8 @@ var Model;
         BodyPart.prototype.getData = function (speciesData) {
             return speciesData.bodyParts[this.tag];
         };
-        BodyPart.prototype.getName = function (speciesData) {
-            return this.getData(speciesData).names[this.index];
+        BodyPart.prototype.getInstanceData = function (speciesData) {
+            return this.getData(speciesData).instances[this.index];
         };
         // Gets tag of armour or weapon site, if present.
         BodyPart.prototype.getSiteTag = function (accType, speciesData) {
@@ -510,7 +519,7 @@ var Model;
             var data = this.getSpeciesData();
             for (var tag in data.bodyParts) {
                 var part = data.bodyParts[tag];
-                for (var i = 0, partName = ''; partName = part.names[i]; ++i) {
+                for (var i = 0; i < part.instances.length; ++i) {
                     this.bodyParts[this.nextBodyPartID] = new BodyPart(this.nextBodyPartID.toString(), tag, i, part.health);
                     ++this.nextBodyPartID;
                 }
@@ -646,7 +655,7 @@ var Model;
                 var data = speciesData.bodyParts[part.tag];
                 var row = [];
                 rows.push(row);
-                row.push(part.getName(speciesData));
+                row.push(part.getInstanceData(speciesData).name);
                 row.push(part.health.toString() + '/' + data.health);
                 row.push(partArmour[id] ? partArmour[id] : '');
                 row.push(partWeapons[id] ? partWeapons[id] : '');
@@ -793,11 +802,12 @@ var Model;
     var Fight;
     (function (Fight) {
         var AttackResult = (function () {
-            function AttackResult(name, description, attackDamage, defense) {
+            function AttackResult(name, description, attackDamage, defense, targetIndex) {
                 this.name = name;
                 this.description = description;
                 this.attackDamage = attackDamage;
                 this.defense = defense;
+                this.targetIndex = targetIndex;
             }
             return AttackResult;
         }());
@@ -826,7 +836,8 @@ var Model;
                 var attackData = attacks[Util.getRandomInt(attacks.length)];
                 var defenderSpeciesData = defender.getSpeciesData();
                 var targets = defender.getBodyParts();
-                var target = targets[Util.getRandomInt(targets.length)];
+                var targetIndex = Util.getRandomInt(targets.length);
+                var target = targets[targetIndex];
                 var targetData = target.getData(defenderSpeciesData);
                 var armour = defender.getBodyPartArmour(target.id);
                 var armourData = armour ? Data.Armour.Types[armour.tag] : null;
@@ -834,10 +845,10 @@ var Model;
                 var damage = attackData.damage * (100 - defense) / 100;
                 var oldHealth = target.health;
                 target.health = Math.max(0, oldHealth - damage);
-                var msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.names[target.index] + '. ';
+                var msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
                 msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
                 msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + target.health.toFixed(1) + '. ';
-                return new AttackResult(attackData.name, msg, attackData.damage, defense);
+                return new AttackResult(attackData.name, msg, attackData.damage, defense, targetIndex);
             };
             return State;
         }());
@@ -933,7 +944,7 @@ var Model;
                 ++i;
             }
         };
-        State.key = "state.v6";
+        State.key = "state.v7";
         return State;
     }());
     Model.State = State;
@@ -988,6 +999,7 @@ var Point = (function () {
         this.x = x;
         this.y = y;
     }
+    Point.prototype.clone = function () { return new Point(this.x, this.y); };
     Point.prototype.translate = function (ctx) { ctx.translate(this.x, this.y); };
     ;
     return Point;
@@ -999,11 +1011,22 @@ var Rect = (function () {
         this.right = right;
         this.bottom = bottom;
     }
+    Rect.prototype.clone = function () { return new Rect(this.left, this.top, this.right, this.bottom); };
     Rect.prototype.width = function () { return this.right - this.left; };
     Rect.prototype.height = function () { return this.bottom - this.top; };
     Rect.prototype.centre = function () { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); };
     Rect.prototype.path = function (ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); };
     ;
+    Rect.prototype.fill = function (ctx) { ctx.fillRect(this.left, this.top, this.width(), this.height()); };
+    ;
+    Rect.prototype.stroke = function (ctx) { ctx.strokeRect(this.left, this.top, this.width(), this.height()); };
+    ;
+    Rect.prototype.expand = function (left, top, right, bottom) {
+        this.left += left;
+        this.top += top;
+        this.right += right;
+        this.bottom += bottom;
+    };
     Rect.prototype.pointInRect = function (point) {
         return point.x >= this.left && point.y >= this.top && point.x < this.right && point.y < this.bottom;
     };
@@ -1014,6 +1037,23 @@ var Rect = (function () {
         this.bottom += dy;
     };
     return Rect;
+}());
+var Xform = (function () {
+    function Xform() {
+        this.matrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix();
+    }
+    Xform.prototype.transformPoint = function (point) {
+        var svgPoint = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGPoint();
+        svgPoint.x = point.x;
+        svgPoint.y = point.y;
+        svgPoint = svgPoint.matrixTransform(this.matrix);
+        return new Point(svgPoint.x, svgPoint.y);
+    };
+    Xform.prototype.apply = function (ctx) {
+        var m = this.matrix;
+        ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
+    };
+    return Xform;
 }());
 "use strict";
 var Util;
@@ -1072,9 +1112,12 @@ var View;
             this.duration = duration;
             this.startTime = 0;
             this.progress = 0;
+            this.onStart = null;
         }
         Animation.prototype.start = function () {
             this.startTime = new Date().getTime();
+            if (this.onStart)
+                this.onStart();
         };
         Animation.prototype.update = function () {
             var now = new Date().getTime();
@@ -1085,7 +1128,7 @@ var View;
             }
             return true;
         };
-        Animation.prototype.draw = function (ctx) { };
+        Animation.prototype.draw = function (ctx, xform) { };
         return Animation;
     }());
     View.Animation = Animation;
@@ -1108,10 +1151,10 @@ var View;
             }
             return this.start();
         };
-        Sequence.prototype.draw = function (ctx) {
+        Sequence.prototype.draw = function (ctx, xform) {
             if (this.items.length) {
                 ctx.save();
-                this.items[0].draw(ctx);
+                this.items[0].draw(ctx, xform ? xform : new Xform());
             }
         };
         return Sequence;
@@ -1195,9 +1238,10 @@ var View;
             this.name = name;
             this.point = point;
         }
-        GrowAnimation.prototype.draw = function (ctx) {
+        GrowAnimation.prototype.draw = function (ctx, xform) {
             var scale = Util.querp(0, 1, this.progress);
-            ctx.translate(this.point.x, this.point.y);
+            var point = xform.transformPoint(this.point);
+            ctx.translate(point.x, point.y);
             ctx.scale(scale, scale);
             drawAttack(this.name, ctx);
         };
@@ -1226,9 +1270,10 @@ var View;
             this.name = name;
             this.point = point;
         }
-        DamageAnimation.prototype.draw = function (ctx) {
+        DamageAnimation.prototype.draw = function (ctx, xform) {
             var offset = Util.querp(0, 100, this.progress);
-            ctx.translate(this.point.x, this.point.y - offset);
+            var point = xform.transformPoint(this.point);
+            ctx.translate(point.x, point.y - offset);
             ctx.globalAlpha = 1 - this.progress * this.progress;
             drawAttack(this.name, ctx);
             ctx.globalAlpha = 1;
@@ -1242,8 +1287,9 @@ var View;
             this.name = name;
             this.point = point;
         }
-        PauseAnimation.prototype.draw = function (ctx) {
-            ctx.translate(this.point.x, this.point.y);
+        PauseAnimation.prototype.draw = function (ctx, xform) {
+            var point = xform.transformPoint(this.point);
+            ctx.translate(point.x, point.y);
             drawAttack(this.name, ctx);
         };
         return PauseAnimation;
@@ -1256,11 +1302,13 @@ var View;
             this.pointA = pointA;
             this.pointB = pointB;
         }
-        MoveAnimation.prototype.draw = function (ctx) {
-            var x = Util.querp(this.pointA.x, this.pointB.x, this.progress);
-            var y = Util.querp(this.pointA.y, this.pointB.y, this.progress);
+        MoveAnimation.prototype.draw = function (ctx, xform) {
+            var pointA = xform.transformPoint(this.pointA);
+            var pointB = xform.transformPoint(this.pointB);
+            var x = Util.querp(pointA.x, pointB.x, this.progress);
+            var y = Util.querp(pointA.y, pointB.y, this.progress);
             ctx.translate(x, y);
-            ctx.rotate(2 * Math.PI * this.progress * 2 * (this.pointA.x > this.pointB.x ? -1 : 1));
+            ctx.rotate(2 * Math.PI * this.progress * 2 * (pointA.x > pointB.x ? -1 : 1));
             drawAttack(this.name, ctx);
         };
         return MoveAnimation;
@@ -1275,6 +1323,7 @@ var View;
             this.imageB = new View.CanvasImage();
             this.sequence = null;
             this.timer = 0;
+            this.healths = [];
             this.onStartButton = function () {
                 if (Model.state.fight) {
                     Model.state.endFight();
@@ -1308,6 +1357,7 @@ var View;
             };
             this.onFightersChanged = function () {
                 _this.updateStartButton();
+                _this.updateHealths();
                 _this.updateImages();
             };
             this.ticks = 0;
@@ -1350,6 +1400,7 @@ var View;
             this.backgroundImage.loadImage(Data.Misc.ArenaBackgroundImage, function () { _this.draw(); });
             this.update();
             this.updateStartButton();
+            this.updateHealths();
             this.updateImages();
         }
         ArenaPage.prototype.onShow = function () {
@@ -1367,6 +1418,7 @@ var View;
             return Model.state.fight == null;
         };
         ArenaPage.prototype.doAttack = function () {
+            var _this = this;
             Util.assert(!!Model.state.fight);
             if (!this.timer)
                 this.timer = window.setInterval(this.onTick, 40);
@@ -1378,14 +1430,18 @@ var View;
                 Model.state.endFight();
                 this.updateStartButton();
             }
+            var fighters = this.getFighters();
+            var targetPart = fighters[defenderIndex].getBodyParts()[result.targetIndex];
             this.sequence = new View.Sequence();
             var pointA = this.getImageRect(attackerIndex).centre();
-            var pointB = this.getImageRect(defenderIndex).centre();
+            var pointB = this.getBodyPartPoint(defenderIndex, targetPart);
             this.sequence.items.push(new GrowAnimation(result.name, pointA));
             this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
             this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
             var damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
-            this.sequence.items.push(new DamageAnimation(damageString, pointB));
+            var damageAnim = new DamageAnimation(damageString, pointB);
+            damageAnim.onStart = function () { _this.updateHealths(); };
+            this.sequence.items.push(damageAnim);
             this.sequence.items.push(new View.Animation(1000));
             this.sequence.start();
         };
@@ -1422,6 +1478,17 @@ var View;
             this.imageB.loadImage(fighters[1].image, function () { _this.draw(); });
             this.draw();
         };
+        ArenaPage.prototype.updateHealths = function () {
+            var fighters = this.getFighters();
+            this.healths.length = 0;
+            for (var i = 0; i < 2; ++i) {
+                this.healths.push([]);
+                for (var _i = 0, _a = fighters[i].getBodyParts(); _i < _a.length; _i++) {
+                    var part = _a[_i];
+                    this.healths[this.healths.length - 1].push(part.health);
+                }
+            }
+        };
         ArenaPage.prototype.getImageRect = function (index) {
             var image = index ? this.imageB : this.imageA;
             var rect = new Rect(0, 0, image.image.width, image.image.height);
@@ -1429,6 +1496,34 @@ var View;
             var y = this.canvas.element.height - rect.height();
             rect.offset(x, y);
             return rect;
+        };
+        ArenaPage.prototype.getBodyPartPoint = function (fighterIndex, part) {
+            var fighter = this.getFighters()[fighterIndex];
+            var rect = this.getImageRect(fighterIndex);
+            var data = part.getInstanceData(fighter.getSpeciesData());
+            return new Point(fighterIndex ? rect.right - data.x : rect.left + data.x, rect.top + data.y);
+        };
+        ArenaPage.prototype.drawHealthBar = function (ctx, centre, current, max) {
+            var scale = 5, height = 8;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#802020';
+            ctx.fillStyle = '#f08080';
+            var innerRect = new Rect(centre.x - scale * max / 2, centre.y - height / 2, centre.x + scale * max / 2, centre.y + height / 2);
+            var outerRect = innerRect.clone();
+            outerRect.expand(1, 1, 1, 1);
+            innerRect.right = innerRect.left + innerRect.width() * current / max;
+            innerRect.fill(ctx);
+            outerRect.stroke(ctx);
+        };
+        ArenaPage.prototype.drawHealthBars = function (ctx, sceneXform, fighterIndex) {
+            var fighter = this.getFighters()[fighterIndex];
+            var parts = fighter.getBodyParts();
+            for (var i = 0; i < parts.length; ++i) {
+                var part = parts[i];
+                var data = part.getData(fighter.getSpeciesData());
+                var point = this.getBodyPartPoint(fighterIndex, part);
+                this.drawHealthBar(ctx, sceneXform.transformPoint(point), this.healths[fighterIndex][i], data.health);
+            }
         };
         ArenaPage.prototype.draw = function () {
             if (!this.backgroundImage.image.complete)
@@ -1440,16 +1535,20 @@ var View;
             ctx.clearRect(0, 0, width, height);
             var gotImages = this.imageA.isComplete() && this.imageB.isComplete();
             var rectA, rectB;
+            var sceneXform = new Xform();
             if (gotImages) {
                 rectA = this.getImageRect(0);
                 rectB = this.getImageRect(1);
                 // Scale to fit.
                 var scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
                 var scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
-                var scale = Math.max(scaleX, scaleY);
-                Util.scaleCentred(ctx, 1 / scale, 640, height);
+                var scale = Math.max(Math.max(scaleX, scaleY), 0.4);
+                sceneXform.matrix = sceneXform.matrix.translate(640, height);
+                sceneXform.matrix = sceneXform.matrix.scale(1 / scale);
+                sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
             }
             ctx.save();
+            sceneXform.apply(ctx);
             ctx.scale(1280 / 800, 1280 / 800);
             Util.scaleCentred(ctx, 1.5, 400, 0);
             ctx.translate(-12, -200);
@@ -1458,18 +1557,27 @@ var View;
             if (!gotImages)
                 return;
             // Scale because all the animals are too big. 
-            Util.scaleCentred(ctx, 0.4, 640, height);
+            sceneXform.matrix = sceneXform.matrix.translate(640, height);
+            sceneXform.matrix = sceneXform.matrix.scale(0.4);
+            sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
+            var fighters = this.getFighters();
+            ctx.fillStyle = '#80f080';
             ctx.save();
+            sceneXform.apply(ctx);
             ctx.translate(rectA.left, rectA.top);
             this.imageA.draw(ctx);
             ctx.restore();
             ctx.save();
+            sceneXform.apply(ctx);
             ctx.translate(rectB.right, rectB.top);
             ctx.scale(-1, 1);
             this.imageB.draw(ctx);
             ctx.restore();
+            this.drawHealthBars(ctx, sceneXform, 0);
+            this.drawHealthBars(ctx, sceneXform, 1);
+            //sceneXform.apply(ctx);
             if (this.sequence)
-                this.sequence.draw(ctx);
+                this.sequence.draw(ctx, sceneXform);
         };
         return ArenaPage;
     }(View.Page));
