@@ -347,8 +347,9 @@ namespace View
 			for (let i = 0; i < 2; ++i)
 			{
 				this.healths.push([]);
-				for (let part of fighters[i].getBodyParts())
-					this.healths[this.healths.length - 1].push(part.health);
+				if (fighters[i])
+					for (let part of fighters[i].getBodyParts())
+						this.healths[this.healths.length - 1].push(part.health);
 			}
 		}
 

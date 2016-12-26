@@ -1514,10 +1514,11 @@ var View;
             this.healths.length = 0;
             for (var i = 0; i < 2; ++i) {
                 this.healths.push([]);
-                for (var _i = 0, _a = fighters[i].getBodyParts(); _i < _a.length; _i++) {
-                    var part = _a[_i];
-                    this.healths[this.healths.length - 1].push(part.health);
-                }
+                if (fighters[i])
+                    for (var _i = 0, _a = fighters[i].getBodyParts(); _i < _a.length; _i++) {
+                        var part = _a[_i];
+                        this.healths[this.healths.length - 1].push(part.health);
+                    }
             }
         };
         ArenaPage.prototype.getImageRect = function (index) {
