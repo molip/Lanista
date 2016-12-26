@@ -19,6 +19,7 @@ namespace View
 			button.innerText = caption;
 			button.addEventListener('click', handler);
 			this.div.appendChild(button);
+			this.div.appendChild(document.createElement('br'));
 		}
 
 		onBuyAll = () =>

@@ -4,21 +4,12 @@ namespace Model
 {
 	export class State
 	{
-		static key: string = "state.v7"
-		private money: number;
-		buildings: Buildings.State;
-		fight: Fight.State;
-		fighters: { [id: string]: Fighter };
-		nextFighterID: number;
-
-		constructor()
-		{
-			this.money = 1000;
-			this.buildings = new Buildings.State();
-			this.fight = null;
-			this.fighters = {};
-			this.nextFighterID = 1;
-		}
+		static key: string = "state.v8"
+		private money = 1000;
+		buildings = new Buildings.State();
+		fight: Fight.State = null;
+		fighters: { [id: string]: Fighter } = {};
+		nextFighterID = 1;
 
 		update(seconds: number)
 		{

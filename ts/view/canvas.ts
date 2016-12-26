@@ -14,13 +14,7 @@ namespace View
 	export class CanvasImage extends CanvasObject
 	{
 		image: HTMLImageElement;
-		pos: Point;
-
-		constructor()
-		{
-			super();
-			this.pos = new Point(0, 0);
-		}
+		pos: Point = new Point(0, 0);
 
 		loadImage(path: string, onLoad: () => void)
 		{

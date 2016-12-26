@@ -11,7 +11,7 @@ namespace Controller
 
 		updateHUD();
 
-		window.setInterval(Controller.onTick, 100);
+		window.setInterval(Controller.onTick, 1000);
 
 		window.addEventListener('keydown', Controller.onKeyDown);
 		window.addEventListener('resize', View.updateLayout);
@@ -30,7 +30,7 @@ namespace Controller
 
 	export function onTick()
 	{
-		if (Model.state.update(0.1))
+		if (Model.state.update(1))
 		{
 			View.ludus.updateObjects();
 			updateHUD();

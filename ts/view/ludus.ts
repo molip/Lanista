@@ -101,13 +101,12 @@ namespace View
 	{
 		Objects: CanvasObject[] = [];
 		Buildings: { [key: string]: Building } = {};
-		BackgroundImage: CanvasImage;
+		BackgroundImage: CanvasImage = new CanvasImage();
 
 		constructor()
 		{
 			super(<HTMLCanvasElement>document.getElementById('canvas_ludus'));
 
-			this.BackgroundImage = new CanvasImage();
 			this.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage, () => { this.draw() });
 
 			this.element.width = View.Width;

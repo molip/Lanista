@@ -57,7 +57,7 @@ var Controller;
         View.init();
         Controller.Canvas.init();
         updateHUD();
-        window.setInterval(Controller.onTick, 100);
+        window.setInterval(Controller.onTick, 1000);
         window.addEventListener('keydown', Controller.onKeyDown);
         window.addEventListener('resize', View.updateLayout);
         document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
@@ -71,7 +71,7 @@ var Controller;
     }
     Controller.onResize = onResize;
     function onTick() {
-        if (Model.state.update(0.1)) {
+        if (Model.state.update(1)) {
             View.ludus.updateObjects();
             updateHUD();
         }
@@ -956,7 +956,7 @@ var Model;
                 ++i;
             }
         };
-        State.key = "state.v7";
+        State.key = "state.v8";
         return State;
     }());
     Model.State = State;
@@ -1372,7 +1372,6 @@ var View;
                 _this.updateHealths();
                 _this.updateImages();
             };
-            this.ticks = 0;
             var topDiv = document.createElement('div');
             topDiv.id = 'arena_top_div';
             this.selectA = document.createElement('select');
@@ -1641,7 +1640,7 @@ var View;
     var CanvasImage = (function (_super) {
         __extends(CanvasImage, _super);
         function CanvasImage() {
-            _super.call(this);
+            _super.apply(this, arguments);
             this.pos = new Point(0, 0);
         }
         CanvasImage.prototype.loadImage = function (path, onLoad) {
@@ -1704,6 +1703,7 @@ var View;
             button.innerText = caption;
             button.addEventListener('click', handler);
             this.div.appendChild(button);
+            this.div.appendChild(document.createElement('br'));
         };
         return DebugPage;
     }(View.Page));

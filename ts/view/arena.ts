@@ -111,7 +111,6 @@ namespace View
 		button: HTMLButtonElement;
 		selectA: HTMLSelectElement;
 		selectB: HTMLSelectElement;
-		ticks: number;
 		canvas: Canvas;
 		backgroundImage: CanvasImage = new CanvasImage();
 		imageA: CanvasImage = new CanvasImage();
@@ -123,8 +122,6 @@ namespace View
 		constructor()
 		{
 			super('Arena');
-
-			this.ticks = 0;
 
 			let topDiv = document.createElement('div');
 			topDiv.id = 'arena_top_div';
