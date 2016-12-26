@@ -74,7 +74,7 @@ namespace Model
 				return this.types[id].progress >= 0;
 			}
 
-			continueConstruction(id: string, seconds: number) 
+			continueConstruction(id: string, manHours: number) 
 			{
 				Util.assert(id in this.types);
 				if (!this.isConstructing(id))
@@ -83,13 +83,13 @@ namespace Model
 				let level = this.getNextLevel(id);
 				Util.assert(level != null);
 
-				if (this.types[id].progress + seconds >= level.buildTime)
+				if (this.types[id].progress + manHours >= level.buildTime)
 				{
 					this.types[id].progress = -1;
 					++this.types[id].levelIndex;
 				}
 				else
-					this.types[id].progress += seconds;
+					this.types[id].progress += manHours;
 
 				return true;
 			}

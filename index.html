@@ -20,9 +20,22 @@
 	<div id="master_div">
 		<canvas id="canvas_ludus"></canvas>
 		<div id="hud_div" class="">
-			<span id="hud_span"></span>
-			<button id="reset_btn">Reset</button> 
-			<button id="debug_btn">Debug</button>
+			<table>
+				<tr>
+					<td id="hud_money_span"></td>
+					<td id="hud_time_span"></td>
+					<td id="speed_buttons">
+						<span id="speed_label_0"></span><input type="radio" id="speed_btn_0">
+						<span id="speed_label_1"></span><input type="radio" id="speed_btn_1">
+						<span id="speed_label_2"></span><input type="radio" id="speed_btn_2">
+						<span id="speed_label_3"></span><input type="radio" id="speed_btn_3">
+					</td>
+					<td id="right_buttons">
+						<button id="debug_btn">Debug</button>
+						<button id="reset_btn">Reset</button>
+					</td>
+				</tr>
+			</table>
 		</div>
 		<div id="page" onclick="event.stopPropagation()"></div>
 	</div>

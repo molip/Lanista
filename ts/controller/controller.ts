@@ -16,11 +16,14 @@ namespace Controller
 		window.addEventListener('keydown', Controller.onKeyDown);
 		window.addEventListener('resize', View.updateLayout);
 
-		document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
-		document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
-
 		if (Model.state.fight)
 			onArenaTriggerClicked();
+	}
+
+	export function setSpeed(speed: number)
+	{
+		Model.state.setSpeed(speed);
+		View.updateSpeedButtons();
 	}
 
 	export function onResize()
@@ -33,8 +36,9 @@ namespace Controller
 		if (Model.state.update(1))
 		{
 			View.ludus.updateObjects();
-			updateHUD();
 		}
+
+		updateHUD();
 	}
 
 	export function onBuildingTriggerClicked(id: string)
@@ -136,8 +140,9 @@ namespace Controller
 
 	export function updateHUD()
 	{
-		var text = 'Money: ' + Util.formatMoney(Model.state.getMoney());
-		View.setHUDText(text);
+		let money = ' Money: ' + Util.formatMoney(Model.state.getMoney());
+		let time = Model.state.getTimeString();
+		View.setHUDText(money, time);
 	}
 
 	export function onKeyDown(evt: KeyboardEvent)

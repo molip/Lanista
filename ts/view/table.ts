@@ -83,6 +83,7 @@ namespace View
 			addRow(cells: Cell[], locked: boolean, handler: () => void)
 			{
 				let row = document.createElement('tr');
+				row.className = 'table_row';
 				this.table.appendChild(row);
 				for (let cell of cells)
 					row.appendChild(cell.getElement());

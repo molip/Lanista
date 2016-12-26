@@ -60,12 +60,15 @@ var Controller;
         window.setInterval(Controller.onTick, 1000);
         window.addEventListener('keydown', Controller.onKeyDown);
         window.addEventListener('resize', View.updateLayout);
-        document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
-        document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
         if (Model.state.fight)
             onArenaTriggerClicked();
     }
     Controller.onLoad = onLoad;
+    function setSpeed(speed) {
+        Model.state.setSpeed(speed);
+        View.updateSpeedButtons();
+    }
+    Controller.setSpeed = setSpeed;
     function onResize() {
         View.updateLayout();
     }
@@ -73,8 +76,8 @@ var Controller;
     function onTick() {
         if (Model.state.update(1)) {
             View.ludus.updateObjects();
-            updateHUD();
         }
+        updateHUD();
     }
     Controller.onTick = onTick;
     function onBuildingTriggerClicked(id) {
@@ -148,8 +151,9 @@ var Controller;
     }
     Controller.onTownTriggerClicked = onTownTriggerClicked;
     function updateHUD() {
-        var text = 'Money: ' + Util.formatMoney(Model.state.getMoney());
-        View.setHUDText(text);
+        var money = ' Money: ' + Util.formatMoney(Model.state.getMoney());
+        var time = Model.state.getTimeString();
+        View.setHUDText(money, time);
     }
     Controller.updateHUD = updateHUD;
     function onKeyDown(evt) {
@@ -774,18 +778,18 @@ var Model;
             State.prototype.isConstructing = function (id) {
                 return this.types[id].progress >= 0;
             };
-            State.prototype.continueConstruction = function (id, seconds) {
+            State.prototype.continueConstruction = function (id, manHours) {
                 Util.assert(id in this.types);
                 if (!this.isConstructing(id))
                     return false;
                 var level = this.getNextLevel(id);
                 Util.assert(level != null);
-                if (this.types[id].progress + seconds >= level.buildTime) {
+                if (this.types[id].progress + manHours >= level.buildTime) {
                     this.types[id].progress = -1;
                     ++this.types[id].levelIndex;
                 }
                 else
-                    this.types[id].progress += seconds;
+                    this.types[id].progress += manHours;
                 return true;
             };
             State.prototype.getConstructionProgress = function (id) {
@@ -877,12 +881,28 @@ var Model;
             this.fight = null;
             this.fighters = {};
             this.nextFighterID = 1;
+            this.time = 0; // Minutes.
+            this.speed = 1; // Game minutes per second. 
         }
         State.prototype.update = function (seconds) {
-            var changed = this.buildings.update(seconds);
-            if (changed)
-                Model.saveState();
+            var minutesPassed = seconds * this.speed;
+            this.time += minutesPassed;
+            var changed = this.buildings.update(minutesPassed / 60);
+            Model.saveState();
             return changed;
+        };
+        State.prototype.setSpeed = function (speed) {
+            if (speed > this.speed) {
+                this.time = Math.floor(this.time / speed) * speed;
+            }
+            this.speed = speed;
+        };
+        State.prototype.getTimeString = function () {
+            var minutesPerDay = 60 * 12;
+            var days = Math.floor(this.time / minutesPerDay);
+            var hours = Math.floor((this.time % minutesPerDay) / 60);
+            var mins = Math.floor(this.time % 60);
+            return 'Day ' + (days + 1).toString() + ' ' + ('00' + (hours + 6)).slice(-2) + ':' + ('00' + mins).slice(-2);
         };
         State.prototype.getMoney = function () { return Model.state.money; };
         State.prototype.spendMoney = function (amount) {
@@ -1957,6 +1977,7 @@ var View;
             };
             Factory.prototype.addRow = function (cells, locked, handler) {
                 var row = document.createElement('tr');
+                row.className = 'table_row';
                 this.table.appendChild(row);
                 for (var _i = 0, cells_1 = cells; _i < cells_1.length; _i++) {
                     var cell = cells_1[_i];
@@ -1978,9 +1999,21 @@ var View;
 (function (View) {
     View.Width = 1280;
     View.Height = 720;
+    var speeds = [0, 1, 10, 60];
     function init() {
         View.ludus = new View.Ludus();
         View.updateLayout();
+        document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
+        document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
+        var _loop_4 = function(i) {
+            document.getElementById('speed_label_' + i).innerText = 'x' + speeds[i];
+            var button = document.getElementById('speed_btn_' + i);
+            button.addEventListener('click', function () { Controller.setSpeed(speeds[i]); });
+        };
+        for (var i = 0; i < speeds.length; ++i) {
+            _loop_4(i);
+        }
+        updateSpeedButtons();
     }
     View.init = init;
     function showInfo(title, description) {
@@ -1989,8 +2022,9 @@ var View;
         page.show();
     }
     View.showInfo = showInfo;
-    function setHUDText(text) {
-        document.getElementById('hud_span').innerText = text;
+    function setHUDText(money, time) {
+        document.getElementById('hud_money_span').innerText = money;
+        document.getElementById('hud_time_span').innerText = time;
     }
     View.setHUDText = setHUDText;
     function updateLayout() {
@@ -2020,4 +2054,11 @@ var View;
         View.ludus.draw();
     }
     View.updateLayout = updateLayout;
+    function updateSpeedButtons() {
+        for (var i = 0; i < speeds.length; ++i) {
+            var button = document.getElementById('speed_btn_' + i);
+            button.checked = Model.state.speed == speeds[i];
+        }
+    }
+    View.updateSpeedButtons = updateSpeedButtons;
 })(View || (View = {}));

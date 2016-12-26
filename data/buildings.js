@@ -9,7 +9,7 @@
 		new Data.Buildings.Level(	200,	5,		44,		317,	'images/canvas/barracks2.png',	'images/canvas/barracks2.png',	'Barracks 2',	'Nice Barracks'				),
 	],
 	'kennels': [
-		new Data.Buildings.Level(	0,	3,		350,	60,		'images/canvas/kennels0.png',	'images/canvas/kennels0.png',	'Kennels 1',	'For animals to live in'		),
+		new Data.Buildings.Level(	0,		3,		350,	60,		'images/canvas/kennels0.png',	'images/canvas/kennels0.png',	'Kennels 1',	'For animals to live in'		),
 		new Data.Buildings.Level(	200,	5,		350,	60,		'images/canvas/home1.png',		'images/canvas/home1.png',		'Kennels 2',	'Nice Kennels'				),
 	],
 	'storage': [

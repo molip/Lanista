@@ -10,13 +10,36 @@ namespace Model
 		fight: Fight.State = null;
 		fighters: { [id: string]: Fighter } = {};
 		nextFighterID = 1;
+		time: number = 0; // Minutes.
+		speed: number = 1; // Game minutes per second. 
 
 		update(seconds: number)
 		{
-			let changed = this.buildings.update(seconds);
-			if (changed)
-				Model.saveState();
+			let minutesPassed = seconds * this.speed;
+			this.time += minutesPassed;
+
+			let changed = this.buildings.update(minutesPassed / 60);
+			Model.saveState();
 			return changed;
+		}
+
+		setSpeed(speed: number)
+		{
+			if (speed > this.speed)
+			{
+				this.time = Math.floor(this.time / speed) * speed;
+			}
+			this.speed = speed;
+		}
+
+		getTimeString()
+		{
+			let minutesPerDay = 60 * 12;
+			let days = Math.floor(this.time / minutesPerDay);
+			let hours = Math.floor((this.time % minutesPerDay) / 60);
+			let mins = Math.floor(this.time % 60);
+
+			return 'Day ' + (days + 1).toString() + ' ' + ('00' + (hours + 6)).slice(-2) + ':' + ('00' + mins).slice(-2);
 		}
 
 		getMoney(): number { return state.money; }

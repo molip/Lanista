@@ -6,10 +6,24 @@ namespace View
 	export let Height = 720;
 	export let ludus: Ludus;
 
+	let speeds = [0, 1, 10, 60];
+
 	export function init()
 	{
 		View.ludus = new Ludus();
 		View.updateLayout();
+
+		document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
+		document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
+
+		for (let i = 0; i < speeds.length; ++i)
+		{
+			document.getElementById('speed_label_' + i).innerText = 'x' + speeds[i];
+			let button = document.getElementById('speed_btn_' + i);
+			button.addEventListener('click', () => { Controller.setSpeed(speeds[i]); });
+		}
+
+		updateSpeedButtons();
 	}
 
 	export function showInfo(title: string, description: string)
@@ -19,9 +33,10 @@ namespace View
 		page.show();
 	}
 
-	export function setHUDText(text: string)
+	export function setHUDText(money: string, time: string)
 	{
-		document.getElementById('hud_span').innerText = text;
+		document.getElementById('hud_money_span').innerText = money;
+		document.getElementById('hud_time_span').innerText = time;
 	}
 
 	export function updateLayout()
@@ -56,5 +71,14 @@ namespace View
 		div.style.fontSize = (scale * 20).toString() + 'px';
 
 		View.ludus.draw();
+	}
+
+	export function updateSpeedButtons()
+	{
+		for (let i = 0; i < speeds.length; ++i)
+		{
+			let button = <HTMLInputElement>document.getElementById('speed_btn_' + i);
+			button.checked = Model.state.speed == speeds[i];
+		}
 	}
 }

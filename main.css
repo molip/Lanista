@@ -11,7 +11,7 @@ table {
 	width: 100%; 
 }
 
-button {
+button, input {
 	pointer-events:auto;
 	font-size:1em;
 }	
@@ -20,7 +20,7 @@ select {
 	font-size:1em;
 }	
 
-tr {
+.table_row {
 	border-style: solid;
 	border-width: 1px 0 1px 0;
 	height: 2em;
@@ -71,10 +71,19 @@ tr {
 	pointer-events:none;
 }
 
-#reset_btn, #debug_btn 
+#hud_div button
 {
-	float:right;
 	font-size: 0.5em;
+	vertical-align:middle;
+}
+
+#speed_buttons
+{
+	font-size: 0.5em;
+}
+
+#right_buttons {
+	float: right;
 }
 
 #page {
@@ -125,7 +134,7 @@ tr {
 	margin: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
 }
 
-tr:hover { background-color: cornflowerblue; }
-tr:active { background-color: white; }
+.table_row:hover { background-color: cornflowerblue; }
+.table_row:active { background-color: white; }
 .disabled { pointer-events:none; }
 
