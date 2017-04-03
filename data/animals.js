@@ -10,11 +10,12 @@
 	'goat': new Data.Animals.Type(	    20,		'images/animals/goat.png',			'goat',     'Goat',	        'Cud you kill one?',    [  ],	                [  ] ),
 	'bull': new Data.Animals.Type(	    65,		'images/animals/bull.png',			'bull',     'Bull',	        'heavy,spiky and angry',[  ],	                [  ] ),
 	'lion': new Data.Animals.Type(	    125,	'images/animals/rabbit.png',		'lion',     'Lion',	        'Well, its a Lion',     [  ],	                [  ] ),
-	'stag': new Data.Animals.Type(	    45,	    'images/animals/rabbit.png',		'stag',     'Stag',	        'A noble creature',     [  ],	                [  ] ),
+	'stag': new Data.Animals.Type(	    45,	    'images/animals/stag.png',			'stag',     'Stag',	        'A noble creature',     [  ],	                [  ] ),
 	'baboon': new Data.Animals.Type(    55,	    'images/animals/rabbit.png',		'baboon',   'Baboon',	    'Clever and strong',    [  ],	                [  ] ),
 	'hippo': new Data.Animals.Type(     115,    'images/animals/rabbit.png',		'hippo',    'Hippo',	    'surprisingly violent', [  ],					[  ] ),
 	'scorpion': new Data.Animals.Type(  30,	    'images/animals/scorpion.png',		'scorpion', 'Scorpion',	    'Be glad its small',    [  ],                   [  ] ),
 	'crocodile': new Data.Animals.Type( 50,	    'images/animals/rabbit.png',		'crocodile','Crocodile',    'A short reptile',      [  ],                   [  ] ),
 	'giant crab': new Data.Animals.Type(150,    'images/animals/giant crab.png',    'giant crab','Giant Crab',  'Its huge!',            [  ],					[  ] ),
 	'giant rat': new Data.Animals.Type (85,     'images/animals/giant rat.png',		'giant rat','Giant Rat',    'Large and rabid',      [  ],                   [  ] ),
+	'elephant': new Data.Animals.Type(	100,	'images/animals/elephant.png',		'elephant', 'Elephant',		'Never forgets',		[  ],					[  ] ),
 };

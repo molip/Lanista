@@ -18,7 +18,8 @@
 	'scorpion':	   	new Data.Species.Type(	'Scorpion'),
 	'giant crab':  	new Data.Species.Type(	'Giant crab'),
 	'giant rat':  	new Data.Species.Type(	'Giant rat'),
-	'crocodile':  	new Data.Species.Type(	'Crocodile'),
+	'crocodile':	new Data.Species.Type(	'Crocodile'),
+	'elephant':		new Data.Species.Type(	'Elephant'),
 }
 
 Data.Species.Types['human'].bodyParts = 
@@ -100,8 +101,8 @@ Data.Species.Types['lion'].bodyParts =
 
 Data.Species.Types['stag'].bodyParts =
 {
-	'head':	new Data.BodyPart(	10,		new Data.Attack('Gore', 'pierce', 1),		null,												[new Data.BodyPartInstance('Head', 160,90)]),
-	'body':	new Data.BodyPart(	10,		new Data.Attack('Charge', 'impact', 1),		null,												[new Data.BodyPartInstance('Body', 80, 80)]),	
+	'head':	new Data.BodyPart(	10,		new Data.Attack('Gore', 'pierce', 1),		null,												[new Data.BodyPartInstance('Head', 800, 400)]),
+	'body':	new Data.BodyPart(	10,		new Data.Attack('Charge', 'impact', 1),		null,												[new Data.BodyPartInstance('Body', 390, 460)]),	
 }
 
 Data.Species.Types['baboon'].bodyParts =
@@ -118,8 +119,8 @@ Data.Species.Types['hippo'].bodyParts =
 
 Data.Species.Types['scorpion'].bodyParts =
 {
-	'head':	new Data.BodyPart(	10,		new Data.Attack('Sting', 'poison', 1),		null,												[new Data.BodyPartInstance('Head', 50, 30)]),
-	'body':	new Data.BodyPart(	10,		null,										null,												[new Data.BodyPartInstance('Body', 25, 25)]),
+	'head':	new Data.BodyPart(	10,		new Data.Attack('Sting', 'poison', 1),		null,												[new Data.BodyPartInstance('Head', 1540, 260)]),
+	'body':	new Data.BodyPart(	10,		null,										null,												[new Data.BodyPartInstance('Body', 820, 430)]),
 }
 
 Data.Species.Types['giant crab'].bodyParts =
@@ -136,6 +137,11 @@ Data.Species.Types['giant rat'].bodyParts =
 
 Data.Species.Types['crocodile'].bodyParts =
 {
-	'head':	new Data.BodyPart(	10,		new Data.Attack('Bite', 'pierce', 1),		null,												[new Data.BodyPartInstance('Head', 160,90)]),
-	'body':	new Data.BodyPart(	10,		null,										null,												[new Data.BodyPartInstance('Body', 80, 80)]),	
+	'head': new Data.BodyPart(	10,		new Data.Attack('Bite', 'pierce', 1),		null,												[new Data.BodyPartInstance('Head', 160, 90)]),
+	'body': new Data.BodyPart(	10,		null,										null,												[new Data.BodyPartInstance('Body', 80, 80)]),
 }
+Data.Species.Types['elephant'].bodyParts =
+	{
+	'head':	new Data.BodyPart(	10,		new Data.Attack('Gore', 'pierce', 1),		null,												[new Data.BodyPartInstance('Head', 1540, 260)]),
+	'body':	new Data.BodyPart(	10,		new Data.Attack('Charge', 'impact', 1),		null,												[new Data.BodyPartInstance('Body', 820, 430)]),
+	}
