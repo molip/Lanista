@@ -141,6 +141,15 @@ namespace Data
 		}
 	}
 
+	export namespace Activities
+	{
+		export class Type
+		{
+			constructor(public name: string, public job: boolean, public human: boolean, public animal: boolean, public freeWork: number) { }
+		}
+		export let Types: { [key: string]: Type };
+	}
+
 	export function validate()
 	{
 		console.log('Validating data...');
@@ -163,5 +172,6 @@ namespace Data
 		export let LudusBackgroundImage: string;
 		export let ConstructionImage: string
 		export let ArenaBackgroundImage: string;
+		export let ExperienceBenefit: number;
 	}
 }

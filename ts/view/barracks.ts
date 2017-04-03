@@ -16,15 +16,24 @@ namespace View
 
 			tableFactory.addColumnHeader('Part', 10);
 			tableFactory.addColumnHeader('Health', 10);
-			tableFactory.addColumnHeader('Armour', 15);
-			tableFactory.addColumnHeader('Weapon', 15);
+			tableFactory.addColumnHeader('Armour', 10);
+			tableFactory.addColumnHeader('Weapon', 10);
+			tableFactory.addColumnHeader('Activity', 10);
+
+			const activityItems: Table.SelectCellItem[] = [];
+			for (let id in Data.Activities.Types)
+				activityItems.push(new Table.SelectCellItem(id, Data.Activities.Types[id].name));
 
 			for (let person of Model.state.getPeople())
 			{
-				let cells = [new Table.TextCell('<h4>' + person.name + '</h4>'), new Table.ImageCell(person.image)];
+				let cells: Table.Cell[] = [new Table.TextCell('<h4>' + person.name + '</h4>'), new Table.ImageCell(person.image)];
 
 				for (let c of Util.formatRows(person.getStatus()))
 					cells.push(new Table.TextCell('<small>' + c + '</small>'));
+
+				let cell = new Table.SelectCell(100, activityItems, (value: string) => { person.setActivity(value); });
+				cell.selectedTag = person.getActivity();
+				cells.push(cell);
 
 				tableFactory.addRow(cells, false, null);
 			}

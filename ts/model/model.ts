@@ -4,7 +4,8 @@ namespace Model
 {
 	export class State
 	{
-		static key: string = "state.v8"
+		static readonly key: string = "state.v9"
+
 		private money = 1000;
 		buildings = new Buildings.State();
 		fight: Fight.State = null;
@@ -17,10 +18,59 @@ namespace Model
 		{
 			let minutesPassed = seconds * this.speed;
 			this.time += minutesPassed;
+			let hoursPassed = minutesPassed / 60;
 
-			let changed = this.buildings.update(minutesPassed / 60);
+			let changed = this.updateActivities(hoursPassed);
+
 			Model.saveState();
 			return changed;
+		}
+
+		updateActivities(hours: number)
+		{
+			let workPower: { [id: string]: number } = {}; // Activity -> power.
+			let workers: { [id: string]: Fighter[] } = {}; // Activity -> workers.
+
+			for (let id in Data.Activities.Types)
+			{
+				workPower[id] = Data.Activities.Types[id].freeWork;
+				workers[id] = [];
+			}
+
+			let UpdateExperience = function (activity: string)
+			{
+				if (activity in workers)
+					for (let i = 0, fighter: Fighter; fighter = workers[activity][i]; ++i)
+						fighter.addExperience(activity, hours);
+			};
+
+			for (let id in this.fighters)
+			{
+				let fighter = this.fighters[id];
+				let activity = fighter.getActivity();
+				Util.assert(activity in Data.Activities.Types);
+				if (Data.Activities.Types[activity].job)
+				{
+					workPower[activity] += 1 + fighter.getExperience(activity) * Data.Misc.ExperienceBenefit;
+					workers[activity].push(fighter);
+				}
+				else
+				{
+					// TODO: Practising, convalescing, recreation
+				}
+			}
+
+			// Building, training animals, training gladiators, crafting, repairing:
+
+			let redraw = false;
+
+			if ('build' in workPower && this.buildings.update(hours * workPower['build']))
+			{
+				UpdateExperience('build');
+				redraw = true;
+			}
+
+			return redraw;
 		}
 
 		setSpeed(speed: number)

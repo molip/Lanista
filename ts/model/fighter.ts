@@ -35,6 +35,9 @@ namespace Model
 		nextBodyPartID: number = 1;
 		weapons: Weapon[] = [];
 		armour: Armour[] = [];
+		private activity: string = '';
+		private experience: { [id: string]: number } = {};
+
 		constructor(public id: number, public species: string, public name: string, public image: string, weapons: string[], armour: string[])
 		{
 			let data = this.getSpeciesData();
@@ -248,6 +251,28 @@ namespace Model
 		{
 			for (let part of this.getBodyParts())
 				part.health = part.getData(this.getSpeciesData()).health;
+			Model.saveState();
+		}
+
+		getExperience(tag: string)
+		{
+			return this.experience[tag] || 0;
+		}
+
+		addExperience(tag: string, hours: number)
+		{
+			this.experience[tag] = this.experience[tag] || 0;
+			this.experience[tag] += hours;
+		}
+
+		getActivity()
+		{
+			return this.activity;
+		}
+
+		setActivity(tag: string)
+		{
+			this.activity = tag;
 			Model.saveState();
 		}
 	}

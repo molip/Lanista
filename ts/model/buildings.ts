@@ -16,11 +16,17 @@ namespace Model
 				}
 			}
 
-			update(seconds: number)
+			update(hours: number)
 			{
 				let changed = false;
+
+				let buildingCount = 0;
 				for (let id in this.types)
-					if (this.continueConstruction(id, seconds))
+					if (this.isConstructing(id))
+						++buildingCount;
+
+				for (let id in this.types)
+					if (this.continueConstruction(id, hours / buildingCount))
 						changed = true;
 
 				return changed;

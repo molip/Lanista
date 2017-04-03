@@ -184,7 +184,7 @@ var Controller;
         Shop.showShopsPage = showShopsPage;
         function onBuildersMerchantClicked() {
             var page = new View.ListPage(getShopTitle('Builders\' Merchant'));
-            var _loop_1 = function(id) {
+            var _loop_1 = function (id) {
                 level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
                 if (level) {
                     handler = function () {
@@ -205,7 +205,7 @@ var Controller;
         function onAnimalMarketClicked() {
             var page = new View.ListPage(getShopTitle('Animal Market'));
             var hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
-            var _loop_2 = function(id) {
+            var _loop_2 = function (id) {
                 handler = function () {
                     Model.state.buyAnimal(id);
                     Controller.updateHUD();
@@ -222,7 +222,7 @@ var Controller;
         function onPeopleMarketClicked() {
             var page = new View.ListPage(getShopTitle('People Market'));
             var hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
-            var _loop_3 = function(id) {
+            var _loop_3 = function (id) {
                 handler = function () {
                     Model.state.buyPerson(id);
                     Controller.updateHUD();
@@ -438,6 +438,20 @@ var Data;
         }
         Buildings.getLevel = getLevel;
     })(Buildings = Data.Buildings || (Data.Buildings = {}));
+    var Activities;
+    (function (Activities) {
+        var Type = (function () {
+            function Type(name, job, human, animal, freeWork) {
+                this.name = name;
+                this.job = job;
+                this.human = human;
+                this.animal = animal;
+                this.freeWork = freeWork;
+            }
+            return Type;
+        }());
+        Activities.Type = Type;
+    })(Activities = Data.Activities || (Data.Activities = {}));
     function validate() {
         console.log('Validating data...');
         for (var id in Armour.Types)
@@ -469,7 +483,7 @@ var Model;
     var Weapon = (function (_super) {
         __extends(Weapon, _super);
         function Weapon(tag, bodyPartIDs) {
-            _super.call(this, tag, bodyPartIDs);
+            return _super.call(this, tag, bodyPartIDs) || this;
         }
         return Weapon;
     }(Accessory));
@@ -477,7 +491,7 @@ var Model;
     var Armour = (function (_super) {
         __extends(Armour, _super);
         function Armour(tag, bodyPartIDs) {
-            _super.call(this, tag, bodyPartIDs);
+            return _super.call(this, tag, bodyPartIDs) || this;
         }
         return Armour;
     }(Accessory));
@@ -525,6 +539,8 @@ var Model;
             this.nextBodyPartID = 1;
             this.weapons = [];
             this.armour = [];
+            this.activity = '';
+            this.experience = {};
             var data = this.getSpeciesData();
             for (var tag in data.bodyParts) {
                 var part = data.bodyParts[tag];
@@ -706,6 +722,20 @@ var Model;
             }
             Model.saveState();
         };
+        Fighter.prototype.getExperience = function (tag) {
+            return this.experience[tag] || 0;
+        };
+        Fighter.prototype.addExperience = function (tag, hours) {
+            this.experience[tag] = this.experience[tag] || 0;
+            this.experience[tag] += hours;
+        };
+        Fighter.prototype.getActivity = function () {
+            return this.activity;
+        };
+        Fighter.prototype.setActivity = function (tag) {
+            this.activity = tag;
+            Model.saveState();
+        };
         return Fighter;
     }());
     Model.Fighter = Fighter;
@@ -717,8 +747,10 @@ var Model;
     var Animal = (function (_super) {
         __extends(Animal, _super);
         function Animal(id, tag, name) {
+            var _this = this;
             var type = Data.Animals.Types[tag];
-            _super.call(this, id, type.species, name, type.shopImage, type.weapons, type.armour);
+            _this = _super.call(this, id, type.species, name, type.shopImage, type.weapons, type.armour) || this;
+            return _this;
         }
         return Animal;
     }(Model.Fighter));
@@ -737,10 +769,14 @@ var Model;
                     this.types[type] = { levelIndex: free ? 0 : -1, progress: -1 };
                 }
             }
-            State.prototype.update = function (seconds) {
+            State.prototype.update = function (hours) {
                 var changed = false;
+                var buildingCount = 0;
                 for (var id in this.types)
-                    if (this.continueConstruction(id, seconds))
+                    if (this.isConstructing(id))
+                        ++buildingCount;
+                for (var id in this.types)
+                    if (this.continueConstruction(id, hours / buildingCount))
                         changed = true;
                 return changed;
             };
@@ -887,9 +923,41 @@ var Model;
         State.prototype.update = function (seconds) {
             var minutesPassed = seconds * this.speed;
             this.time += minutesPassed;
-            var changed = this.buildings.update(minutesPassed / 60);
+            var hoursPassed = minutesPassed / 60;
+            var changed = this.updateActivities(hoursPassed);
             Model.saveState();
             return changed;
+        };
+        State.prototype.updateActivities = function (hours) {
+            var workPower = {}; // Activity -> power.
+            var workers = {}; // Activity -> workers.
+            for (var id in Data.Activities.Types) {
+                workPower[id] = Data.Activities.Types[id].freeWork;
+                workers[id] = [];
+            }
+            var UpdateExperience = function (activity) {
+                if (activity in workers)
+                    for (var i = 0, fighter = void 0; fighter = workers[activity][i]; ++i)
+                        fighter.addExperience(activity, hours);
+            };
+            for (var id in this.fighters) {
+                var fighter = this.fighters[id];
+                var activity = fighter.getActivity();
+                Util.assert(activity in Data.Activities.Types);
+                if (Data.Activities.Types[activity].job) {
+                    workPower[activity] += 1 + fighter.getExperience(activity) * Data.Misc.ExperienceBenefit;
+                    workers[activity].push(fighter);
+                }
+                else {
+                }
+            }
+            // Building, training animals, training gladiators, crafting, repairing:
+            var redraw = false;
+            if ('build' in workPower && this.buildings.update(hours * workPower['build'])) {
+                UpdateExperience('build');
+                redraw = true;
+            }
+            return redraw;
         };
         State.prototype.setSpeed = function (speed) {
             if (speed > this.speed) {
@@ -976,9 +1044,9 @@ var Model;
                 ++i;
             }
         };
-        State.key = "state.v8";
         return State;
     }());
+    State.key = "state.v9";
     Model.State = State;
     function init() {
         var str = localStorage.getItem(State.key);
@@ -1018,8 +1086,10 @@ var Model;
     var Person = (function (_super) {
         __extends(Person, _super);
         function Person(id, tag, name) {
+            var _this = this;
             var type = Data.People.Types[tag];
-            _super.call(this, id, 'human', name, type.shopImage, type.weapons, type.armour);
+            _this = _super.call(this, id, 'human', name, type.shopImage, type.weapons, type.armour) || this;
+            return _this;
         }
         return Person;
     }(Model.Fighter));
@@ -1230,16 +1300,17 @@ var View;
         };
         Page.prototype.onShow = function () { };
         Page.prototype.onClose = function () { return true; };
-        Page.Current = null;
         return Page;
     }());
+    Page.Current = null;
     View.Page = Page;
     var ListPage = (function (_super) {
         __extends(ListPage, _super);
         function ListPage(title) {
-            _super.call(this, title);
-            this.tableFactory = new View.Table.Factory();
-            this.div.appendChild(this.tableFactory.element);
+            var _this = _super.call(this, title) || this;
+            _this.tableFactory = new View.Table.Factory();
+            _this.div.appendChild(_this.tableFactory.element);
+            return _this;
         }
         ListPage.prototype.addItem = function (title, description, image, locked, handler) {
             var cells = [new View.Table.TextCell('<h4>' + title + '</h4>', 20), new View.Table.ImageCell(image, 20), new View.Table.TextCell(description)];
@@ -1266,9 +1337,10 @@ var View;
     var GrowAnimation = (function (_super) {
         __extends(GrowAnimation, _super);
         function GrowAnimation(name, point) {
-            _super.call(this, 300);
-            this.name = name;
-            this.point = point;
+            var _this = _super.call(this, 300) || this;
+            _this.name = name;
+            _this.point = point;
+            return _this;
         }
         GrowAnimation.prototype.draw = function (ctx, xform) {
             var scale = Util.querp(0, 1, this.progress);
@@ -1298,9 +1370,10 @@ var View;
     var DamageAnimation = (function (_super) {
         __extends(DamageAnimation, _super);
         function DamageAnimation(name, point) {
-            _super.call(this, 1000);
-            this.name = name;
-            this.point = point;
+            var _this = _super.call(this, 1000) || this;
+            _this.name = name;
+            _this.point = point;
+            return _this;
         }
         DamageAnimation.prototype.draw = function (ctx, xform) {
             var offset = Util.querp(0, 100, this.progress);
@@ -1315,9 +1388,10 @@ var View;
     var PauseAnimation = (function (_super) {
         __extends(PauseAnimation, _super);
         function PauseAnimation(name, point, duration) {
-            _super.call(this, duration);
-            this.name = name;
-            this.point = point;
+            var _this = _super.call(this, duration) || this;
+            _this.name = name;
+            _this.point = point;
+            return _this;
         }
         PauseAnimation.prototype.draw = function (ctx, xform) {
             var point = xform.transformPoint(this.point);
@@ -1329,10 +1403,11 @@ var View;
     var MoveAnimation = (function (_super) {
         __extends(MoveAnimation, _super);
         function MoveAnimation(name, pointA, pointB) {
-            _super.call(this, 500);
-            this.name = name;
-            this.pointA = pointA;
-            this.pointB = pointB;
+            var _this = _super.call(this, 500) || this;
+            _this.name = name;
+            _this.pointA = pointA;
+            _this.pointB = pointB;
+            return _this;
         }
         MoveAnimation.prototype.draw = function (ctx, xform) {
             var pointA = xform.transformPoint(this.pointA);
@@ -1348,15 +1423,14 @@ var View;
     var ArenaPage = (function (_super) {
         __extends(ArenaPage, _super);
         function ArenaPage() {
-            var _this = this;
-            _super.call(this, 'Arena');
-            this.backgroundImage = new View.CanvasImage();
-            this.imageA = new View.CanvasImage();
-            this.imageB = new View.CanvasImage();
-            this.sequence = null;
-            this.timer = 0;
-            this.healths = [];
-            this.onStartButton = function () {
+            var _this = _super.call(this, 'Arena') || this;
+            _this.backgroundImage = new View.CanvasImage();
+            _this.imageA = new View.CanvasImage();
+            _this.imageB = new View.CanvasImage();
+            _this.sequence = null;
+            _this.timer = 0;
+            _this.healths = [];
+            _this.onStartButton = function () {
                 if (Model.state.fight) {
                     Model.state.endFight();
                     _this.updateStartButton();
@@ -1373,7 +1447,7 @@ var View;
                 _this.updateStartButton();
                 _this.doAttack();
             };
-            this.onTick = function () {
+            _this.onTick = function () {
                 if (_this.sequence) {
                     if (_this.sequence.update()) {
                         _this.draw();
@@ -1387,17 +1461,17 @@ var View;
                     }
                 }
             };
-            this.onFightersChanged = function () {
+            _this.onFightersChanged = function () {
                 _this.updateStartButton();
                 _this.updateHealths();
                 _this.updateImages();
             };
             var topDiv = document.createElement('div');
             topDiv.id = 'arena_top_div';
-            this.selectA = document.createElement('select');
-            this.selectB = document.createElement('select');
-            this.selectA.addEventListener('change', this.onFightersChanged);
-            this.selectB.addEventListener('change', this.onFightersChanged);
+            _this.selectA = document.createElement('select');
+            _this.selectB = document.createElement('select');
+            _this.selectA.addEventListener('change', _this.onFightersChanged);
+            _this.selectB.addEventListener('change', _this.onFightersChanged);
             var makeOption = function (id) {
                 var option = document.createElement('option');
                 option.text = Model.state.fighters[id].name;
@@ -1406,33 +1480,34 @@ var View;
                 return option;
             };
             for (var id in Model.state.fighters) {
-                this.selectB.options.add(makeOption(id));
-                this.selectA.options.add(makeOption(id));
+                _this.selectB.options.add(makeOption(id));
+                _this.selectA.options.add(makeOption(id));
             }
-            if (this.selectB.options.length > 1)
-                this.selectB.selectedIndex = 1;
-            this.button = document.createElement('button');
-            this.button.addEventListener('click', this.onStartButton);
-            topDiv.appendChild(this.selectA);
-            topDiv.appendChild(this.selectB);
-            topDiv.appendChild(this.button);
-            this.para = document.createElement('p');
-            this.para.style.margin = '0';
-            this.scroller = document.createElement('div');
-            this.scroller.id = 'arena_scroller';
-            this.scroller.className = 'scroller';
-            this.scroller.appendChild(this.para);
+            if (_this.selectB.options.length > 1)
+                _this.selectB.selectedIndex = 1;
+            _this.button = document.createElement('button');
+            _this.button.addEventListener('click', _this.onStartButton);
+            topDiv.appendChild(_this.selectA);
+            topDiv.appendChild(_this.selectB);
+            topDiv.appendChild(_this.button);
+            _this.para = document.createElement('p');
+            _this.para.style.margin = '0';
+            _this.scroller = document.createElement('div');
+            _this.scroller.id = 'arena_scroller';
+            _this.scroller.className = 'scroller';
+            _this.scroller.appendChild(_this.para);
             var canvas = document.createElement('canvas');
             canvas.id = 'arena_canvas';
-            this.canvas = new View.Canvas(canvas);
-            this.div.appendChild(topDiv);
-            this.div.appendChild(canvas);
-            this.div.appendChild(this.scroller);
-            this.backgroundImage.loadImage(Data.Misc.ArenaBackgroundImage, function () { _this.draw(); });
-            this.update();
-            this.updateStartButton();
-            this.updateHealths();
-            this.updateImages();
+            _this.canvas = new View.Canvas(canvas);
+            _this.div.appendChild(topDiv);
+            _this.div.appendChild(canvas);
+            _this.div.appendChild(_this.scroller);
+            _this.backgroundImage.loadImage(Data.Misc.ArenaBackgroundImage, function () { _this.draw(); });
+            _this.update();
+            _this.updateStartButton();
+            _this.updateHealths();
+            _this.updateImages();
+            return _this;
         }
         ArenaPage.prototype.onShow = function () {
             this.canvas.element.width = View.Width;
@@ -1622,24 +1697,35 @@ var View;
     var BarracksPage = (function (_super) {
         __extends(BarracksPage, _super);
         function BarracksPage() {
-            _super.call(this, 'Barracks');
+            var _this = _super.call(this, 'Barracks') || this;
             var tableFactory = new View.Table.Factory();
-            this.div.appendChild(tableFactory.element);
+            _this.div.appendChild(tableFactory.element);
             tableFactory.addColumnHeader('Name', 20);
             tableFactory.addColumnHeader('Image', 30);
             tableFactory.addColumnHeader('Part', 10);
             tableFactory.addColumnHeader('Health', 10);
-            tableFactory.addColumnHeader('Armour', 15);
-            tableFactory.addColumnHeader('Weapon', 15);
-            for (var _i = 0, _a = Model.state.getPeople(); _i < _a.length; _i++) {
-                var person = _a[_i];
+            tableFactory.addColumnHeader('Armour', 10);
+            tableFactory.addColumnHeader('Weapon', 10);
+            tableFactory.addColumnHeader('Activity', 10);
+            var activityItems = [];
+            for (var id in Data.Activities.Types)
+                activityItems.push(new View.Table.SelectCellItem(id, Data.Activities.Types[id].name));
+            var _loop_4 = function (person) {
                 var cells = [new View.Table.TextCell('<h4>' + person.name + '</h4>'), new View.Table.ImageCell(person.image)];
-                for (var _b = 0, _c = Util.formatRows(person.getStatus()); _b < _c.length; _b++) {
-                    var c = _c[_b];
+                for (var _i = 0, _a = Util.formatRows(person.getStatus()); _i < _a.length; _i++) {
+                    var c = _a[_i];
                     cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
                 }
+                var cell = new View.Table.SelectCell(100, activityItems, function (value) { person.setActivity(value); });
+                cell.selectedTag = person.getActivity();
+                cells.push(cell);
                 tableFactory.addRow(cells, false, null);
+            };
+            for (var _i = 0, _a = Model.state.getPeople(); _i < _a.length; _i++) {
+                var person = _a[_i];
+                _loop_4(person);
             }
+            return _this;
         }
         return BarracksPage;
     }(View.Page));
@@ -1661,8 +1747,9 @@ var View;
     var CanvasImage = (function (_super) {
         __extends(CanvasImage, _super);
         function CanvasImage() {
-            _super.apply(this, arguments);
-            this.pos = new Point(0, 0);
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.pos = new Point(0, 0);
+            return _this;
         }
         CanvasImage.prototype.loadImage = function (path, onLoad) {
             this.image = new Image();
@@ -1703,21 +1790,42 @@ var View;
     var DebugPage = (function (_super) {
         __extends(DebugPage, _super);
         function DebugPage() {
-            _super.call(this, 'Debug');
-            this.onBuyAll = function () {
+            var _this = _super.call(this, 'Debug') || this;
+            _this.onBuyAllAnimals = function () {
                 for (var tag in Data.Animals.Types) {
                     Model.state.addMoney(Data.Animals.Types[tag].cost);
                     Model.state.buyAnimal(tag);
                 }
                 View.Page.hideCurrent();
             };
-            this.onHeal = function () {
+            _this.onBuyAllPeople = function () {
+                for (var tag in Data.People.Types) {
+                    Model.state.addMoney(Data.People.Types[tag].cost);
+                    Model.state.buyPerson(tag);
+                }
+                View.Page.hideCurrent();
+            };
+            _this.onBuyAllBuildings = function () {
+                for (var tag in Data.Buildings.Levels) {
+                    if (Model.state.buildings.canUpgrade(tag)) {
+                        var level = Data.Buildings.getLevel(tag, Model.state.buildings.getNextUpgradeIndex(tag));
+                        if (level.cost)
+                            Model.state.addMoney(level.cost);
+                        Model.state.buildings.buyUpgrade(tag);
+                    }
+                }
+                View.Page.hideCurrent();
+            };
+            _this.onHeal = function () {
                 for (var id in Model.state.fighters)
                     Model.state.fighters[id].resetHealth();
                 View.Page.hideCurrent();
             };
-            this.addButton('Buy all animals', this.onBuyAll);
-            this.addButton('Heal fighters', this.onHeal);
+            _this.addButton('Buy all animals', _this.onBuyAllAnimals);
+            _this.addButton('Buy all people', _this.onBuyAllPeople);
+            _this.addButton('Buy all buildings', _this.onBuyAllBuildings);
+            _this.addButton('Heal fighters', _this.onHeal);
+            return _this;
         }
         DebugPage.prototype.addButton = function (caption, handler) {
             var button = document.createElement('button');
@@ -1737,9 +1845,9 @@ var View;
     var KennelsPage = (function (_super) {
         __extends(KennelsPage, _super);
         function KennelsPage() {
-            _super.call(this, 'Kennels');
+            var _this = _super.call(this, 'Kennels') || this;
             var tableFactory = new View.Table.Factory();
-            this.div.appendChild(tableFactory.element);
+            _this.div.appendChild(tableFactory.element);
             tableFactory.addColumnHeader('Name', 20);
             tableFactory.addColumnHeader('Image', 30);
             tableFactory.addColumnHeader('Part', 10);
@@ -1755,6 +1863,7 @@ var View;
                 }
                 tableFactory.addRow(cells, false, null);
             }
+            return _this;
         }
         return KennelsPage;
     }(View.Page));
@@ -1766,9 +1875,10 @@ var View;
     var Trigger = (function (_super) {
         __extends(Trigger, _super);
         function Trigger(id, handler) {
-            _super.call(this);
-            this.id = id;
-            this.handler = handler;
+            var _this = _super.call(this) || this;
+            _this.id = id;
+            _this.handler = handler;
+            return _this;
         }
         Trigger.prototype.onClick = function () {
             if (this.isEnabled())
@@ -1780,10 +1890,11 @@ var View;
     var Building = (function (_super) {
         __extends(Building, _super);
         function Building(id, handler) {
-            _super.call(this, id, handler);
-            this.handler = handler;
-            this.levelIndex = -1;
-            this.progress = -1;
+            var _this = _super.call(this, id, handler) || this;
+            _this.handler = handler;
+            _this.levelIndex = -1;
+            _this.progress = -1;
+            return _this;
         }
         Building.prototype.isEnabled = function () {
             return Model.state.buildings.getCurrentLevelIndex(this.id) >= 0;
@@ -1845,15 +1956,15 @@ var View;
     var Ludus = (function (_super) {
         __extends(Ludus, _super);
         function Ludus() {
-            var _this = this;
-            _super.call(this, document.getElementById('canvas_ludus'));
-            this.Objects = [];
-            this.Buildings = {};
-            this.BackgroundImage = new View.CanvasImage();
-            this.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage, function () { _this.draw(); });
-            this.element.width = View.Width;
-            this.element.height = View.Height;
-            this.initObjects();
+            var _this = _super.call(this, document.getElementById('canvas_ludus')) || this;
+            _this.Objects = [];
+            _this.Buildings = {};
+            _this.BackgroundImage = new View.CanvasImage();
+            _this.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage, function () { _this.draw(); });
+            _this.element.width = View.Width;
+            _this.element.height = View.Height;
+            _this.initObjects();
+            return _this;
         }
         Ludus.prototype.draw = function () {
             if (!this.BackgroundImage.image.complete)
@@ -1928,8 +2039,9 @@ var View;
         var TextCell = (function (_super) {
             __extends(TextCell, _super);
             function TextCell(content, width) {
-                _super.call(this, width);
-                this.content = content;
+                var _this = _super.call(this, width) || this;
+                _this.content = content;
+                return _this;
             }
             TextCell.prototype.getElement = function () {
                 var e = _super.prototype.getElement.call(this);
@@ -1942,8 +2054,9 @@ var View;
         var ImageCell = (function (_super) {
             __extends(ImageCell, _super);
             function ImageCell(src, width) {
-                _super.call(this, width);
-                this.src = src;
+                var _this = _super.call(this, width) || this;
+                _this.src = src;
+                return _this;
             }
             ImageCell.prototype.getElement = function () {
                 var e = _super.prototype.getElement.call(this);
@@ -1958,6 +2071,40 @@ var View;
             return ImageCell;
         }(Cell));
         Table.ImageCell = ImageCell;
+        var SelectCellItem = (function () {
+            function SelectCellItem(tag, name) {
+                this.tag = tag;
+                this.name = name;
+            }
+            return SelectCellItem;
+        }());
+        Table.SelectCellItem = SelectCellItem;
+        var SelectCell = (function (_super) {
+            __extends(SelectCell, _super);
+            function SelectCell(width, items, handler) {
+                var _this = _super.call(this, width) || this;
+                _this.items = items;
+                _this.handler = handler;
+                return _this;
+            }
+            SelectCell.prototype.getElement = function () {
+                var _this = this;
+                var e = _super.prototype.getElement.call(this);
+                var select = document.createElement('select');
+                for (var i = 0, item = void 0; item = this.items[i]; ++i) {
+                    var optionElement = document.createElement('option');
+                    optionElement.value = item.tag;
+                    optionElement.innerText = item.name;
+                    select.appendChild(optionElement);
+                }
+                select.value = this.selectedTag;
+                select.addEventListener('change', function () { _this.handler(select.value); });
+                e.appendChild(select);
+                return e;
+            };
+            return SelectCell;
+        }(Cell));
+        Table.SelectCell = SelectCell;
         var Factory = (function () {
             function Factory() {
                 this.element = document.createElement('div');
@@ -1987,8 +2134,8 @@ var View;
                 row.addEventListener('click', handler);
                 if (locked)
                     row.style.opacity = '0.5';
-                if (locked || !handler)
-                    row.className = 'disabled';
+                if (!locked && handler)
+                    row.className += ' highlight';
             };
             return Factory;
         }());
@@ -2006,13 +2153,13 @@ var View;
         View.updateLayout();
         document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
         document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
-        var _loop_4 = function(i) {
+        var _loop_5 = function (i) {
             document.getElementById('speed_label_' + i).innerText = 'x' + speeds[i];
             var button = document.getElementById('speed_btn_' + i);
             button.addEventListener('click', function () { Controller.setSpeed(speeds[i]); });
         };
         for (var i = 0; i < speeds.length; ++i) {
-            _loop_4(i);
+            _loop_5(i);
         }
         updateSpeedButtons();
     }

@@ -52,6 +52,38 @@ namespace View
 			}
 		}
 
+		export class SelectCellItem
+		{
+			constructor(public tag: string, public name: string) { }
+		}
+
+		export class SelectCell extends Cell
+		{
+			selectedTag: string;
+
+			constructor(width: number, private items: SelectCellItem[], private handler: (value: string) => void)
+			{
+				super(width);
+			}
+
+			getElement(): HTMLTableDataCellElement
+			{
+				let e = super.getElement();
+				let select = document.createElement('select');
+				for (let i = 0, item; item = this.items[i]; ++i)
+				{
+					let optionElement = document.createElement('option');
+					optionElement.value = item.tag;
+					optionElement.innerText = item.name;
+					select.appendChild(optionElement);
+				}
+				select.value = this.selectedTag;
+				select.addEventListener('change', () => { this.handler(select.value); });
+				e.appendChild(select);
+				return e;
+			}
+		}
+
 		export class Factory
 		{
 			element: HTMLDivElement;
@@ -91,8 +123,8 @@ namespace View
 				if (locked)
 					row.style.opacity = '0.5';
 
-				if (locked || !handler)
-					row.className = 'disabled';
+				if (!locked && handler)
+					row.className += ' highlight';
 			}
 		}
 	}
