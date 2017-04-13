@@ -34,6 +34,10 @@ var Controller;
             var logPos = View.ludus.devToLog(devPos.x, devPos.y);
             var obj = hitTestObjects(logPos.x, logPos.y);
             if (obj != Canvas.HotObject) {
+                if (Canvas.HotObject)
+                    Canvas.HotObject.onMouseLeave();
+                if (obj)
+                    obj.onMouseEnter();
                 Canvas.HotObject = obj;
                 View.ludus.draw();
             }
@@ -41,6 +45,7 @@ var Controller;
         Canvas.onMouseMove = onMouseMove;
         function onMouseOut() {
             if (Canvas.HotObject) {
+                Canvas.HotObject.onMouseLeave();
                 Canvas.HotObject = null;
                 View.ludus.draw();
             }
@@ -1740,6 +1745,13 @@ var View;
         CanvasObject.prototype.draw = function (ctx) { };
         CanvasObject.prototype.getRect = function () { return null; };
         CanvasObject.prototype.onClick = function () { };
+        CanvasObject.prototype.onMouseEnter = function () {
+            var tt = new View.Tooltip();
+            tt.show();
+        };
+        CanvasObject.prototype.onMouseLeave = function () {
+            View.Tooltip.hideCurrent();
+        };
         CanvasObject.prototype.isEnabled = function () { return true; };
         return CanvasObject;
     }());
@@ -2209,4 +2221,32 @@ var View;
         }
     }
     View.updateSpeedButtons = updateSpeedButtons;
+})(View || (View = {}));
+"use strict";
+var View;
+(function (View) {
+    var Tooltip = (function () {
+        function Tooltip() {
+            Util.assert(Tooltip.Current == null);
+            Tooltip.Current = this;
+            this.div = document.createElement('div');
+        }
+        Tooltip.hideCurrent = function () {
+            if (Tooltip.Current) {
+                Tooltip.Current = null;
+                var elem = document.getElementById('tooltip');
+                elem.style.visibility = 'hidden';
+                elem.innerHTML = '';
+            }
+        };
+        Tooltip.prototype.show = function () {
+            var elem = document.getElementById('tooltip');
+            elem.innerHTML = '';
+            elem.appendChild(this.div);
+            elem.style.visibility = 'visible';
+        };
+        return Tooltip;
+    }());
+    Tooltip.Current = null;
+    View.Tooltip = Tooltip;
 })(View || (View = {}));

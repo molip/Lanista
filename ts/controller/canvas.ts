@@ -35,6 +35,12 @@ namespace Controller
 			let obj: View.CanvasObject = hitTestObjects(logPos.x, logPos.y);
 			if (obj != HotObject)
 			{
+				if (HotObject)
+					HotObject.onMouseLeave();
+
+				if (obj)
+					obj.onMouseEnter();
+
 				HotObject = obj;
 				View.ludus.draw();
 			}
@@ -44,6 +50,7 @@ namespace Controller
 		{
 			if (HotObject)
 			{
+				HotObject.onMouseLeave();
 				HotObject = null;
 				View.ludus.draw();
 			}

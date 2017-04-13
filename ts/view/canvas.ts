@@ -8,6 +8,16 @@ namespace View
 		draw(ctx: CanvasRenderingContext2D) { }
 		getRect(): Rect { return null; }
 		onClick() {}
+		onMouseEnter()
+		{
+			let tt = new Tooltip();
+			tt.show();
+		}
+		onMouseLeave()
+		{
+			Tooltip.hideCurrent();
+		}
+
 		isEnabled() { return true; }
 	}
 

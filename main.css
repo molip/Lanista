@@ -98,6 +98,17 @@ select {
 	transition: transform .5s ease-in-out;
 }
 
+#tooltip {
+    background-color: white;
+    left: 100px;
+    top: 100px;
+    width: 300px;
+    height: 200px;
+    position: absolute;
+    pointer-events: auto;
+    visibility: hidden;
+}
+
 #back_button {
 	position: absolute; 
 	left: 0;
