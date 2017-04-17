@@ -1238,7 +1238,8 @@ var View;
             this.progress = 0;
             this.onStart = null;
         }
-        Animation.prototype.start = function () {
+        Animation.prototype.start = function (speed) {
+            this.duration /= speed;
             this.startTime = new Date().getTime();
             if (this.onStart)
                 this.onStart();
@@ -1257,12 +1258,13 @@ var View;
     }());
     View.Animation = Animation;
     var Sequence = (function () {
-        function Sequence() {
+        function Sequence(speed) {
+            this.speed = speed;
             this.items = [];
         }
         Sequence.prototype.start = function () {
             if (this.items.length) {
-                this.items[0].start();
+                this.items[0].start(this.speed);
                 return true;
             }
             return false;
@@ -1509,9 +1511,15 @@ var View;
                 _this.selectB.selectedIndex = 1;
             _this.button = document.createElement('button');
             _this.button.addEventListener('click', _this.onStartButton);
+            _this.speedCheckbox = document.createElement('input');
+            _this.speedCheckbox.type = 'checkbox';
+            _this.speedCheckboxLabel = document.createElement('span');
+            _this.speedCheckboxLabel.innerText = 'Oh, just get on with it!';
             topDiv.appendChild(_this.selectA);
             topDiv.appendChild(_this.selectB);
             topDiv.appendChild(_this.button);
+            topDiv.appendChild(_this.speedCheckbox);
+            topDiv.appendChild(_this.speedCheckboxLabel);
             _this.para = document.createElement('p');
             _this.para.style.margin = '0';
             _this.scroller = document.createElement('div');
@@ -1561,7 +1569,7 @@ var View;
             var fighters = this.getFighters();
             var sourcePart = fighters[attackerIndex].bodyParts[result.sourceID];
             var targetPart = fighters[defenderIndex].bodyParts[result.targetID];
-            this.sequence = new View.Sequence();
+            this.sequence = new View.Sequence(this.speedCheckbox.checked ? 5 : 1);
             var pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
             var pointB = this.getBodyPartPoint(defenderIndex, targetPart);
             this.sequence.items.push(new GrowAnimation(result.name, pointA));
