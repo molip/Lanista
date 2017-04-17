@@ -29,6 +29,11 @@ namespace Model
 		}
 	}
 
+	export class Attack
+	{
+		constructor(public data: Data.Attack, public sourceID: string) { }
+	}
+
 	export class Fighter
 	{
 		bodyParts: { [id: string]: BodyPart } = {};
@@ -210,7 +215,7 @@ namespace Model
 
 		getAttacks()
 		{
-			let attacks: Data.Attack[] = [];
+			let attacks: Attack[] = [];
 
 			let speciesData = this.getSpeciesData()
 			for (let id in this.bodyParts)
@@ -218,13 +223,14 @@ namespace Model
 				let part = this.bodyParts[id];
 				let data = speciesData.bodyParts[part.tag];
 				if (data.attack)
-					attacks.push(data.attack); // TODO: Check body part health.
+					attacks.push(new Attack(data.attack, id)); // TODO: Check body part health.
 			}
 
 			for (let weapon of this.weapons)
 			{
 				let data = Data.Weapons.Types[weapon.tag];
-				attacks = attacks.concat(data.attacks); // TODO: Check body part health.
+				for (let attack of data.attacks)
+					attacks.push(new Attack(attack, weapon.bodyPartIDs[0])); // Just use the first body part for the source. 
 			}
 
 			return attacks;
@@ -236,6 +242,21 @@ namespace Model
 			for (let id in this.bodyParts)
 				parts.push(this.bodyParts[id]); // TODO: Check body part health ? 
 			return parts;
+		}
+
+		getBodyPartIDs()
+		{
+			let ids: string[] = [];
+			for (let id in this.bodyParts)
+				ids.push(id); // TODO: Check body part health ? 
+			return ids;
+		}
+
+		chooseRandomBodyPart()
+		{
+			let targets = this.getBodyPartIDs();
+			let targetIndex = Util.getRandomInt(targets.length);
+			return targets[targetIndex];
 		}
 
 		isDead()

@@ -529,6 +529,14 @@ var Model;
         return BodyPart;
     }());
     Model.BodyPart = BodyPart;
+    var Attack = (function () {
+        function Attack(data, sourceID) {
+            this.data = data;
+            this.sourceID = sourceID;
+        }
+        return Attack;
+    }());
+    Model.Attack = Attack;
     var Fighter = (function () {
         function Fighter(id, species, name, image, weapons, armour) {
             this.id = id;
@@ -587,8 +595,8 @@ var Model;
             }
             return bodyPartIDs;
         };
-        // Gets available body parts compatible with specified site. 
-        Fighter.prototype.getEmptySites = function (accType, site) {
+        // Returns first available body parts compatible with specified site. 
+        Fighter.prototype.findBodyPartsForSite = function (accType, site) {
             if (site.species != this.species)
                 return null;
             var bodyPartIDs = [];
@@ -606,25 +614,25 @@ var Model;
             }
             return null;
         };
-        Fighter.prototype.getEmptySitesForAccessory = function (accType, accTag) {
+        Fighter.prototype.findBodyPartsForAccessory = function (accType, accTag) {
             var data = accType == AccessoryType.Weapon ? Data.Weapons.Types[accTag] : Data.Armour.Types[accTag];
             for (var _i = 0, _a = data.sites; _i < _a.length; _i++) {
                 var site = _a[_i];
-                var bodyPartIDs = this.getEmptySites(accType, site);
+                var bodyPartIDs = this.findBodyPartsForSite(accType, site);
                 if (bodyPartIDs)
                     return bodyPartIDs;
             }
             return null;
         };
         Fighter.prototype.canAddWeapon = function (weaponTag) {
-            return !!this.getEmptySitesForAccessory(AccessoryType.Weapon, weaponTag);
+            return !!this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponTag);
         };
         Fighter.prototype.canAddArmour = function (armourTag) {
-            return !!this.getEmptySitesForAccessory(AccessoryType.Armour, armourTag);
+            return !!this.findBodyPartsForAccessory(AccessoryType.Armour, armourTag);
         };
         Fighter.prototype.addWeapon = function (weaponTag) {
             // TODO: Choose site.
-            var bodyPartIDs = this.getEmptySitesForAccessory(AccessoryType.Weapon, weaponTag);
+            var bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponTag);
             if (bodyPartIDs) {
                 this.weapons.push(new Model.Weapon(weaponTag, bodyPartIDs));
                 return;
@@ -633,7 +641,7 @@ var Model;
         };
         Fighter.prototype.addArmour = function (armourTag) {
             // TODO: Choose site.
-            var bodyPartIDs = this.getEmptySitesForAccessory(AccessoryType.Armour, armourTag);
+            var bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Armour, armourTag);
             if (bodyPartIDs) {
                 this.armour.push(new Model.Armour(armourTag, bodyPartIDs));
                 return;
@@ -694,12 +702,15 @@ var Model;
                 var part = this.bodyParts[id];
                 var data = speciesData.bodyParts[part.tag];
                 if (data.attack)
-                    attacks.push(data.attack); // TODO: Check body part health.
+                    attacks.push(new Attack(data.attack, id)); // TODO: Check body part health.
             }
             for (var _i = 0, _a = this.weapons; _i < _a.length; _i++) {
                 var weapon = _a[_i];
                 var data = Data.Weapons.Types[weapon.tag];
-                attacks = attacks.concat(data.attacks); // TODO: Check body part health.
+                for (var _b = 0, _c = data.attacks; _b < _c.length; _b++) {
+                    var attack = _c[_b];
+                    attacks.push(new Attack(attack, weapon.bodyPartIDs[0]));
+                } // Just use the first body part for the source. 
             }
             return attacks;
         };
@@ -708,6 +719,17 @@ var Model;
             for (var id in this.bodyParts)
                 parts.push(this.bodyParts[id]); // TODO: Check body part health ? 
             return parts;
+        };
+        Fighter.prototype.getBodyPartIDs = function () {
+            var ids = [];
+            for (var id in this.bodyParts)
+                ids.push(id); // TODO: Check body part health ? 
+            return ids;
+        };
+        Fighter.prototype.chooseRandomBodyPart = function () {
+            var targets = this.getBodyPartIDs();
+            var targetIndex = Util.getRandomInt(targets.length);
+            return targets[targetIndex];
         };
         Fighter.prototype.isDead = function () {
             for (var id in this.bodyParts)
@@ -854,12 +876,13 @@ var Model;
     var Fight;
     (function (Fight) {
         var AttackResult = (function () {
-            function AttackResult(name, description, attackDamage, defense, targetIndex) {
+            function AttackResult(name, description, attackDamage, defense, sourceID, targetID) {
                 this.name = name;
                 this.description = description;
                 this.attackDamage = attackDamage;
                 this.defense = defense;
-                this.targetIndex = targetIndex;
+                this.sourceID = sourceID;
+                this.targetID = targetID;
             }
             return AttackResult;
         }());
@@ -885,22 +908,21 @@ var Model;
             };
             State.prototype.attack = function (attacker, defender) {
                 var attacks = attacker.getAttacks();
-                var attackData = attacks[Util.getRandomInt(attacks.length)];
+                var attack = attacks[Util.getRandomInt(attacks.length)];
                 var defenderSpeciesData = defender.getSpeciesData();
-                var targets = defender.getBodyParts();
-                var targetIndex = Util.getRandomInt(targets.length);
-                var target = targets[targetIndex];
+                var targetID = defender.chooseRandomBodyPart();
+                var target = defender.bodyParts[targetID];
                 var targetData = target.getData(defenderSpeciesData);
                 var armour = defender.getBodyPartArmour(target.id);
                 var armourData = armour ? Data.Armour.Types[armour.tag] : null;
-                var defense = armourData ? armourData.getDefense(attackData.type) : 0;
-                var damage = attackData.damage * (100 - defense) / 100;
+                var defense = armourData ? armourData.getDefense(attack.data.type) : 0;
+                var damage = attack.data.damage * (100 - defense) / 100;
                 var oldHealth = target.health;
                 target.health = Math.max(0, oldHealth - damage);
-                var msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
-                msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
+                var msg = attacker.name + ' uses ' + attack.data.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
+                msg += 'Damage = ' + attack.data.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
                 msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + target.health.toFixed(1) + '. ';
-                return new AttackResult(attackData.name, msg, attackData.damage, defense, targetIndex);
+                return new AttackResult(attack.data.name, msg, attack.data.damage, defense, attack.sourceID, targetID);
             };
             return State;
         }());
@@ -1537,9 +1559,10 @@ var View;
                 this.updateStartButton();
             }
             var fighters = this.getFighters();
-            var targetPart = fighters[defenderIndex].getBodyParts()[result.targetIndex];
+            var sourcePart = fighters[attackerIndex].bodyParts[result.sourceID];
+            var targetPart = fighters[defenderIndex].bodyParts[result.targetID];
             this.sequence = new View.Sequence();
-            var pointA = this.getImageRect(attackerIndex).centre();
+            var pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
             var pointB = this.getBodyPartPoint(defenderIndex, targetPart);
             this.sequence.items.push(new GrowAnimation(result.name, pointA));
             this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));

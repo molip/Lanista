@@ -248,10 +248,11 @@ namespace View
 			}
 
 			let fighters = this.getFighters();
-			let targetPart = fighters[defenderIndex].getBodyParts()[result.targetIndex];
+			let sourcePart = fighters[attackerIndex].bodyParts[result.sourceID];
+			let targetPart = fighters[defenderIndex].bodyParts[result.targetID];
 
 			this.sequence = new Sequence();
-			let pointA = this.getImageRect(attackerIndex).centre();
+			let pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
 			let pointB = this.getBodyPartPoint(defenderIndex, targetPart);
 
 			this.sequence.items.push(new GrowAnimation(result.name, pointA));
