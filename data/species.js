@@ -24,15 +24,15 @@
 
 Data.Species.Types['human'].bodyParts = 
 {	//							health	attack (name, type, damage)					weapon site (name, id, replacesAttack)				instances (name, x, y)
-	'head':	new Data.BodyPart(	10,		null,										null,												[new Data.BodyPartInstance('Head', 0, 0)]),
-	'body':	new Data.BodyPart(	50,		null,										null,												[new Data.BodyPartInstance('Body', 0, 0)]),
-	'arm':	new Data.BodyPart(	20,		new Data.Attack('Punch','impact', 1),		new Data.WeaponSite('Hand', 'hand',	true),			[new Data.BodyPartInstance('Left arm', 0, 0), new Data.BodyPartInstance('Right arm', 0, 0)]),	
-	'leg':	new Data.BodyPart(	30,		new Data.Attack('Kick', 'impact', 2),		null,												[new Data.BodyPartInstance('Left leg', 0, 0), new Data.BodyPartInstance('Right leg', 0, 0)]),
+	'head':	new Data.BodyPart(	10,		null,										null,												[new Data.BodyPartInstance('Head', 140, 50)]),
+	'body':	new Data.BodyPart(	50,		null,										null,												[new Data.BodyPartInstance('Body', 110, 275)]),
+	'arm':	new Data.BodyPart(	20,		new Data.Attack('Punch','impact', 3),		new Data.WeaponSite('Hand', 'hand',	true),			[new Data.BodyPartInstance('Left arm', 255, 430), new Data.BodyPartInstance('Right arm', 5, 470)]),	
+	'leg':	new Data.BodyPart(	30,		new Data.Attack('Kick', 'impact', 5),		null,												[new Data.BodyPartInstance('Left leg', 315, 665), new Data.BodyPartInstance('Right leg', 60, 690)]),
 }
 
 Data.Species.Types['rabbit'].bodyParts =
 {
-	'head':	new Data.BodyPart(	3,		new Data.Attack('Bite', 'pierce', 1),		new Data.WeaponSite('Head mount', 'mount', false),	[new Data.BodyPartInstance('Head', 160, 90)]),
+	'head':	new Data.BodyPart(	3,		new Data.Attack('Nibble', 'pierce', 1),		new Data.WeaponSite('Head mount', 'mount', false),	[new Data.BodyPartInstance('Head', 160, 90)]),
 	'body':	new Data.BodyPart(	5,		null,										null,												[new Data.BodyPartInstance('Body', 80, 80)]),	
 }
 
@@ -50,15 +50,16 @@ Data.Species.Types['dog'].bodyParts =
 
 Data.Species.Types['lynx'].bodyParts =
 {
-	'head':	new Data.BodyPart(	10,		new Data.Attack('Bite', 'pierce', 1),		null,												[new Data.BodyPartInstance('Head', 340, 70)]),
-	'body':	new Data.BodyPart(	10,		null,										null,												[new Data.BodyPartInstance('Body', 190, 60)]),
-	'legs':	new Data.BodyPart(	10,		new Data.Attack('Claw', 'blade', 1),		null,												[new Data.BodyPartInstance('Legs', 180, 170)]),
+	'head':	new Data.BodyPart(	6,		new Data.Attack('Bite', 'pierce', 4),		null,												[new Data.BodyPartInstance('Head', 340, 70)]),
+	'body':	new Data.BodyPart(	20,		null,										null,												[new Data.BodyPartInstance('Body', 190, 60)]),
+	'legs':	new Data.BodyPart(	24,		new Data.Attack('Claw', 'blade', 6),		null,												[new Data.BodyPartInstance('Legs', 180, 170)]),
 }
 
 Data.Species.Types['wolf'].bodyParts =
 {
-	'head':	new Data.BodyPart(	10,		new Data.Attack('Bite', 'pierce', 1),		null,												[new Data.BodyPartInstance('Head', 420, 80)]),
-	'body':	new Data.BodyPart(	10,		null,										null,												[new Data.BodyPartInstance('Body', 200, 90)]),
+	'head':	new Data.BodyPart(	8,		new Data.Attack('Bite', 'pierce', 5),		null,												[new Data.BodyPartInstance('Head', 420, 80)]),
+	'body':	new Data.BodyPart(	35,		null,										null,												[new Data.BodyPartInstance('Body', 200, 90)]),
+	'legs':	new Data.BodyPart(	40,		null,										null,												[new Data.BodyPartInstance('Legs', 185, 245)]),
 }
 
 Data.Species.Types['snake'].bodyParts =

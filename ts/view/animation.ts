@@ -11,8 +11,9 @@ namespace View
 		{
 		}
 
-		start()
+		start(speed: number)
 		{
+			this.duration /= speed;
 			this.startTime = new Date().getTime();
 			if (this.onStart)
 				this.onStart();
@@ -38,7 +39,7 @@ namespace View
 	{
 		items: Animation[] = [];
 		 
-		constructor()
+		constructor(public speed: number)
 		{
 		}
 
@@ -46,7 +47,7 @@ namespace View
 		{
 			if (this.items.length)
 			{
-				this.items[0].start();
+				this.items[0].start(this.speed);
 				return true;
 			}
 			return false;

@@ -111,6 +111,8 @@ namespace View
 		button: HTMLButtonElement;
 		selectA: HTMLSelectElement;
 		selectB: HTMLSelectElement;
+		speedCheckboxLabel: HTMLSpanElement;
+		speedCheckbox: HTMLInputElement;
 		canvas: Canvas;
 		backgroundImage: CanvasImage = new CanvasImage();
 		imageA: CanvasImage = new CanvasImage();
@@ -153,9 +155,17 @@ namespace View
 			this.button = document.createElement('button');
 			this.button.addEventListener('click', this.onStartButton);
 
+			this.speedCheckbox = document.createElement('input');
+			this.speedCheckbox.type = 'checkbox';
+
+			this.speedCheckboxLabel = document.createElement('span');
+			this.speedCheckboxLabel.innerText = 'Oh, just get on with it!';
+
 			topDiv.appendChild(this.selectA);
 			topDiv.appendChild(this.selectB);
 			topDiv.appendChild(this.button);
+			topDiv.appendChild(this.speedCheckbox);
+			topDiv.appendChild(this.speedCheckboxLabel);
 
 			this.para = document.createElement('p');
 			this.para.style.margin = '0';
@@ -248,10 +258,11 @@ namespace View
 			}
 
 			let fighters = this.getFighters();
-			let targetPart = fighters[defenderIndex].getBodyParts()[result.targetIndex];
+			let sourcePart = fighters[attackerIndex].bodyParts[result.sourceID];
+			let targetPart = fighters[defenderIndex].bodyParts[result.targetID];
 
-			this.sequence = new Sequence();
-			let pointA = this.getImageRect(attackerIndex).centre();
+			this.sequence = new Sequence(this.speedCheckbox.checked ? 5 : 1);
+			let pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
 			let pointB = this.getBodyPartPoint(defenderIndex, targetPart);
 
 			this.sequence.items.push(new GrowAnimation(result.name, pointA));

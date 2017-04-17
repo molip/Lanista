@@ -29,6 +29,11 @@ namespace Model
 		}
 	}
 
+	export class Attack
+	{
+		constructor(public data: Data.Attack, public sourceID: string) { }
+	}
+
 	export class Fighter
 	{
 		bodyParts: { [id: string]: BodyPart } = {};
@@ -90,8 +95,8 @@ namespace Model
 			return bodyPartIDs;	
 		}
 
-		// Gets available body parts compatible with specified site. 
-		getEmptySites(accType: AccessoryType, site: Data.Site)
+		// Returns first available body parts compatible with specified site. 
+		findBodyPartsForSite(accType: AccessoryType, site: Data.Site)
 		{
 			if (site.species != this.species)
 				return null;
@@ -116,12 +121,12 @@ namespace Model
 			return null;
 		}
 
-		getEmptySitesForAccessory(accType: AccessoryType, accTag: string)
+		findBodyPartsForAccessory(accType: AccessoryType, accTag: string)
 		{
 			let data = accType == AccessoryType.Weapon ? Data.Weapons.Types[accTag] : Data.Armour.Types[accTag];
 			for (let site of data.sites)
 			{
-				let bodyPartIDs = this.getEmptySites(accType, site);
+				let bodyPartIDs = this.findBodyPartsForSite(accType, site);
 				if (bodyPartIDs)
 					return bodyPartIDs;
 			}
@@ -130,18 +135,18 @@ namespace Model
 
 		canAddWeapon(weaponTag: string)
 		{
-			return !!this.getEmptySitesForAccessory(AccessoryType.Weapon, weaponTag);
+			return !!this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponTag);
 		}
 
 		canAddArmour(armourTag: string)
 		{
-			return !!this.getEmptySitesForAccessory(AccessoryType.Armour, armourTag);
+			return !!this.findBodyPartsForAccessory(AccessoryType.Armour, armourTag);
 		}
 
 		addWeapon(weaponTag: string)
 		{
 			// TODO: Choose site.
-			let bodyPartIDs = this.getEmptySitesForAccessory(AccessoryType.Weapon, weaponTag);
+			let bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponTag);
 			if (bodyPartIDs)
 			{
 				this.weapons.push(new Weapon(weaponTag, bodyPartIDs));
@@ -153,7 +158,7 @@ namespace Model
 		addArmour(armourTag: string)
 		{
 			// TODO: Choose site.
-			let bodyPartIDs = this.getEmptySitesForAccessory(AccessoryType.Armour, armourTag);
+			let bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Armour, armourTag);
 			if (bodyPartIDs)
 			{
 				this.armour.push(new Armour(armourTag, bodyPartIDs));
@@ -210,7 +215,7 @@ namespace Model
 
 		getAttacks()
 		{
-			let attacks: Data.Attack[] = [];
+			let attacks: Attack[] = [];
 
 			let speciesData = this.getSpeciesData()
 			for (let id in this.bodyParts)
@@ -218,13 +223,14 @@ namespace Model
 				let part = this.bodyParts[id];
 				let data = speciesData.bodyParts[part.tag];
 				if (data.attack)
-					attacks.push(data.attack); // TODO: Check body part health.
+					attacks.push(new Attack(data.attack, id)); // TODO: Check body part health.
 			}
 
 			for (let weapon of this.weapons)
 			{
 				let data = Data.Weapons.Types[weapon.tag];
-				attacks = attacks.concat(data.attacks); // TODO: Check body part health.
+				for (let attack of data.attacks)
+					attacks.push(new Attack(attack, weapon.bodyPartIDs[0])); // Just use the first body part for the source. 
 			}
 
 			return attacks;
@@ -236,6 +242,21 @@ namespace Model
 			for (let id in this.bodyParts)
 				parts.push(this.bodyParts[id]); // TODO: Check body part health ? 
 			return parts;
+		}
+
+		getBodyPartIDs()
+		{
+			let ids: string[] = [];
+			for (let id in this.bodyParts)
+				ids.push(id); // TODO: Check body part health ? 
+			return ids;
+		}
+
+		chooseRandomBodyPart()
+		{
+			let targets = this.getBodyPartIDs();
+			let targetIndex = Util.getRandomInt(targets.length);
+			return targets[targetIndex];
 		}
 
 		isDead()

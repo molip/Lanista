@@ -6,7 +6,7 @@ namespace Model
 	{
 		export class AttackResult
 		{
-			constructor(public name: string, public description: string, public attackDamage: number, public defense: number, public targetIndex: number) { }
+			constructor(public name: string, public description: string, public attackDamage: number, public defense: number, public sourceID: string, public targetID: string) { }
 		}
 
 		export type Team = string[]; // Fighter IDs. 
@@ -46,27 +46,26 @@ namespace Model
 			attack(attacker: Fighter, defender: Fighter)
 			{
 				let attacks = attacker.getAttacks();
-				let attackData = attacks[Util.getRandomInt(attacks.length)];
+				let attack = attacks[Util.getRandomInt(attacks.length)];
 
 				let defenderSpeciesData = defender.getSpeciesData();
-				let targets = defender.getBodyParts();
-				let targetIndex = Util.getRandomInt(targets.length);
-				let target = targets[targetIndex];
+				let targetID = defender.chooseRandomBodyPart();
+				let target = defender.bodyParts[targetID];
 				let targetData = target.getData(defenderSpeciesData);
 
 				let armour = defender.getBodyPartArmour(target.id);
 				let armourData = armour ? Data.Armour.Types[armour.tag] : null;
 
-				let defense = armourData ? armourData.getDefense(attackData.type) : 0;
-				let damage = attackData.damage * (100 - defense) / 100;
+				let defense = armourData ? armourData.getDefense(attack.data.type) : 0;
+				let damage = attack.data.damage * (100 - defense) / 100;
 
 				let oldHealth = target.health;
 				target.health = Math.max(0, oldHealth - damage);
 
-				let msg = attacker.name + ' uses ' + attackData.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
-				msg += 'Damage = ' + attackData.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
+				let msg = attacker.name + ' uses ' + attack.data.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
+				msg += 'Damage = ' + attack.data.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
 				msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + target.health.toFixed(1) + '. ';
-				return new AttackResult(attackData.name, msg, attackData.damage, defense, targetIndex); 
+				return new AttackResult(attack.data.name, msg, attack.data.damage, defense, attack.sourceID, targetID); 
 			}
 		}
 	}
