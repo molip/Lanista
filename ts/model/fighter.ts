@@ -90,8 +90,8 @@ namespace Model
 			return bodyPartIDs;	
 		}
 
-		// Gets available body parts compatible with specified site. 
-		getEmptySites(accType: AccessoryType, site: Data.Site)
+		// Returns first available body parts compatible with specified site. 
+		findBodyPartsForSite(accType: AccessoryType, site: Data.Site)
 		{
 			if (site.species != this.species)
 				return null;
@@ -116,12 +116,12 @@ namespace Model
 			return null;
 		}
 
-		getEmptySitesForAccessory(accType: AccessoryType, accTag: string)
+		findBodyPartsForAccessory(accType: AccessoryType, accTag: string)
 		{
 			let data = accType == AccessoryType.Weapon ? Data.Weapons.Types[accTag] : Data.Armour.Types[accTag];
 			for (let site of data.sites)
 			{
-				let bodyPartIDs = this.getEmptySites(accType, site);
+				let bodyPartIDs = this.findBodyPartsForSite(accType, site);
 				if (bodyPartIDs)
 					return bodyPartIDs;
 			}
@@ -130,18 +130,18 @@ namespace Model
 
 		canAddWeapon(weaponTag: string)
 		{
-			return !!this.getEmptySitesForAccessory(AccessoryType.Weapon, weaponTag);
+			return !!this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponTag);
 		}
 
 		canAddArmour(armourTag: string)
 		{
-			return !!this.getEmptySitesForAccessory(AccessoryType.Armour, armourTag);
+			return !!this.findBodyPartsForAccessory(AccessoryType.Armour, armourTag);
 		}
 
 		addWeapon(weaponTag: string)
 		{
 			// TODO: Choose site.
-			let bodyPartIDs = this.getEmptySitesForAccessory(AccessoryType.Weapon, weaponTag);
+			let bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponTag);
 			if (bodyPartIDs)
 			{
 				this.weapons.push(new Weapon(weaponTag, bodyPartIDs));
@@ -153,7 +153,7 @@ namespace Model
 		addArmour(armourTag: string)
 		{
 			// TODO: Choose site.
-			let bodyPartIDs = this.getEmptySitesForAccessory(AccessoryType.Armour, armourTag);
+			let bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Armour, armourTag);
 			if (bodyPartIDs)
 			{
 				this.armour.push(new Armour(armourTag, bodyPartIDs));
