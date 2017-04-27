@@ -33,10 +33,21 @@ namespace Controller
 
 	export function onTick()
 	{
-		if (Model.state.update(1))
+		if (View.Page.Current)
+			return;
+
+		if (View.isTransitioning())
+			return;
+
+		let changed = Model.state.update(1);
+
+		if (changed)
 		{
 			View.ludus.updateObjects();
 		}
+
+		if (Model.state.isNight())
+			View.startTransition(new View.Transition(Model.state.phase == 'dusk', () => { Model.state.advancePhase(); }));
 
 		updateHUD();
 	}
@@ -67,6 +78,8 @@ namespace Controller
 			Model.resetState();
 			updateHUD();
 			View.ludus.initObjects();
+			View.updateSpeedButtons();
+			Controller.onTick();
 		}
 	}
 

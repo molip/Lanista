@@ -8,6 +8,20 @@ namespace View
 
 	let speeds = [0, 1, 10, 60];
 
+	export class Transition
+	{
+		progress: number = 0;
+		id: number = 0;
+		constructor(public reverse: boolean, public endHandler: () => void) { }
+	}
+
+	let currentTransition: Transition = null;
+
+	function setOpacity(opacity: number)
+	{
+		document.getElementById('master_div').style.opacity = opacity.toString();
+	}
+
 	export function init()
 	{
 		View.ludus = new Ludus();
@@ -24,6 +38,8 @@ namespace View
 		}
 
 		updateSpeedButtons();
+
+		setOpacity(Model.state.isNight() ? 0 : 1);
 	}
 
 	export function showInfo(title: string, description: string)
@@ -79,6 +95,36 @@ namespace View
 		{
 			let button = <HTMLInputElement>document.getElementById('speed_btn_' + i);
 			button.checked = Model.state.speed == speeds[i];
+		}
+	}
+
+	export function startTransition(transition: Transition)
+	{
+		currentTransition = transition;
+		currentTransition.id = window.setInterval(View.onTransitionTick, 100);
+	}
+
+	export function isTransitioning()
+	{
+		return currentTransition != null;
+	}
+
+	export function onTransitionTick()
+	{
+		const steps = 20;
+		Util.assert(currentTransition != null);
+		let opacity = ++currentTransition.progress / steps;
+		if (currentTransition.reverse)
+			opacity = 1 - opacity;
+
+		setOpacity(opacity);
+
+		if (currentTransition.progress == steps)
+		{
+			window.clearInterval(currentTransition.id);
+			let handler = currentTransition.endHandler;
+			currentTransition = null;
+			handler();
 		}
 	}
 }

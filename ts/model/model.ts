@@ -2,11 +2,14 @@
 
 namespace Model
 {
+	const minutesPerDay = 60 * 12;
+
 	export class State
 	{
-		static readonly key: string = "state.v9"
+		static readonly key: string = "state.v11"
 
 		private money = 1000;
+		phase: string = 'dawn';
 		buildings = new Buildings.State();
 		fight: Fight.State = null;
 		fighters: { [id: string]: Fighter } = {};
@@ -16,14 +19,44 @@ namespace Model
 
 		update(seconds: number)
 		{
-			let minutesPassed = seconds * this.speed;
-			this.time += minutesPassed;
-			let hoursPassed = minutesPassed / 60;
+			let changed = false;
 
-			let changed = this.updateActivities(hoursPassed);
+			if (!this.isNight())
+			{
+				let oldDay = this.getDay();
+
+				let minutesPassed = seconds * this.speed;
+				this.time += minutesPassed;
+				let hoursPassed = minutesPassed / 60;
+
+				changed = this.updateActivities(hoursPassed);
+
+				if (this.getDay() > oldDay)
+					this.phase = 'dusk'; 
+			}
 
 			Model.saveState();
 			return changed;
+		}
+
+		isNight() { return this.phase != 'day'; }
+
+		getMorningNews()
+		{
+			// TODO: Any random events must be generated the previous day, and saved. 
+			return true;
+		}
+
+		advancePhase()
+		{
+			if (this.phase == 'dusk')
+				this.phase = 'dawn';
+			else if (this.phase == 'dawn')
+				this.phase = 'day';
+			else
+				Util.assert(false);
+
+			Model.saveState();
 		}
 
 		updateActivities(hours: number)
@@ -82,12 +115,18 @@ namespace Model
 			this.speed = speed;
 		}
 
+		getDay()
+		{
+			return Math.floor(this.time / minutesPerDay);
+		}
+
 		getTimeString()
 		{
-			let minutesPerDay = 60 * 12;
-			let days = Math.floor(this.time / minutesPerDay);
-			let hours = Math.floor((this.time % minutesPerDay) / 60);
-			let mins = Math.floor(this.time % 60);
+			let dusk = this.phase == 'dusk';
+
+			let days = this.getDay() - (dusk ? 1 : 0);
+			let hours = dusk ? 12 : Math.floor((this.time % minutesPerDay) / 60);
+			let mins = dusk ? 0 : Math.floor(this.time % 60);
 
 			return 'Day ' + (days + 1).toString() + ' ' + ('00' + (hours + 6)).slice(-2) + ':' + ('00' + mins).slice(-2);
 		}
@@ -212,6 +251,9 @@ namespace Model
 
 				fighter.onLoad();
 			}
+
+			if (state.phase == 'dusk') // Skip it. 
+				state.phase = 'dawn';
 		}
 		else
 			resetState();

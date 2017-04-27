@@ -74,9 +74,16 @@ var Controller;
     }
     Controller.onResize = onResize;
     function onTick() {
-        if (Model.state.update(1)) {
+        if (View.Page.Current)
+            return;
+        if (View.isTransitioning())
+            return;
+        var changed = Model.state.update(1);
+        if (changed) {
             View.ludus.updateObjects();
         }
+        if (Model.state.isNight())
+            View.startTransition(new View.Transition(Model.state.phase == 'dusk', function () { Model.state.advancePhase(); }));
         updateHUD();
     }
     Controller.onTick = onTick;
@@ -103,6 +110,8 @@ var Controller;
             Model.resetState();
             updateHUD();
             View.ludus.initObjects();
+            View.updateSpeedButtons();
+            Controller.onTick();
         }
     }
     Controller.onResetClicked = onResetClicked;
@@ -932,9 +941,11 @@ var Model;
 "use strict";
 var Model;
 (function (Model) {
+    var minutesPerDay = 60 * 12;
     var State = (function () {
         function State() {
             this.money = 1000;
+            this.phase = 'dawn';
             this.buildings = new Model.Buildings.State();
             this.fight = null;
             this.fighters = {};
@@ -943,12 +954,32 @@ var Model;
             this.speed = 1; // Game minutes per second. 
         }
         State.prototype.update = function (seconds) {
-            var minutesPassed = seconds * this.speed;
-            this.time += minutesPassed;
-            var hoursPassed = minutesPassed / 60;
-            var changed = this.updateActivities(hoursPassed);
+            var changed = false;
+            if (!this.isNight()) {
+                var oldDay = this.getDay();
+                var minutesPassed = seconds * this.speed;
+                this.time += minutesPassed;
+                var hoursPassed = minutesPassed / 60;
+                changed = this.updateActivities(hoursPassed);
+                if (this.getDay() > oldDay)
+                    this.phase = 'dusk';
+            }
             Model.saveState();
             return changed;
+        };
+        State.prototype.isNight = function () { return this.phase != 'day'; };
+        State.prototype.getMorningNews = function () {
+            // TODO: Any random events must be generated the previous day, and saved. 
+            return true;
+        };
+        State.prototype.advancePhase = function () {
+            if (this.phase == 'dusk')
+                this.phase = 'dawn';
+            else if (this.phase == 'dawn')
+                this.phase = 'day';
+            else
+                Util.assert(false);
+            Model.saveState();
         };
         State.prototype.updateActivities = function (hours) {
             var workPower = {}; // Activity -> power.
@@ -987,11 +1018,14 @@ var Model;
             }
             this.speed = speed;
         };
+        State.prototype.getDay = function () {
+            return Math.floor(this.time / minutesPerDay);
+        };
         State.prototype.getTimeString = function () {
-            var minutesPerDay = 60 * 12;
-            var days = Math.floor(this.time / minutesPerDay);
-            var hours = Math.floor((this.time % minutesPerDay) / 60);
-            var mins = Math.floor(this.time % 60);
+            var dusk = this.phase == 'dusk';
+            var days = this.getDay() - (dusk ? 1 : 0);
+            var hours = dusk ? 12 : Math.floor((this.time % minutesPerDay) / 60);
+            var mins = dusk ? 0 : Math.floor(this.time % 60);
             return 'Day ' + (days + 1).toString() + ' ' + ('00' + (hours + 6)).slice(-2) + ':' + ('00' + mins).slice(-2);
         };
         State.prototype.getMoney = function () { return Model.state.money; };
@@ -1068,7 +1102,7 @@ var Model;
         };
         return State;
     }());
-    State.key = "state.v9";
+    State.key = "state.v11";
     Model.State = State;
     function init() {
         var str = localStorage.getItem(State.key);
@@ -1086,6 +1120,8 @@ var Model;
                     fighter.__proto__ = Model.Animal.prototype;
                 fighter.onLoad();
             }
+            if (Model.state.phase == 'dusk')
+                Model.state.phase = 'dawn';
         }
         else
             resetState();
@@ -2179,6 +2215,20 @@ var View;
     View.Width = 1280;
     View.Height = 720;
     var speeds = [0, 1, 10, 60];
+    var Transition = (function () {
+        function Transition(reverse, endHandler) {
+            this.reverse = reverse;
+            this.endHandler = endHandler;
+            this.progress = 0;
+            this.id = 0;
+        }
+        return Transition;
+    }());
+    View.Transition = Transition;
+    var currentTransition = null;
+    function setOpacity(opacity) {
+        document.getElementById('master_div').style.opacity = opacity.toString();
+    }
     function init() {
         View.ludus = new View.Ludus();
         View.updateLayout();
@@ -2193,6 +2243,7 @@ var View;
             _loop_5(i);
         }
         updateSpeedButtons();
+        setOpacity(Model.state.isNight() ? 0 : 1);
     }
     View.init = init;
     function showInfo(title, description) {
@@ -2240,4 +2291,28 @@ var View;
         }
     }
     View.updateSpeedButtons = updateSpeedButtons;
+    function startTransition(transition) {
+        currentTransition = transition;
+        currentTransition.id = window.setInterval(View.onTransitionTick, 100);
+    }
+    View.startTransition = startTransition;
+    function isTransitioning() {
+        return currentTransition != null;
+    }
+    View.isTransitioning = isTransitioning;
+    function onTransitionTick() {
+        var steps = 20;
+        Util.assert(currentTransition != null);
+        var opacity = ++currentTransition.progress / steps;
+        if (currentTransition.reverse)
+            opacity = 1 - opacity;
+        setOpacity(opacity);
+        if (currentTransition.progress == steps) {
+            window.clearInterval(currentTransition.id);
+            var handler = currentTransition.endHandler;
+            currentTransition = null;
+            handler();
+        }
+    }
+    View.onTransitionTick = onTransitionTick;
 })(View || (View = {}));
