@@ -49,6 +49,8 @@ namespace Controller
 		if (Model.state.isNight())
 			View.startTransition(new View.Transition(Model.state.phase == 'dusk', () => { Model.state.advancePhase(); }));
 
+		View.enable(!Model.state.isNight());
+
 		updateHUD();
 	}
 

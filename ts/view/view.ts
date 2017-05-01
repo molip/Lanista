@@ -127,4 +127,9 @@ namespace View
 			handler();
 		}
 	}
+
+	export function enable(enable: boolean)
+	{
+		document.body.style.pointerEvents = enable ? 'auto' : 'none';
+	}
 }
