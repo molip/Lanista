@@ -61,7 +61,7 @@ var Controller;
         window.addEventListener('keydown', Controller.onKeyDown);
         window.addEventListener('resize', View.updateLayout);
         if (Model.state.fight)
-            onArenaTriggerClicked();
+            showFightPage();
     }
     Controller.onLoad = onLoad;
     function setSpeed(speed) {
@@ -84,6 +84,7 @@ var Controller;
         }
         if (Model.state.isNight())
             View.startTransition(new View.Transition(Model.state.phase == 'dusk', function () { Model.state.advancePhase(); }));
+        View.enable(!Model.state.isNight());
         updateHUD();
     }
     Controller.onTick = onTick;
@@ -159,6 +160,10 @@ var Controller;
         Controller.Shop.showShopsPage();
     }
     Controller.onTownTriggerClicked = onTownTriggerClicked;
+    function showFightPage() {
+        var page = new View.FightPage();
+        page.show();
+    }
     function updateHUD() {
         var money = ' Money: ' + Util.formatMoney(Model.state.getMoney());
         var time = Model.state.getTimeString();
@@ -1387,380 +1392,6 @@ var View;
 "use strict";
 var View;
 (function (View) {
-    function drawAttack(name, ctx) {
-        ctx.textAlign = "center";
-        ctx.textBaseline = 'middle';
-        ctx.font = '40px Arial';
-        ctx.fillStyle = '#ff0000';
-        ctx.fillText(name, 0, 0);
-    }
-    var GrowAnimation = (function (_super) {
-        __extends(GrowAnimation, _super);
-        function GrowAnimation(name, point) {
-            var _this = _super.call(this, 300) || this;
-            _this.name = name;
-            _this.point = point;
-            return _this;
-        }
-        GrowAnimation.prototype.draw = function (ctx, xform) {
-            var scale = Util.querp(0, 1, this.progress);
-            var point = xform.transformPoint(this.point);
-            ctx.translate(point.x, point.y);
-            ctx.scale(scale, scale);
-            drawAttack(this.name, ctx);
-        };
-        return GrowAnimation;
-    }(View.Animation));
-    //class ExplodeAnimation extends Animation
-    //{
-    //	constructor(private name: string, private point: Point)
-    //	{
-    //		super(300);
-    //	}
-    //	draw(ctx: CanvasRenderingContext2D)
-    //	{
-    //		let scale = Util.lerp(1, 15, this.progress); 
-    //		ctx.translate(this.point.x, this.point.y);
-    //		ctx.scale(scale, scale);
-    //		ctx.globalAlpha = 1 - this.progress;
-    //		drawAttack(this.name, ctx);
-    //		ctx.globalAlpha = 1;
-    //	}
-    //}
-    var DamageAnimation = (function (_super) {
-        __extends(DamageAnimation, _super);
-        function DamageAnimation(name, point) {
-            var _this = _super.call(this, 1000) || this;
-            _this.name = name;
-            _this.point = point;
-            return _this;
-        }
-        DamageAnimation.prototype.draw = function (ctx, xform) {
-            var offset = Util.querp(0, 100, this.progress);
-            var point = xform.transformPoint(this.point);
-            ctx.translate(point.x, point.y - offset);
-            ctx.globalAlpha = 1 - this.progress * this.progress;
-            drawAttack(this.name, ctx);
-            ctx.globalAlpha = 1;
-        };
-        return DamageAnimation;
-    }(View.Animation));
-    var PauseAnimation = (function (_super) {
-        __extends(PauseAnimation, _super);
-        function PauseAnimation(name, point, duration) {
-            var _this = _super.call(this, duration) || this;
-            _this.name = name;
-            _this.point = point;
-            return _this;
-        }
-        PauseAnimation.prototype.draw = function (ctx, xform) {
-            var point = xform.transformPoint(this.point);
-            ctx.translate(point.x, point.y);
-            drawAttack(this.name, ctx);
-        };
-        return PauseAnimation;
-    }(View.Animation));
-    var MoveAnimation = (function (_super) {
-        __extends(MoveAnimation, _super);
-        function MoveAnimation(name, pointA, pointB) {
-            var _this = _super.call(this, 500) || this;
-            _this.name = name;
-            _this.pointA = pointA;
-            _this.pointB = pointB;
-            return _this;
-        }
-        MoveAnimation.prototype.draw = function (ctx, xform) {
-            var pointA = xform.transformPoint(this.pointA);
-            var pointB = xform.transformPoint(this.pointB);
-            var x = Util.querp(pointA.x, pointB.x, this.progress);
-            var y = Util.querp(pointA.y, pointB.y, this.progress);
-            ctx.translate(x, y);
-            ctx.rotate(2 * Math.PI * this.progress * 2 * (pointA.x > pointB.x ? -1 : 1));
-            drawAttack(this.name, ctx);
-        };
-        return MoveAnimation;
-    }(View.Animation));
-    var ArenaPage = (function (_super) {
-        __extends(ArenaPage, _super);
-        function ArenaPage() {
-            var _this = _super.call(this, 'Arena') || this;
-            _this.backgroundImage = new View.CanvasImage();
-            _this.imageA = new View.CanvasImage();
-            _this.imageB = new View.CanvasImage();
-            _this.sequence = null;
-            _this.timer = 0;
-            _this.healths = [];
-            _this.onStartButton = function () {
-                if (Model.state.fight) {
-                    Model.state.endFight();
-                    _this.updateStartButton();
-                    _this.sequence = null;
-                    _this.draw();
-                    return;
-                }
-                var teams = [];
-                var fighterIDs = Model.state.getFighterIDs();
-                teams.push([fighterIDs[_this.selectA.selectedIndex]]);
-                teams.push([fighterIDs[_this.selectB.selectedIndex]]);
-                Model.state.startFight(teams[0], teams[1]);
-                _this.selectA.disabled = _this.selectB.disabled = true;
-                _this.updateStartButton();
-                _this.doAttack();
-            };
-            _this.onTick = function () {
-                if (_this.sequence) {
-                    if (_this.sequence.update()) {
-                        _this.draw();
-                    }
-                    else {
-                        _this.sequence = null;
-                        if (Model.state.fight)
-                            _this.doAttack();
-                        else
-                            window.clearInterval(_this.timer);
-                    }
-                }
-            };
-            _this.onFightersChanged = function () {
-                _this.updateStartButton();
-                _this.updateHealths();
-                _this.updateImages();
-            };
-            var topDiv = document.createElement('div');
-            topDiv.id = 'arena_top_div';
-            _this.selectA = document.createElement('select');
-            _this.selectB = document.createElement('select');
-            _this.selectA.addEventListener('change', _this.onFightersChanged);
-            _this.selectB.addEventListener('change', _this.onFightersChanged);
-            var makeOption = function (id) {
-                var option = document.createElement('option');
-                option.text = Model.state.fighters[id].name;
-                if (Model.state.fighters[id].isDead())
-                    option.text += ' (x_x)';
-                return option;
-            };
-            for (var id in Model.state.fighters) {
-                _this.selectB.options.add(makeOption(id));
-                _this.selectA.options.add(makeOption(id));
-            }
-            if (_this.selectB.options.length > 1)
-                _this.selectB.selectedIndex = 1;
-            _this.button = document.createElement('button');
-            _this.button.addEventListener('click', _this.onStartButton);
-            _this.speedCheckbox = document.createElement('input');
-            _this.speedCheckbox.type = 'checkbox';
-            _this.speedCheckboxLabel = document.createElement('span');
-            _this.speedCheckboxLabel.innerText = 'Oh, just get on with it!';
-            topDiv.appendChild(_this.selectA);
-            topDiv.appendChild(_this.selectB);
-            topDiv.appendChild(_this.button);
-            topDiv.appendChild(_this.speedCheckbox);
-            topDiv.appendChild(_this.speedCheckboxLabel);
-            _this.para = document.createElement('p');
-            _this.para.style.margin = '0';
-            _this.scroller = document.createElement('div');
-            _this.scroller.id = 'arena_scroller';
-            _this.scroller.className = 'scroller';
-            _this.scroller.appendChild(_this.para);
-            var canvas = document.createElement('canvas');
-            canvas.id = 'arena_canvas';
-            _this.canvas = new View.Canvas(canvas);
-            _this.div.appendChild(topDiv);
-            _this.div.appendChild(canvas);
-            _this.div.appendChild(_this.scroller);
-            _this.backgroundImage.loadImage(Data.Misc.ArenaBackgroundImage, function () { _this.draw(); });
-            _this.update();
-            _this.updateStartButton();
-            _this.updateHealths();
-            _this.updateImages();
-            return _this;
-        }
-        ArenaPage.prototype.onShow = function () {
-            this.canvas.element.width = View.Width;
-            this.canvas.element.height = View.Width * this.canvas.element.clientHeight / this.canvas.element.clientWidth;
-            if (Model.state.fight) {
-                var fighterIDs = Model.state.getFighterIDs();
-                this.selectA.selectedIndex = fighterIDs.indexOf(Model.state.fight.teams[0][0]);
-                this.selectB.selectedIndex = fighterIDs.indexOf(Model.state.fight.teams[1][0]);
-                this.doAttack();
-            }
-            this.draw();
-        };
-        ArenaPage.prototype.onClose = function () {
-            return Model.state.fight == null;
-        };
-        ArenaPage.prototype.doAttack = function () {
-            var _this = this;
-            Util.assert(!!Model.state.fight);
-            if (!this.timer)
-                this.timer = window.setInterval(this.onTick, 40);
-            var attackerIndex = Model.state.fight.nextTeamIndex;
-            var result = Model.state.fight.step();
-            var defenderIndex = Model.state.fight.nextTeamIndex;
-            this.update();
-            if (Model.state.fight.finished) {
-                Model.state.endFight();
-                this.updateStartButton();
-            }
-            var fighters = this.getFighters();
-            var sourcePart = fighters[attackerIndex].bodyParts[result.sourceID];
-            var targetPart = fighters[defenderIndex].bodyParts[result.targetID];
-            this.sequence = new View.Sequence(this.speedCheckbox.checked ? 5 : 1);
-            var pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
-            var pointB = this.getBodyPartPoint(defenderIndex, targetPart);
-            this.sequence.items.push(new GrowAnimation(result.name, pointA));
-            this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
-            this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
-            var damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
-            var damageAnim = new DamageAnimation(damageString, pointB);
-            damageAnim.onStart = function () { _this.updateHealths(); };
-            this.sequence.items.push(damageAnim);
-            this.sequence.items.push(new View.Animation(1000));
-            this.sequence.start();
-        };
-        ArenaPage.prototype.getFighters = function () {
-            var fighterIDs = Model.state.getFighterIDs();
-            var fighterA = this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]];
-            var fighterB = this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]];
-            return [fighterA, fighterB];
-        };
-        ArenaPage.prototype.updateStartButton = function () {
-            if (Model.state.fight) {
-                this.button.innerText = 'Stop';
-                this.button.disabled = false;
-                return;
-            }
-            this.button.innerText = 'Start';
-            var fighters = this.getFighters();
-            this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
-        };
-        ArenaPage.prototype.update = function () {
-            if (!Model.state.fight)
-                return;
-            var atEnd = Math.abs(this.scroller.scrollTop + this.scroller.clientHeight - this.scroller.scrollHeight) <= 10;
-            this.para.innerHTML = Model.state.fight.text;
-            if (atEnd)
-                this.scroller.scrollTop = this.scroller.scrollHeight;
-        };
-        ArenaPage.prototype.updateImages = function () {
-            var _this = this;
-            var fighters = this.getFighters();
-            if (fighters.indexOf(null) >= 0)
-                return;
-            this.imageA.loadImage(fighters[0].image, function () { _this.draw(); });
-            this.imageB.loadImage(fighters[1].image, function () { _this.draw(); });
-            this.draw();
-        };
-        ArenaPage.prototype.updateHealths = function () {
-            var fighters = this.getFighters();
-            this.healths.length = 0;
-            for (var i = 0; i < 2; ++i) {
-                this.healths.push([]);
-                if (fighters[i])
-                    for (var _i = 0, _a = fighters[i].getBodyParts(); _i < _a.length; _i++) {
-                        var part = _a[_i];
-                        this.healths[this.healths.length - 1].push(part.health);
-                    }
-            }
-        };
-        ArenaPage.prototype.getImageRect = function (index) {
-            var image = index ? this.imageB : this.imageA;
-            var rect = new Rect(0, 0, image.image.width, image.image.height);
-            var x = this.canvas.element.width / 2 + (index ? 50 : -50 - rect.width());
-            var y = this.canvas.element.height - rect.height();
-            rect.offset(x, y);
-            return rect;
-        };
-        ArenaPage.prototype.getBodyPartPoint = function (fighterIndex, part) {
-            var fighter = this.getFighters()[fighterIndex];
-            var rect = this.getImageRect(fighterIndex);
-            var data = part.getInstanceData(fighter.getSpeciesData());
-            return new Point(fighterIndex ? rect.right - data.x : rect.left + data.x, rect.top + data.y);
-        };
-        ArenaPage.prototype.drawHealthBar = function (ctx, centre, current, max) {
-            var scale = 5, height = 8;
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#802020';
-            ctx.fillStyle = '#f08080';
-            var innerRect = new Rect(centre.x - scale * max / 2, centre.y - height / 2, centre.x + scale * max / 2, centre.y + height / 2);
-            var outerRect = innerRect.clone();
-            outerRect.expand(1, 1, 1, 1);
-            innerRect.right = innerRect.left + innerRect.width() * current / max;
-            innerRect.fill(ctx);
-            outerRect.stroke(ctx);
-        };
-        ArenaPage.prototype.drawHealthBars = function (ctx, sceneXform, fighterIndex) {
-            var fighter = this.getFighters()[fighterIndex];
-            var parts = fighter.getBodyParts();
-            for (var i = 0; i < parts.length; ++i) {
-                var part = parts[i];
-                var data = part.getData(fighter.getSpeciesData());
-                var point = this.getBodyPartPoint(fighterIndex, part);
-                this.drawHealthBar(ctx, sceneXform.transformPoint(point), this.healths[fighterIndex][i], data.health);
-            }
-        };
-        ArenaPage.prototype.draw = function () {
-            if (!this.backgroundImage.image.complete)
-                return;
-            var ctx = this.canvas.element.getContext("2d");
-            var width = this.canvas.element.width;
-            var height = this.canvas.element.height;
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.clearRect(0, 0, width, height);
-            var gotImages = this.imageA.isComplete() && this.imageB.isComplete();
-            var rectA, rectB;
-            var sceneXform = new Xform();
-            if (gotImages) {
-                rectA = this.getImageRect(0);
-                rectB = this.getImageRect(1);
-                // Scale to fit.
-                var scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
-                var scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
-                var scale = Math.max(Math.max(scaleX, scaleY), 0.4);
-                sceneXform.matrix = sceneXform.matrix.translate(640, height);
-                sceneXform.matrix = sceneXform.matrix.scale(1 / scale);
-                sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
-            }
-            ctx.save();
-            sceneXform.apply(ctx);
-            ctx.scale(1280 / 800, 1280 / 800);
-            Util.scaleCentred(ctx, 1.5, 400, 0);
-            ctx.translate(-12, -200);
-            this.backgroundImage.draw(ctx);
-            ctx.restore();
-            if (!gotImages)
-                return;
-            // Scale because all the animals are too big. 
-            sceneXform.matrix = sceneXform.matrix.translate(640, height);
-            sceneXform.matrix = sceneXform.matrix.scale(0.4);
-            sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
-            var fighters = this.getFighters();
-            ctx.fillStyle = '#80f080';
-            ctx.save();
-            sceneXform.apply(ctx);
-            ctx.translate(rectA.left, rectA.top);
-            this.imageA.draw(ctx);
-            ctx.restore();
-            ctx.save();
-            sceneXform.apply(ctx);
-            ctx.translate(rectB.right, rectB.top);
-            ctx.scale(-1, 1);
-            this.imageB.draw(ctx);
-            ctx.restore();
-            this.drawHealthBars(ctx, sceneXform, 0);
-            this.drawHealthBars(ctx, sceneXform, 1);
-            //sceneXform.apply(ctx);
-            if (this.sequence)
-                this.sequence.draw(ctx, sceneXform);
-        };
-        return ArenaPage;
-    }(View.Page));
-    View.ArenaPage = ArenaPage;
-})(View || (View = {}));
-/// <reference path="page.ts" />
-"use strict";
-var View;
-(function (View) {
     var BarracksPage = (function (_super) {
         __extends(BarracksPage, _super);
         function BarracksPage() {
@@ -2315,4 +1946,407 @@ var View;
         }
     }
     View.onTransitionTick = onTransitionTick;
+    function enable(enable) {
+        document.body.style.pointerEvents = enable ? 'auto' : 'none';
+    }
+    View.enable = enable;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    function drawAttack(name, ctx) {
+        ctx.textAlign = "center";
+        ctx.textBaseline = 'middle';
+        ctx.font = '40px Arial';
+        ctx.fillStyle = '#ff0000';
+        ctx.fillText(name, 0, 0);
+    }
+    var GrowAnimation = (function (_super) {
+        __extends(GrowAnimation, _super);
+        function GrowAnimation(name, point) {
+            var _this = _super.call(this, 300) || this;
+            _this.name = name;
+            _this.point = point;
+            return _this;
+        }
+        GrowAnimation.prototype.draw = function (ctx, xform) {
+            var scale = Util.querp(0, 1, this.progress);
+            var point = xform.transformPoint(this.point);
+            ctx.translate(point.x, point.y);
+            ctx.scale(scale, scale);
+            drawAttack(this.name, ctx);
+        };
+        return GrowAnimation;
+    }(View.Animation));
+    //class ExplodeAnimation extends Animation
+    //{
+    //	constructor(private name: string, private point: Point)
+    //	{
+    //		super(300);
+    //	}
+    //	draw(ctx: CanvasRenderingContext2D)
+    //	{
+    //		let scale = Util.lerp(1, 15, this.progress); 
+    //		ctx.translate(this.point.x, this.point.y);
+    //		ctx.scale(scale, scale);
+    //		ctx.globalAlpha = 1 - this.progress;
+    //		drawAttack(this.name, ctx);
+    //		ctx.globalAlpha = 1;
+    //	}
+    //}
+    var DamageAnimation = (function (_super) {
+        __extends(DamageAnimation, _super);
+        function DamageAnimation(name, point) {
+            var _this = _super.call(this, 1000) || this;
+            _this.name = name;
+            _this.point = point;
+            return _this;
+        }
+        DamageAnimation.prototype.draw = function (ctx, xform) {
+            var offset = Util.querp(0, 100, this.progress);
+            var point = xform.transformPoint(this.point);
+            ctx.translate(point.x, point.y - offset);
+            ctx.globalAlpha = 1 - this.progress * this.progress;
+            drawAttack(this.name, ctx);
+            ctx.globalAlpha = 1;
+        };
+        return DamageAnimation;
+    }(View.Animation));
+    var PauseAnimation = (function (_super) {
+        __extends(PauseAnimation, _super);
+        function PauseAnimation(name, point, duration) {
+            var _this = _super.call(this, duration) || this;
+            _this.name = name;
+            _this.point = point;
+            return _this;
+        }
+        PauseAnimation.prototype.draw = function (ctx, xform) {
+            var point = xform.transformPoint(this.point);
+            ctx.translate(point.x, point.y);
+            drawAttack(this.name, ctx);
+        };
+        return PauseAnimation;
+    }(View.Animation));
+    var MoveAnimation = (function (_super) {
+        __extends(MoveAnimation, _super);
+        function MoveAnimation(name, pointA, pointB) {
+            var _this = _super.call(this, 500) || this;
+            _this.name = name;
+            _this.pointA = pointA;
+            _this.pointB = pointB;
+            return _this;
+        }
+        MoveAnimation.prototype.draw = function (ctx, xform) {
+            var pointA = xform.transformPoint(this.pointA);
+            var pointB = xform.transformPoint(this.pointB);
+            var x = Util.querp(pointA.x, pointB.x, this.progress);
+            var y = Util.querp(pointA.y, pointB.y, this.progress);
+            ctx.translate(x, y);
+            ctx.rotate(2 * Math.PI * this.progress * 2 * (pointA.x > pointB.x ? -1 : 1));
+            drawAttack(this.name, ctx);
+        };
+        return MoveAnimation;
+    }(View.Animation));
+    var FightPage = (function (_super) {
+        __extends(FightPage, _super);
+        function FightPage() {
+            var _this = _super.call(this, 'Fight') || this;
+            _this.backgroundImage = new View.CanvasImage();
+            _this.imageA = new View.CanvasImage();
+            _this.imageB = new View.CanvasImage();
+            _this.sequence = null;
+            _this.timer = 0;
+            _this.healths = [];
+            _this.onStartButton = function () {
+                Util.assert(Model.state.fight != null);
+                if (_this.timer) {
+                    _this.stopFight();
+                }
+                else {
+                    _this.button.innerText = 'Stop';
+                    _this.doAttack();
+                    _this.timer = window.setInterval(_this.onTick, 40);
+                }
+            };
+            _this.onTick = function () {
+                if (_this.sequence) {
+                    if (_this.sequence.update()) {
+                        _this.draw();
+                    }
+                    else {
+                        _this.sequence = null;
+                        if (Model.state.fight)
+                            _this.doAttack();
+                        else {
+                            window.clearInterval(_this.timer);
+                            _this.timer = 0;
+                        }
+                    }
+                }
+            };
+            Util.assert(Model.state.fight != null);
+            var topDiv = document.createElement('div');
+            topDiv.id = 'fight_top_div';
+            _this.button = document.createElement('button');
+            _this.button.addEventListener('click', _this.onStartButton);
+            _this.button.innerText = 'Start';
+            _this.speedCheckbox = document.createElement('input');
+            _this.speedCheckbox.type = 'checkbox';
+            _this.speedCheckboxLabel = document.createElement('span');
+            _this.speedCheckboxLabel.innerText = 'Oh, just get on with it!';
+            topDiv.appendChild(_this.button);
+            topDiv.appendChild(_this.speedCheckbox);
+            topDiv.appendChild(_this.speedCheckboxLabel);
+            _this.para = document.createElement('p');
+            _this.para.style.margin = '0';
+            _this.scroller = document.createElement('div');
+            _this.scroller.id = 'fight_scroller';
+            _this.scroller.className = 'scroller';
+            _this.scroller.appendChild(_this.para);
+            var canvas = document.createElement('canvas');
+            canvas.id = 'fight_canvas';
+            _this.canvas = new View.Canvas(canvas);
+            _this.div.appendChild(topDiv);
+            _this.div.appendChild(canvas);
+            _this.div.appendChild(_this.scroller);
+            _this.backgroundImage.loadImage(Data.Misc.FightBackgroundImage, function () { _this.draw(); });
+            var fighters = Model.state.fighters;
+            _this.fighters = [fighters[Model.state.fight.teams[0][0]], fighters[Model.state.fight.teams[1][0]]];
+            _this.update();
+            _this.updateHealths();
+            _this.updateImages();
+            return _this;
+        }
+        FightPage.prototype.onShow = function () {
+            this.canvas.element.width = View.Width;
+            this.canvas.element.height = View.Width * this.canvas.element.clientHeight / this.canvas.element.clientWidth;
+            this.draw();
+        };
+        FightPage.prototype.onClose = function () {
+            if (Model.state.fight)
+                return false;
+            Util.assert(this.timer == 0);
+            return true;
+        };
+        FightPage.prototype.stopFight = function () {
+            Model.state.endFight();
+            this.button.disabled = true;
+        };
+        FightPage.prototype.doAttack = function () {
+            var _this = this;
+            Util.assert(!!Model.state.fight);
+            var attackerIndex = Model.state.fight.nextTeamIndex;
+            var result = Model.state.fight.step();
+            var defenderIndex = Model.state.fight.nextTeamIndex;
+            this.update();
+            if (Model.state.fight.finished)
+                this.stopFight();
+            var sourcePart = this.fighters[attackerIndex].bodyParts[result.sourceID];
+            var targetPart = this.fighters[defenderIndex].bodyParts[result.targetID];
+            this.sequence = new View.Sequence(this.speedCheckbox.checked ? 5 : 1);
+            var pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
+            var pointB = this.getBodyPartPoint(defenderIndex, targetPart);
+            this.sequence.items.push(new GrowAnimation(result.name, pointA));
+            this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
+            this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
+            var damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
+            var damageAnim = new DamageAnimation(damageString, pointB);
+            damageAnim.onStart = function () { _this.updateHealths(); };
+            this.sequence.items.push(damageAnim);
+            this.sequence.items.push(new View.Animation(1000));
+            this.sequence.start();
+        };
+        FightPage.prototype.update = function () {
+            if (!Model.state.fight)
+                return;
+            var atEnd = Math.abs(this.scroller.scrollTop + this.scroller.clientHeight - this.scroller.scrollHeight) <= 10;
+            this.para.innerHTML = Model.state.fight.text;
+            if (atEnd)
+                this.scroller.scrollTop = this.scroller.scrollHeight;
+        };
+        FightPage.prototype.updateImages = function () {
+            var _this = this;
+            if (this.fighters.indexOf(null) >= 0)
+                return;
+            this.imageA.loadImage(this.fighters[0].image, function () { _this.draw(); });
+            this.imageB.loadImage(this.fighters[1].image, function () { _this.draw(); });
+            this.draw();
+        };
+        FightPage.prototype.updateHealths = function () {
+            this.healths.length = 0;
+            for (var i = 0; i < 2; ++i) {
+                this.healths.push([]);
+                if (this.fighters[i])
+                    for (var _i = 0, _a = this.fighters[i].getBodyParts(); _i < _a.length; _i++) {
+                        var part = _a[_i];
+                        this.healths[this.healths.length - 1].push(part.health);
+                    }
+            }
+        };
+        FightPage.prototype.getImageRect = function (index) {
+            var image = index ? this.imageB : this.imageA;
+            var rect = new Rect(0, 0, image.image.width, image.image.height);
+            var x = this.canvas.element.width / 2 + (index ? 50 : -50 - rect.width());
+            var y = this.canvas.element.height - rect.height();
+            rect.offset(x, y);
+            return rect;
+        };
+        FightPage.prototype.getBodyPartPoint = function (fighterIndex, part) {
+            var fighter = this.fighters[fighterIndex];
+            var rect = this.getImageRect(fighterIndex);
+            var data = part.getInstanceData(fighter.getSpeciesData());
+            return new Point(fighterIndex ? rect.right - data.x : rect.left + data.x, rect.top + data.y);
+        };
+        FightPage.prototype.drawHealthBar = function (ctx, centre, current, max) {
+            var scale = 5, height = 8;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#802020';
+            ctx.fillStyle = '#f08080';
+            var innerRect = new Rect(centre.x - scale * max / 2, centre.y - height / 2, centre.x + scale * max / 2, centre.y + height / 2);
+            var outerRect = innerRect.clone();
+            outerRect.expand(1, 1, 1, 1);
+            innerRect.right = innerRect.left + innerRect.width() * current / max;
+            innerRect.fill(ctx);
+            outerRect.stroke(ctx);
+        };
+        FightPage.prototype.drawHealthBars = function (ctx, sceneXform, fighterIndex) {
+            var fighter = this.fighters[fighterIndex];
+            var parts = fighter.getBodyParts();
+            for (var i = 0; i < parts.length; ++i) {
+                var part = parts[i];
+                var data = part.getData(fighter.getSpeciesData());
+                var point = this.getBodyPartPoint(fighterIndex, part);
+                this.drawHealthBar(ctx, sceneXform.transformPoint(point), this.healths[fighterIndex][i], data.health);
+            }
+        };
+        FightPage.prototype.draw = function () {
+            if (!this.backgroundImage.image.complete)
+                return;
+            var ctx = this.canvas.element.getContext("2d");
+            var width = this.canvas.element.width;
+            var height = this.canvas.element.height;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, width, height);
+            var gotImages = this.imageA.isComplete() && this.imageB.isComplete();
+            var rectA, rectB;
+            var sceneXform = new Xform();
+            if (gotImages) {
+                rectA = this.getImageRect(0);
+                rectB = this.getImageRect(1);
+                // Scale to fit.
+                var scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
+                var scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
+                var scale = Math.max(Math.max(scaleX, scaleY), 0.4);
+                sceneXform.matrix = sceneXform.matrix.translate(640, height);
+                sceneXform.matrix = sceneXform.matrix.scale(1 / scale);
+                sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
+            }
+            ctx.save();
+            sceneXform.apply(ctx);
+            ctx.scale(1280 / 800, 1280 / 800);
+            Util.scaleCentred(ctx, 1.5, 400, 0);
+            ctx.translate(-12, -200);
+            this.backgroundImage.draw(ctx);
+            ctx.restore();
+            if (!gotImages)
+                return;
+            // Scale because all the animals are too big. 
+            sceneXform.matrix = sceneXform.matrix.translate(640, height);
+            sceneXform.matrix = sceneXform.matrix.scale(0.4);
+            sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
+            ctx.fillStyle = '#80f080';
+            ctx.save();
+            sceneXform.apply(ctx);
+            ctx.translate(rectA.left, rectA.top);
+            this.imageA.draw(ctx);
+            ctx.restore();
+            ctx.save();
+            sceneXform.apply(ctx);
+            ctx.translate(rectB.right, rectB.top);
+            ctx.scale(-1, 1);
+            this.imageB.draw(ctx);
+            ctx.restore();
+            this.drawHealthBars(ctx, sceneXform, 0);
+            this.drawHealthBars(ctx, sceneXform, 1);
+            //sceneXform.apply(ctx);
+            if (this.sequence)
+                this.sequence.draw(ctx, sceneXform);
+        };
+        return FightPage;
+    }(View.Page));
+    View.FightPage = FightPage;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    var ArenaPage = (function (_super) {
+        __extends(ArenaPage, _super);
+        function ArenaPage() {
+            var _this = _super.call(this, 'Arena') || this;
+            _this.onStartButton = function () {
+                var teams = [];
+                var fighterIDs = Model.state.getFighterIDs();
+                teams.push([fighterIDs[_this.selectA.selectedIndex]]);
+                teams.push([fighterIDs[_this.selectB.selectedIndex]]);
+                View.Page.hideCurrent();
+                Model.state.startFight(teams[0], teams[1]);
+                var page = new View.FightPage();
+                page.show();
+            };
+            _this.onFightersChanged = function () {
+                _this.updateStartButton();
+            };
+            var topDiv = document.createElement('div');
+            _this.selectA = document.createElement('select');
+            _this.selectB = document.createElement('select');
+            _this.selectA.addEventListener('change', _this.onFightersChanged);
+            _this.selectB.addEventListener('change', _this.onFightersChanged);
+            var makeOption = function (id) {
+                var option = document.createElement('option');
+                option.text = Model.state.fighters[id].name;
+                if (Model.state.fighters[id].isDead())
+                    option.text += ' (x_x)';
+                return option;
+            };
+            for (var id in Model.state.fighters) {
+                _this.selectB.options.add(makeOption(id));
+                _this.selectA.options.add(makeOption(id));
+            }
+            if (_this.selectB.options.length > 1)
+                _this.selectB.selectedIndex = 1;
+            _this.button = document.createElement('button');
+            _this.button.addEventListener('click', _this.onStartButton);
+            topDiv.appendChild(_this.selectA);
+            topDiv.appendChild(_this.selectB);
+            topDiv.appendChild(_this.button);
+            _this.div.appendChild(topDiv);
+            _this.updateStartButton();
+            return _this;
+        }
+        ArenaPage.prototype.onShow = function () {
+        };
+        ArenaPage.prototype.onClose = function () {
+            return Model.state.fight == null;
+        };
+        ArenaPage.prototype.getFighters = function () {
+            var fighterIDs = Model.state.getFighterIDs();
+            var fighterA = this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]];
+            var fighterB = this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]];
+            return [fighterA, fighterB];
+        };
+        ArenaPage.prototype.updateStartButton = function () {
+            if (Model.state.fight) {
+                this.button.innerText = 'Stop';
+                this.button.disabled = false;
+                return;
+            }
+            this.button.innerText = 'Start';
+            var fighters = this.getFighters();
+            this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
+        };
+        return ArenaPage;
+    }(View.Page));
+    View.ArenaPage = ArenaPage;
 })(View || (View = {}));

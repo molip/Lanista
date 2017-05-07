@@ -17,7 +17,7 @@ namespace Controller
 		window.addEventListener('resize', View.updateLayout);
 
 		if (Model.state.fight)
-			onArenaTriggerClicked();
+			showFightPage();
 	}
 
 	export function setSpeed(speed: number)
@@ -151,6 +151,12 @@ namespace Controller
 	export function onTownTriggerClicked()
 	{
 		Shop.showShopsPage();
+	}
+
+	function showFightPage()
+	{
+		let page = new View.FightPage();
+		page.show();
 	}
 
 	export function updateHUD()
