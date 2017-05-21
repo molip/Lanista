@@ -2,7 +2,7 @@
 	"compileOnSave": true,
 	"compilerOptions": {
 		"outFile": "app.js",
-		"target": "es5",
+		"target": "es2015",
 		"watch": true,
 		"emitBOM": true,
 		"noImplicitAny": true,
