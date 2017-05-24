@@ -39,19 +39,33 @@ namespace Controller
 		if (View.isTransitioning())
 			return;
 
-		let changed = Model.state.update(1);
-
-		if (changed)
+		switch (Model.state.phase)
 		{
-			View.ludus.updateObjects();
+			case Model.Phase.Day:
+				View.enable(true);
+				if (Model.state.update(1))
+					View.ludus.updateObjects();
+				break;
+			case Model.Phase.Dawn:
+				View.enable(false);
+				startTransition(false);
+				break;
+			case Model.Phase.Dusk:
+				View.enable(false);
+				startTransition(true);
+				break;
+			case Model.Phase.News:
+			case Model.Phase.Event:
+				new View.NewsPage(() => { Model.state.advancePhase(); }).show();
+				break;
 		}
 
-		if (Model.state.isNight())
-			View.startTransition(new View.Transition(Model.state.phase == 'dusk', () => { Model.state.advancePhase(); }));
-
-		View.enable(!Model.state.isNight());
-
 		updateHUD();
+	}
+
+	function startTransition(dusk: boolean)
+	{
+		View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
 	}
 
 	export function onBuildingTriggerClicked(id: string)

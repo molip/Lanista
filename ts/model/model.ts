@@ -4,59 +4,90 @@ namespace Model
 {
 	const minutesPerDay = 60 * 12;
 
+	export enum Phase { Dawn, News, Event, Fight, Day, Dusk }
+
 	export class State
 	{
-		static readonly key: string = "state.v11"
+		static readonly key: string = "state.v15"
 
 		private money = 1000;
-		phase: string = 'dawn';
+		phase: Phase = Phase.Dawn;
 		buildings = new Buildings.State();
 		fight: Fight.State = null;
 		fighters: { [id: string]: Fighter } = {};
+		news: News[] = [];
+		events: Event[] = [];
 		nextFighterID = 1;
 		time: number = 0; // Minutes.
 		speed: number = 1; // Game minutes per second. 
+
+		constructor()
+		{
+			this.news.push(new News("It's the first day. There will be a fight tomorrow."));
+			this.events.push(new FightEvent(1));
+		}
 
 		update(seconds: number)
 		{
 			let changed = false;
 
-			if (!this.isNight())
+			Util.assert(this.phase == Phase.Day);
+
+			let oldDay = this.getDay();
+
+			let minutesPassed = seconds * this.speed;
+			this.time += minutesPassed;
+			let hoursPassed = minutesPassed / 60;
+
+			changed = this.updateActivities(hoursPassed);
+
+			if (this.getDay() > oldDay)
 			{
-				let oldDay = this.getDay();
-
-				let minutesPassed = seconds * this.speed;
-				this.time += minutesPassed;
-				let hoursPassed = minutesPassed / 60;
-
-				changed = this.updateActivities(hoursPassed);
-
-				if (this.getDay() > oldDay)
-					this.phase = 'dusk'; 
+				this.phase = Phase.Dusk;
 			}
 
 			Model.saveState();
+
 			return changed;
 		}
 
-		isNight() { return this.phase != 'day'; }
-
-		getMorningNews()
-		{
-			// TODO: Any random events must be generated the previous day, and saved. 
-			return true;
-		}
+		isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
 
 		advancePhase()
 		{
-			if (this.phase == 'dusk')
-				this.phase = 'dawn';
-			else if (this.phase == 'dawn')
-				this.phase = 'day';
-			else
-				Util.assert(false);
+			switch (this.phase)
+			{
+				case Phase.Dawn:
+					this.phase = Phase.News;
+					if (this.news.length == 0)
+						this.advancePhase();
+					break;
+				case Phase.News:
+					this.news.length = 0;
+					this.phase = Phase.Event;
+					if (this.getEventsForToday().length == 0)
+						this.advancePhase();
+					break;
+				case Phase.Event:
+					let today = this.getDay();
+					this.events = this.events.filter(e => e.day != today);
+					this.phase = Phase.Day;
+					break;
+				case Phase.Day:
+					this.phase = Phase.Dusk;
+					break;
+				case Phase.Dusk:
+					this.phase = Phase.Dawn;
+					break;
+			}
 
 			Model.saveState();
+		}
+
+		getEventsForToday()
+		{
+			let today = this.getDay();
+			return this.events.filter(e => e.day == today);
 		}
 
 		updateActivities(hours: number)
@@ -122,7 +153,7 @@ namespace Model
 
 		getTimeString()
 		{
-			let dusk = this.phase == 'dusk';
+			let dusk = this.phase == Phase.Dusk;
 
 			let days = this.getDay() - (dusk ? 1 : 0);
 			let hours = dusk ? 12 : Math.floor((this.time % minutesPerDay) / 60);
@@ -252,8 +283,11 @@ namespace Model
 				fighter.onLoad();
 			}
 
-			if (state.phase == 'dusk') // Skip it. 
-				state.phase = 'dawn';
+			for (let event of state.events)
+				setEventPrototype(event);
+
+			if (state.phase == Phase.Dusk) // Skip it. 
+				state.phase = Phase.Dawn;
 		}
 		else
 			resetState();
