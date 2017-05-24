@@ -29,26 +29,32 @@ namespace Model
 
 		update(seconds: number)
 		{
-			let changed = false;
-
 			Util.assert(this.phase == Phase.Day);
+			let changed = this.addMinutes(seconds * this.speed);
+			Model.saveState();
+			return changed;
+		}
 
+		skipToNextDay()
+		{
+			let newTime = (this.getDay() + 1) * minutesPerDay;
+			let changed = this.addMinutes(newTime - this.time);
+			Model.saveState();
+			return changed;
+		}
+
+		private addMinutes(minutes: number)
+		{
 			let oldDay = this.getDay();
+			this.time += minutes;
+			let hoursPassed = minutes / 60;
 
-			let minutesPassed = seconds * this.speed;
-			this.time += minutesPassed;
-			let hoursPassed = minutesPassed / 60;
-
-			changed = this.updateActivities(hoursPassed);
+			let changed = this.updateActivities(hoursPassed);
 
 			if (this.getDay() > oldDay)
 			{
 				this.phase = Phase.Dusk;
 			}
-
-			Model.saveState();
-
-			return changed;
 		}
 
 		isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
@@ -69,6 +75,7 @@ namespace Model
 						this.advancePhase();
 					break;
 				case Phase.Event:
+					Util.assert(this.fight == null); // Otherwise startFight sets the phase. 
 					let today = this.getDay();
 					this.events = this.events.filter(e => e.day != today);
 					this.phase = Phase.Day;
@@ -225,14 +232,20 @@ namespace Model
 		startFight(teamA: Fight.Team, teamB: Fight.Team)
 		{
 			Util.assert(this.fight == null);
+			Util.assert(this.phase == Phase.Event);
 			this.fight = new Fight.State(teamA, teamB);
+			this.phase = Phase.Fight;
 			Model.saveState();
 		}
 
 		endFight()
 		{
 			Util.assert(!!this.fight);
+			Util.assert(this.time / minutesPerDay == this.getDay()); // Fight must happen at dawn.
+
 			this.fight = null;
+			this.time += minutesPerDay; // Skip to tomorrow.
+			this.phase = Phase.Dusk;
 			Model.saveState();
 		}
 

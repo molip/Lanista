@@ -11,7 +11,7 @@ namespace View
 
 		constructor()
 		{
-			super('Arena');
+			super('Choose Fighters');
 
 			let topDiv = document.createElement('div');
 
@@ -57,7 +57,10 @@ namespace View
 
 		onClose()
 		{
-			return Model.state.fight == null;
+			if (Model.state.fight == null)
+				Model.state.advancePhase();
+
+			return true;
 		}
 
 		onStartButton = () =>
@@ -68,12 +71,9 @@ namespace View
 			teams.push([fighterIDs[this.selectA.selectedIndex]]);
 			teams.push([fighterIDs[this.selectB.selectedIndex]]);
 
-			Page.hideCurrent();
-
 			Model.state.startFight(teams[0], teams[1]);
 
-			let page = new View.FightPage();
-			page.show();
+			Page.hideCurrent();
 		}
 		
 		onFightersChanged = () =>

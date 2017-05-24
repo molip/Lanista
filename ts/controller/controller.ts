@@ -55,8 +55,13 @@ namespace Controller
 				startTransition(true);
 				break;
 			case Model.Phase.News:
-			case Model.Phase.Event:
 				new View.NewsPage(() => { Model.state.advancePhase(); }).show();
+				break;
+			case Model.Phase.Event:
+				new View.ArenaPage().show();
+				break;
+			case Model.Phase.Fight:
+				new View.FightPage().show();
 				break;
 		}
 
@@ -158,8 +163,7 @@ namespace Controller
 
 	function onArenaTriggerClicked()
 	{
-		let page = new View.ArenaPage();
-		page.show();
+		View.showInfo('Arena', 'TODO.');
 	}
 	
 	export function onTownTriggerClicked()
