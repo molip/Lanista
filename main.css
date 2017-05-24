@@ -33,14 +33,14 @@ select {
 	height:100%;
 }
 
-#arena_top_div
+#fight_top_div
 {
 	position: absolute;
-	top: 0%;
+	top: 0;
 	height: 5%;
 }
 
-#arena_canvas
+#fight_canvas
 {
 	position:absolute;
 	width:100%;
@@ -48,7 +48,7 @@ select {
 	height:75%;
 }
 
-#arena_scroller
+#fight_scroller
 {
 	position:absolute;
 	top:80%;

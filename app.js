@@ -1,9 +1,4 @@
-﻿var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-"use strict";
+﻿"use strict";
 var Controller;
 (function (Controller) {
     var Canvas;
@@ -17,11 +12,9 @@ var Controller;
         }
         Canvas.init = init;
         function hitTestObjects(x, y) {
-            for (var _i = 0, _a = View.ludus.Objects; _i < _a.length; _i++) {
-                var obj = _a[_i];
+            for (let obj of View.ludus.Objects)
                 if (obj.isEnabled() && obj.getRect().pointInRect(new Point(x, y)))
                     return obj;
-            }
             return null;
         }
         function onClick() {
@@ -30,9 +23,9 @@ var Controller;
         }
         Canvas.onClick = onClick;
         function onMouseMove(e) {
-            var devPos = Util.getEventPos(e, View.ludus.element);
-            var logPos = View.ludus.devToLog(devPos.x, devPos.y);
-            var obj = hitTestObjects(logPos.x, logPos.y);
+            let devPos = Util.getEventPos(e, View.ludus.element);
+            let logPos = View.ludus.devToLog(devPos.x, devPos.y);
+            let obj = hitTestObjects(logPos.x, logPos.y);
             if (obj != Canvas.HotObject) {
                 Canvas.HotObject = obj;
                 View.ludus.draw();
@@ -61,7 +54,7 @@ var Controller;
         window.addEventListener('keydown', Controller.onKeyDown);
         window.addEventListener('resize', View.updateLayout);
         if (Model.state.fight)
-            onArenaTriggerClicked();
+            showFightPage();
     }
     Controller.onLoad = onLoad;
     function setSpeed(speed) {
@@ -78,15 +71,36 @@ var Controller;
             return;
         if (View.isTransitioning())
             return;
-        var changed = Model.state.update(1);
-        if (changed) {
-            View.ludus.updateObjects();
+        switch (Model.state.phase) {
+            case Model.Phase.Day:
+                View.enable(true);
+                if (Model.state.update(1))
+                    View.ludus.updateObjects();
+                break;
+            case Model.Phase.Dawn:
+                View.enable(false);
+                startTransition(false);
+                break;
+            case Model.Phase.Dusk:
+                View.enable(false);
+                startTransition(true);
+                break;
+            case Model.Phase.News:
+                new View.NewsPage(() => { Model.state.advancePhase(); }).show();
+                break;
+            case Model.Phase.Event:
+                new View.ArenaPage().show();
+                break;
+            case Model.Phase.Fight:
+                new View.FightPage().show();
+                break;
         }
-        if (Model.state.isNight())
-            View.startTransition(new View.Transition(Model.state.phase == 'dusk', function () { Model.state.advancePhase(); }));
         updateHUD();
     }
     Controller.onTick = onTick;
+    function startTransition(dusk) {
+        View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
+    }
     function onBuildingTriggerClicked(id) {
         var handlers = {
             'home': onHomeTriggerClicked,
@@ -123,11 +137,11 @@ var Controller;
         View.showInfo('Home', 'TODO: general stats etc. go here.');
     }
     function onBarracksTriggerClicked() {
-        var page = new View.BarracksPage();
+        let page = new View.BarracksPage();
         page.show();
     }
     function onKennelsTriggerClicked() {
-        var page = new View.KennelsPage();
+        let page = new View.KennelsPage();
         page.show();
     }
     function onStorageTriggerClicked() {
@@ -152,16 +166,19 @@ var Controller;
         View.showInfo('Merch', 'TODO.');
     }
     function onArenaTriggerClicked() {
-        var page = new View.ArenaPage();
-        page.show();
+        View.showInfo('Arena', 'TODO.');
     }
     function onTownTriggerClicked() {
         Controller.Shop.showShopsPage();
     }
     Controller.onTownTriggerClicked = onTownTriggerClicked;
+    function showFightPage() {
+        let page = new View.FightPage();
+        page.show();
+    }
     function updateHUD() {
-        var money = ' Money: ' + Util.formatMoney(Model.state.getMoney());
-        var time = Model.state.getTimeString();
+        let money = ' Money: ' + Util.formatMoney(Model.state.getMoney());
+        let time = Model.state.getTimeString();
         View.setHUDText(money, time);
     }
     Controller.updateHUD = updateHUD;
@@ -183,7 +200,7 @@ var Controller;
             return name + ' (money available: ' + Util.formatMoney(Model.state.getMoney()) + ')';
         }
         function showShopsPage() {
-            var page = new View.ListPage('Let\'s go shopping!');
+            let page = new View.ListPage('Let\'s go shopping!');
             page.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
             page.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
             page.addItem('People Market', 'Buy people', 'images/people.png', false, onPeopleMarketClicked);
@@ -192,11 +209,11 @@ var Controller;
         }
         Shop.showShopsPage = showShopsPage;
         function onBuildersMerchantClicked() {
-            var page = new View.ListPage(getShopTitle('Builders\' Merchant'));
-            var _loop_1 = function (id) {
-                level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
+            let page = new View.ListPage(getShopTitle('Builders\' Merchant'));
+            for (let id of ['home', 'arena', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch']) {
+                var level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
                 if (level) {
-                    handler = function () {
+                    var handler = function () {
                         Model.state.buildings.buyUpgrade(id);
                         Controller.updateHUD();
                         View.ludus.updateObjects();
@@ -204,45 +221,32 @@ var Controller;
                     addItem(page, level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, handler);
                     page.show();
                 }
-            };
-            var level, handler;
-            for (var _i = 0, _a = ['home', 'arena', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch']; _i < _a.length; _i++) {
-                var id = _a[_i];
-                _loop_1(id);
             }
         }
         function onAnimalMarketClicked() {
-            var page = new View.ListPage(getShopTitle('Animal Market'));
-            var hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
-            var _loop_2 = function (id) {
-                handler = function () {
+            let page = new View.ListPage(getShopTitle('Animal Market'));
+            let hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
+            for (let id in Data.Animals.Types) {
+                var handler = function () {
                     Model.state.buyAnimal(id);
                     Controller.updateHUD();
                 };
-                var type = Data.Animals.Types[id];
+                let type = Data.Animals.Types[id];
                 addItem(page, type.name, type.description, type.shopImage, !hasKennels, type.cost, handler);
                 page.show();
-            };
-            var handler;
-            for (var id in Data.Animals.Types) {
-                _loop_2(id);
             }
         }
         function onPeopleMarketClicked() {
-            var page = new View.ListPage(getShopTitle('People Market'));
-            var hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
-            var _loop_3 = function (id) {
-                handler = function () {
+            let page = new View.ListPage(getShopTitle('People Market'));
+            let hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
+            for (let id in Data.People.Types) {
+                var handler = function () {
                     Model.state.buyPerson(id);
                     Controller.updateHUD();
                 };
-                var type = Data.People.Types[id];
+                let type = Data.People.Types[id];
                 addItem(page, type.name, type.description, type.shopImage, !hasBarracks, type.cost, handler);
                 page.show();
-            };
-            var handler;
-            for (var id in Data.People.Types) {
-                _loop_3(id);
             }
         }
     })(Shop = Controller.Shop || (Controller.Shop = {}));
@@ -250,37 +254,34 @@ var Controller;
 "use strict";
 var Data;
 (function (Data) {
-    var Attack = (function () {
-        function Attack(name, type, damage) {
+    class Attack {
+        constructor(name, type, damage) {
             this.name = name;
             this.type = type;
             this.damage = damage;
         }
-        return Attack;
-    }());
+    }
     Data.Attack = Attack;
-    var WeaponSite = (function () {
-        function WeaponSite(name, type, replacesAttack) {
+    class WeaponSite {
+        constructor(name, type, replacesAttack) {
             this.name = name;
             this.type = type;
             this.replacesAttack = replacesAttack;
         }
-        return WeaponSite;
-    }());
+    }
     Data.WeaponSite = WeaponSite;
-    var Site = (function () {
-        function Site(species, type, count) {
+    class Site {
+        constructor(species, type, count) {
             this.species = species;
             this.type = type;
             this.count = count;
         }
-        return Site;
-    }());
+    }
     Data.Site = Site;
     var Armour;
     (function (Armour) {
-        var Type = (function () {
-            function Type(name, cost, image, description, sites, defence) {
+        class Type {
+            constructor(name, cost, image, description, sites, defence) {
                 this.name = name;
                 this.cost = cost;
                 this.image = image;
@@ -288,25 +289,23 @@ var Data;
                 this.sites = sites;
                 this.defence = defence;
             }
-            Type.prototype.validate = function () {
-                for (var _i = 0, _a = this.sites; _i < _a.length; _i++) {
-                    var site = _a[_i];
-                    var speciesData = Species.Types[site.species];
+            validate() {
+                for (let site of this.sites) {
+                    let speciesData = Species.Types[site.species];
                     if (!(speciesData && speciesData.bodyParts && speciesData.bodyParts[site.type]))
                         console.log('Armour: "%s" site references unknown body part "%s/%s"', this.name, site.species, site.type);
                 }
-            };
-            Type.prototype.getDefense = function (attackType) {
+            }
+            getDefense(attackType) {
                 return this.defence[attackType] ? this.defence[attackType] : 0;
-            };
-            return Type;
-        }());
+            }
+        }
         Armour.Type = Type;
     })(Armour = Data.Armour || (Data.Armour = {}));
     var Weapons;
     (function (Weapons) {
-        var Type = (function () {
-            function Type(name, block, cost, image, description, sites, attacks) {
+        class Type {
+            constructor(name, block, cost, image, description, sites, attacks) {
                 this.name = name;
                 this.block = block;
                 this.cost = cost;
@@ -315,14 +314,13 @@ var Data;
                 this.sites = sites;
                 this.attacks = attacks;
             }
-            Type.prototype.validate = function () {
-                for (var _i = 0, _a = this.sites; _i < _a.length; _i++) {
-                    var site = _a[_i];
-                    var found = false;
-                    var speciesData = Species.Types[site.species];
+            validate() {
+                for (let site of this.sites) {
+                    let found = false;
+                    let speciesData = Species.Types[site.species];
                     if (speciesData) {
-                        for (var id in speciesData.bodyParts) {
-                            var weaponSite = speciesData.bodyParts[id].weaponSite;
+                        for (let id in speciesData.bodyParts) {
+                            let weaponSite = speciesData.bodyParts[id].weaponSite;
                             if (weaponSite && weaponSite.type == site.type) {
                                 found = true;
                                 break;
@@ -332,44 +330,40 @@ var Data;
                     if (!found)
                         console.log('Weapon: "%s" site references unknown weapon site "%s/%s"', this.name, site.species, site.type);
                 }
-            };
-            return Type;
-        }());
+            }
+        }
         Weapons.Type = Type;
     })(Weapons = Data.Weapons || (Data.Weapons = {}));
-    var BodyPartInstance = (function () {
-        function BodyPartInstance(name, x, y) {
+    class BodyPartInstance {
+        constructor(name, x, y) {
             this.name = name;
             this.x = x;
             this.y = y;
         }
-        return BodyPartInstance;
-    }());
+    }
     Data.BodyPartInstance = BodyPartInstance;
-    var BodyPart = (function () {
-        function BodyPart(health, attack, weaponSite, instances) {
+    class BodyPart {
+        constructor(health, attack, weaponSite, instances) {
             this.health = health;
             this.attack = attack;
             this.weaponSite = weaponSite;
             this.instances = instances;
         }
-        return BodyPart;
-    }());
+    }
     Data.BodyPart = BodyPart;
     var Species;
     (function (Species) {
-        var Type = (function () {
-            function Type(name) {
+        class Type {
+            constructor(name) {
                 this.name = name;
             }
-            return Type;
-        }());
+        }
         Species.Type = Type;
     })(Species = Data.Species || (Data.Species = {}));
     var Animals;
     (function (Animals) {
-        var Type = (function () {
-            function Type(cost, shopImage, species, name, description, armour, weapons) {
+        class Type {
+            constructor(cost, shopImage, species, name, description, armour, weapons) {
                 this.cost = cost;
                 this.shopImage = shopImage;
                 this.species = species;
@@ -378,30 +372,25 @@ var Data;
                 this.armour = armour;
                 this.weapons = weapons;
             }
-            Type.prototype.validate = function () {
+            validate() {
                 if (!Species.Types[this.species])
                     console.log('Animal: "%s" references unknown species "%s"', this.name, this.species);
                 if (!Species.Types[this.species].bodyParts)
                     console.log('Animal: "%s" has no body parts', this.name);
-                for (var _i = 0, _a = this.weapons; _i < _a.length; _i++) {
-                    var weapon = _a[_i];
+                for (let weapon of this.weapons)
                     if (!Weapons.Types[weapon])
                         console.log('Animal: "%s" references unknown weapon "%s"', this.name, weapon);
-                }
-                for (var _b = 0, _c = this.armour; _b < _c.length; _b++) {
-                    var armour = _c[_b];
+                for (let armour of this.armour)
                     if (!Armour.Types[armour])
                         console.log('Animal: "%s" references unknown armour "%s"', this.name, armour);
-                }
-            };
-            return Type;
-        }());
+            }
+        }
         Animals.Type = Type;
     })(Animals = Data.Animals || (Data.Animals = {}));
     var People;
     (function (People) {
-        var Type = (function () {
-            function Type(cost, shopImage, name, description, armour, weapons) {
+        class Type {
+            constructor(cost, shopImage, name, description, armour, weapons) {
                 this.cost = cost;
                 this.shopImage = shopImage;
                 this.name = name;
@@ -409,26 +398,21 @@ var Data;
                 this.armour = armour;
                 this.weapons = weapons;
             }
-            Type.prototype.validate = function () {
-                for (var _i = 0, _a = this.weapons; _i < _a.length; _i++) {
-                    var weapon = _a[_i];
+            validate() {
+                for (let weapon of this.weapons)
                     if (!Weapons.Types[weapon])
                         console.log('People: "%s" references unknown weapon "%s"', this.name, weapon);
-                }
-                for (var _b = 0, _c = this.armour; _b < _c.length; _b++) {
-                    var armour = _c[_b];
+                for (let armour of this.armour)
                     if (!Armour.Types[armour])
                         console.log('People: "%s" references unknown armour "%s"', this.name, armour);
-                }
-            };
-            return Type;
-        }());
+            }
+        }
         People.Type = Type;
     })(People = Data.People || (Data.People = {}));
     var Buildings;
     (function (Buildings) {
-        var Level = (function () {
-            function Level(cost, buildTime, mapX, mapY, mapImage, shopImage, name, description) {
+        class Level {
+            constructor(cost, buildTime, mapX, mapY, mapImage, shopImage, name, description) {
                 this.cost = cost;
                 this.buildTime = buildTime;
                 this.mapX = mapX;
@@ -438,8 +422,7 @@ var Data;
                 this.name = name;
                 this.description = description;
             }
-            return Level;
-        }());
+        }
         Buildings.Level = Level;
         function getLevel(id, index) {
             Util.assert(id in Buildings.Levels);
@@ -449,27 +432,26 @@ var Data;
     })(Buildings = Data.Buildings || (Data.Buildings = {}));
     var Activities;
     (function (Activities) {
-        var Type = (function () {
-            function Type(name, job, human, animal, freeWork) {
+        class Type {
+            constructor(name, job, human, animal, freeWork) {
                 this.name = name;
                 this.job = job;
                 this.human = human;
                 this.animal = animal;
                 this.freeWork = freeWork;
             }
-            return Type;
-        }());
+        }
         Activities.Type = Type;
     })(Activities = Data.Activities || (Data.Activities = {}));
     function validate() {
         console.log('Validating data...');
-        for (var id in Armour.Types)
+        for (let id in Armour.Types)
             Armour.Types[id].validate();
-        for (var id in Weapons.Types)
+        for (let id in Weapons.Types)
             Weapons.Types[id].validate();
-        for (var id in Animals.Types)
+        for (let id in Animals.Types)
             Animals.Types[id].validate();
-        for (var id in People.Types)
+        for (let id in People.Types)
             People.Types[id].validate();
         console.log('Validating finished.');
     }
@@ -481,29 +463,24 @@ var Data;
 "use strict";
 var Model;
 (function (Model) {
-    var Accessory = (function () {
-        function Accessory(tag, bodyPartIDs) {
+    class Accessory {
+        constructor(tag, bodyPartIDs) {
             this.tag = tag;
             this.bodyPartIDs = bodyPartIDs;
         }
-        return Accessory;
-    }());
+    }
     Model.Accessory = Accessory;
-    var Weapon = (function (_super) {
-        __extends(Weapon, _super);
-        function Weapon(tag, bodyPartIDs) {
-            return _super.call(this, tag, bodyPartIDs) || this;
+    class Weapon extends Accessory {
+        constructor(tag, bodyPartIDs) {
+            super(tag, bodyPartIDs);
         }
-        return Weapon;
-    }(Accessory));
+    }
     Model.Weapon = Weapon;
-    var Armour = (function (_super) {
-        __extends(Armour, _super);
-        function Armour(tag, bodyPartIDs) {
-            return _super.call(this, tag, bodyPartIDs) || this;
+    class Armour extends Accessory {
+        constructor(tag, bodyPartIDs) {
+            super(tag, bodyPartIDs);
         }
-        return Armour;
-    }(Accessory));
+    }
     Model.Armour = Armour;
 })(Model || (Model = {}));
 "use strict";
@@ -515,39 +492,37 @@ var Model;
         AccessoryType[AccessoryType["Armour"] = 1] = "Armour";
     })(AccessoryType || (AccessoryType = {}));
     ;
-    var BodyPart = (function () {
-        function BodyPart(id, tag, index, health) {
+    class BodyPart {
+        constructor(id, tag, index, health) {
             this.id = id;
             this.tag = tag;
             this.index = index;
             this.health = health;
         }
-        BodyPart.prototype.getData = function (speciesData) {
+        getData(speciesData) {
             return speciesData.bodyParts[this.tag];
-        };
-        BodyPart.prototype.getInstanceData = function (speciesData) {
+        }
+        getInstanceData(speciesData) {
             return this.getData(speciesData).instances[this.index];
-        };
+        }
         // Gets tag of armour or weapon site, if present.
-        BodyPart.prototype.getSiteTag = function (accType, speciesData) {
+        getSiteTag(accType, speciesData) {
             if (accType == AccessoryType.Armour)
                 return this.tag;
-            var site = this.getData(speciesData).weaponSite;
+            let site = this.getData(speciesData).weaponSite;
             return site ? site.type : null;
-        };
-        return BodyPart;
-    }());
+        }
+    }
     Model.BodyPart = BodyPart;
-    var Attack = (function () {
-        function Attack(data, sourceID) {
+    class Attack {
+        constructor(data, sourceID) {
             this.data = data;
             this.sourceID = sourceID;
         }
-        return Attack;
-    }());
+    }
     Model.Attack = Attack;
-    var Fighter = (function () {
-        function Fighter(id, species, name, image, weapons, armour) {
+    class Fighter {
+        constructor(id, species, name, image, weapons, armour) {
             this.id = id;
             this.species = species;
             this.name = name;
@@ -558,61 +533,51 @@ var Model;
             this.armour = [];
             this.activity = '';
             this.experience = {};
-            var data = this.getSpeciesData();
-            for (var tag in data.bodyParts) {
-                var part = data.bodyParts[tag];
-                for (var i = 0; i < part.instances.length; ++i) {
+            let data = this.getSpeciesData();
+            for (let tag in data.bodyParts) {
+                let part = data.bodyParts[tag];
+                for (let i = 0; i < part.instances.length; ++i) {
                     this.bodyParts[this.nextBodyPartID] = new BodyPart(this.nextBodyPartID.toString(), tag, i, part.health);
                     ++this.nextBodyPartID;
                 }
             }
-            for (var _i = 0, weapons_1 = weapons; _i < weapons_1.length; _i++) {
-                var tag = weapons_1[_i];
+            for (let tag of weapons)
                 this.addWeapon(tag);
-            }
-            for (var _a = 0, armour_1 = armour; _a < armour_1.length; _a++) {
-                var tag = armour_1[_a];
+            for (let tag of armour)
                 this.addArmour(tag);
-            }
         }
-        Fighter.prototype.onLoad = function () {
-            for (var id in this.bodyParts)
+        onLoad() {
+            for (let id in this.bodyParts)
                 this.bodyParts[id].__proto__ = BodyPart.prototype;
-            for (var _i = 0, _a = this.weapons; _i < _a.length; _i++) {
-                var weapon = _a[_i];
+            for (let weapon of this.weapons)
                 weapon.__proto__ = Model.Weapon.prototype;
-            }
-            for (var _b = 0, _c = this.armour; _b < _c.length; _b++) {
-                var armour = _c[_b];
+            for (let armour of this.armour)
                 armour.__proto__ = Model.Armour.prototype;
-            }
-        };
-        Fighter.prototype.isHuman = function () { return this.species == 'human'; };
-        Fighter.prototype.getAccessories = function (type) {
+        }
+        isHuman() { return this.species == 'human'; }
+        getAccessories(type) {
             return type == AccessoryType.Weapon ? this.weapons : this.armour;
-        };
-        Fighter.prototype.getSpeciesData = function () {
-            var type = Data.Species.Types[this.species];
+        }
+        getSpeciesData() {
+            let type = Data.Species.Types[this.species];
             Util.assert(type != undefined);
             return type;
-        };
-        Fighter.prototype.getOccupiedSites = function (accType) {
-            var bodyPartIDs = [];
-            for (var _i = 0, _a = this.getAccessories(accType); _i < _a.length; _i++) {
-                var acc = _a[_i];
+        }
+        getOccupiedSites(accType) {
+            let bodyPartIDs = [];
+            for (let acc of this.getAccessories(accType))
                 bodyPartIDs = bodyPartIDs.concat(acc.bodyPartIDs);
-            }
             return bodyPartIDs;
-        };
+        }
         // Returns first available body parts compatible with specified site. 
-        Fighter.prototype.findBodyPartsForSite = function (accType, site) {
+        findBodyPartsForSite(accType, site) {
             if (site.species != this.species)
                 return null;
-            var bodyPartIDs = [];
-            var occupied = this.getOccupiedSites(accType);
-            var speciesData = this.getSpeciesData();
-            for (var id in this.bodyParts) {
-                var part = this.bodyParts[id];
+            let bodyPartIDs = [];
+            let occupied = this.getOccupiedSites(accType);
+            let speciesData = this.getSpeciesData();
+            for (let id in this.bodyParts) {
+                let part = this.bodyParts[id];
                 if (occupied.indexOf(id) < 0) {
                     if (part.getSiteTag(accType, speciesData) == site.type) {
                         bodyPartIDs.push(id);
@@ -622,80 +587,69 @@ var Model;
                 }
             }
             return null;
-        };
-        Fighter.prototype.findBodyPartsForAccessory = function (accType, accTag) {
-            var data = accType == AccessoryType.Weapon ? Data.Weapons.Types[accTag] : Data.Armour.Types[accTag];
-            for (var _i = 0, _a = data.sites; _i < _a.length; _i++) {
-                var site = _a[_i];
-                var bodyPartIDs = this.findBodyPartsForSite(accType, site);
+        }
+        findBodyPartsForAccessory(accType, accTag) {
+            let data = accType == AccessoryType.Weapon ? Data.Weapons.Types[accTag] : Data.Armour.Types[accTag];
+            for (let site of data.sites) {
+                let bodyPartIDs = this.findBodyPartsForSite(accType, site);
                 if (bodyPartIDs)
                     return bodyPartIDs;
             }
             return null;
-        };
-        Fighter.prototype.canAddWeapon = function (weaponTag) {
+        }
+        canAddWeapon(weaponTag) {
             return !!this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponTag);
-        };
-        Fighter.prototype.canAddArmour = function (armourTag) {
+        }
+        canAddArmour(armourTag) {
             return !!this.findBodyPartsForAccessory(AccessoryType.Armour, armourTag);
-        };
-        Fighter.prototype.addWeapon = function (weaponTag) {
+        }
+        addWeapon(weaponTag) {
             // TODO: Choose site.
-            var bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponTag);
+            let bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponTag);
             if (bodyPartIDs) {
                 this.weapons.push(new Model.Weapon(weaponTag, bodyPartIDs));
                 return;
             }
             Util.assert(false);
-        };
-        Fighter.prototype.addArmour = function (armourTag) {
+        }
+        addArmour(armourTag) {
             // TODO: Choose site.
-            var bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Armour, armourTag);
+            let bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Armour, armourTag);
             if (bodyPartIDs) {
                 this.armour.push(new Model.Armour(armourTag, bodyPartIDs));
                 return;
             }
             Util.assert(false);
-        };
-        Fighter.prototype.getBodyPartArmour = function (bodyPartID) {
-            for (var _i = 0, _a = this.armour; _i < _a.length; _i++) {
-                var armour = _a[_i];
-                for (var _b = 0, _c = armour.bodyPartIDs; _b < _c.length; _b++) {
-                    var id = _c[_b];
+        }
+        getBodyPartArmour(bodyPartID) {
+            for (let armour of this.armour)
+                for (let id of armour.bodyPartIDs)
                     if (id == bodyPartID)
                         return armour;
-                }
-            }
             return null;
-        };
-        Fighter.prototype.getStatus = function () {
+        }
+        getStatus() {
             // Get armour string for each body part.
-            var partArmour = {};
-            for (var _i = 0, _a = this.armour; _i < _a.length; _i++) {
-                var armour = _a[_i];
-                var data = Data.Armour.Types[armour.tag];
-                for (var _b = 0, _c = armour.bodyPartIDs; _b < _c.length; _b++) {
-                    var partID = _c[_b];
+            let partArmour = {};
+            for (let armour of this.armour) {
+                let data = Data.Armour.Types[armour.tag];
+                for (let partID of armour.bodyPartIDs)
                     partArmour[partID] = data.name + (armour.bodyPartIDs.length > 1 ? '*' : '');
-                }
             }
             // Get weapon string for each body part.
-            var partWeapons = {};
-            for (var _d = 0, _e = this.weapons; _d < _e.length; _d++) {
-                var weapon = _e[_d];
-                var data = Data.Weapons.Types[weapon.tag];
-                for (var _f = 0, _g = weapon.bodyPartIDs; _f < _g.length; _f++) {
-                    var partID = _g[_f];
+            let partWeapons = {};
+            for (let weapon of this.weapons) {
+                let data = Data.Weapons.Types[weapon.tag];
+                for (let partID of weapon.bodyPartIDs)
                     partWeapons[partID] = data.name + (weapon.bodyPartIDs.length > 1 ? '*' : '');
-                }
             }
-            var speciesData = this.getSpeciesData();
-            var rows = [];
-            var status = '';
-            for (var id in this.bodyParts) {
-                var part = this.bodyParts[id];
-                var data = speciesData.bodyParts[part.tag];
-                var row = [];
+            let speciesData = this.getSpeciesData();
+            let rows = [];
+            let status = '';
+            for (let id in this.bodyParts) {
+                let part = this.bodyParts[id];
+                let data = speciesData.bodyParts[part.tag];
+                let row = [];
                 rows.push(row);
                 row.push(part.getInstanceData(speciesData).name);
                 row.push(part.health.toString() + '/' + data.health);
@@ -703,88 +657,78 @@ var Model;
                 row.push(partWeapons[id] ? partWeapons[id] : '');
             }
             return rows;
-        };
-        Fighter.prototype.getAttacks = function () {
-            var attacks = [];
-            var speciesData = this.getSpeciesData();
-            for (var id in this.bodyParts) {
-                var part = this.bodyParts[id];
-                var data = speciesData.bodyParts[part.tag];
+        }
+        getAttacks() {
+            let attacks = [];
+            let speciesData = this.getSpeciesData();
+            for (let id in this.bodyParts) {
+                let part = this.bodyParts[id];
+                let data = speciesData.bodyParts[part.tag];
                 if (data.attack)
                     attacks.push(new Attack(data.attack, id)); // TODO: Check body part health.
             }
-            for (var _i = 0, _a = this.weapons; _i < _a.length; _i++) {
-                var weapon = _a[_i];
-                var data = Data.Weapons.Types[weapon.tag];
-                for (var _b = 0, _c = data.attacks; _b < _c.length; _b++) {
-                    var attack = _c[_b];
-                    attacks.push(new Attack(attack, weapon.bodyPartIDs[0]));
-                } // Just use the first body part for the source. 
+            for (let weapon of this.weapons) {
+                let data = Data.Weapons.Types[weapon.tag];
+                for (let attack of data.attacks)
+                    attacks.push(new Attack(attack, weapon.bodyPartIDs[0])); // Just use the first body part for the source. 
             }
             return attacks;
-        };
-        Fighter.prototype.getBodyParts = function () {
-            var parts = [];
-            for (var id in this.bodyParts)
+        }
+        getBodyParts() {
+            let parts = [];
+            for (let id in this.bodyParts)
                 parts.push(this.bodyParts[id]); // TODO: Check body part health ? 
             return parts;
-        };
-        Fighter.prototype.getBodyPartIDs = function () {
-            var ids = [];
-            for (var id in this.bodyParts)
+        }
+        getBodyPartIDs() {
+            let ids = [];
+            for (let id in this.bodyParts)
                 ids.push(id); // TODO: Check body part health ? 
             return ids;
-        };
-        Fighter.prototype.chooseRandomBodyPart = function () {
-            var targets = this.getBodyPartIDs();
-            var targetIndex = Util.getRandomInt(targets.length);
+        }
+        chooseRandomBodyPart() {
+            let targets = this.getBodyPartIDs();
+            let targetIndex = Util.getRandomInt(targets.length);
             return targets[targetIndex];
-        };
-        Fighter.prototype.isDead = function () {
-            for (var id in this.bodyParts)
+        }
+        isDead() {
+            for (let id in this.bodyParts)
                 if (this.bodyParts[id].health == 0)
                     return true;
             return false;
-        };
-        Fighter.prototype.resetHealth = function () {
-            for (var _i = 0, _a = this.getBodyParts(); _i < _a.length; _i++) {
-                var part = _a[_i];
+        }
+        resetHealth() {
+            for (let part of this.getBodyParts())
                 part.health = part.getData(this.getSpeciesData()).health;
-            }
             Model.saveState();
-        };
-        Fighter.prototype.getExperience = function (tag) {
+        }
+        getExperience(tag) {
             return this.experience[tag] || 0;
-        };
-        Fighter.prototype.addExperience = function (tag, hours) {
+        }
+        addExperience(tag, hours) {
             this.experience[tag] = this.experience[tag] || 0;
             this.experience[tag] += hours;
-        };
-        Fighter.prototype.getActivity = function () {
+        }
+        getActivity() {
             return this.activity;
-        };
-        Fighter.prototype.setActivity = function (tag) {
+        }
+        setActivity(tag) {
             this.activity = tag;
             Model.saveState();
-        };
-        return Fighter;
-    }());
+        }
+    }
     Model.Fighter = Fighter;
 })(Model || (Model = {}));
 /// <reference path="fighter.ts" />
 "use strict";
 var Model;
 (function (Model) {
-    var Animal = (function (_super) {
-        __extends(Animal, _super);
-        function Animal(id, tag, name) {
-            var _this = this;
-            var type = Data.Animals.Types[tag];
-            _this = _super.call(this, id, type.species, name, type.shopImage, type.weapons, type.armour) || this;
-            return _this;
+    class Animal extends Model.Fighter {
+        constructor(id, tag, name) {
+            let type = Data.Animals.Types[tag];
+            super(id, type.species, name, type.shopImage, type.weapons, type.armour);
         }
-        return Animal;
-    }(Model.Fighter));
+    }
     Model.Animal = Animal;
 })(Model || (Model = {}));
 "use strict";
@@ -792,64 +736,64 @@ var Model;
 (function (Model) {
     var Buildings;
     (function (Buildings) {
-        var State = (function () {
-            function State() {
+        class State {
+            constructor() {
                 this.types = {};
                 for (var type in Data.Buildings.Levels) {
                     var free = Data.Buildings.getLevel(type, 0).cost == 0;
                     this.types[type] = { levelIndex: free ? 0 : -1, progress: -1 };
                 }
             }
-            State.prototype.update = function (hours) {
-                var changed = false;
-                var buildingCount = 0;
-                for (var id in this.types)
+            update(hours) {
+                let changed = false;
+                let buildingCount = 0;
+                for (let id in this.types)
                     if (this.isConstructing(id))
                         ++buildingCount;
-                for (var id in this.types)
+                for (let id in this.types)
                     if (this.continueConstruction(id, hours / buildingCount))
                         changed = true;
                 return changed;
-            };
-            State.prototype.getCurrentLevelIndex = function (id) {
+            }
+            getCurrentLevelIndex(id) {
                 Util.assert(id in this.types);
                 return this.types[id].levelIndex;
-            };
-            State.prototype.getNextLevelIndex = function (id) {
+            }
+            getNextLevelIndex(id) {
                 var nextIndex = this.getCurrentLevelIndex(id) + 1;
                 return nextIndex < this.getLevelCount(id) ? nextIndex : -1;
-            };
-            State.prototype.getNextUpgradeIndex = function (id) {
+            }
+            getNextUpgradeIndex(id) {
                 var index = this.getCurrentLevelIndex(id) + 1;
                 if (this.isConstructing(id))
                     ++index;
                 return index < this.getLevelCount(id) ? index : -1;
-            };
-            State.prototype.setLevelIndex = function (id, index) {
+            }
+            setLevelIndex(id, index) {
                 Util.assert(id in this.types);
                 Util.assert(index < this.getLevelCount(id));
                 this.types[id].levelIndex = index;
                 Model.saveState();
-            };
-            State.prototype.canUpgrade = function (id) {
+            }
+            canUpgrade(id) {
                 Util.assert(id in this.types);
                 var level = this.getNextLevel(id);
                 return level && Model.state.getMoney() >= level.cost && !this.isConstructing(id);
-            };
-            State.prototype.buyUpgrade = function (id) {
+            }
+            buyUpgrade(id) {
                 Util.assert(this.canUpgrade(id));
                 Model.state.spendMoney(this.getNextLevel(id).cost);
                 this.types[id].progress = 0;
                 Model.saveState();
-            };
-            State.prototype.isConstructing = function (id) {
+            }
+            isConstructing(id) {
                 return this.types[id].progress >= 0;
-            };
-            State.prototype.continueConstruction = function (id, manHours) {
+            }
+            continueConstruction(id, manHours) {
                 Util.assert(id in this.types);
                 if (!this.isConstructing(id))
                     return false;
-                var level = this.getNextLevel(id);
+                let level = this.getNextLevel(id);
                 Util.assert(level != null);
                 if (this.types[id].progress + manHours >= level.buildTime) {
                     this.types[id].progress = -1;
@@ -858,34 +802,59 @@ var Model;
                 else
                     this.types[id].progress += manHours;
                 return true;
-            };
-            State.prototype.getConstructionProgress = function (id) {
+            }
+            getConstructionProgress(id) {
                 Util.assert(id in this.types);
-                var progress = this.types[id].progress;
+                let progress = this.types[id].progress;
                 if (progress < 0)
                     return 0;
-                var level = this.getNextLevel(id);
+                let level = this.getNextLevel(id);
                 Util.assert(level != null);
                 return progress / level.buildTime;
-            };
-            State.prototype.getNextLevel = function (id) {
+            }
+            getNextLevel(id) {
                 return Data.Buildings.getLevel(id, this.getNextLevelIndex(id));
-            };
-            State.prototype.getLevelCount = function (id) {
+            }
+            getLevelCount(id) {
                 return Data.Buildings.Levels[id].length;
-            };
-            return State;
-        }());
+            }
+        }
         Buildings.State = State;
     })(Buildings = Model.Buildings || (Model.Buildings = {}));
 })(Model || (Model = {}));
 "use strict";
 var Model;
 (function (Model) {
+    function setEventPrototype(e) {
+        if (e.type == 'fight')
+            e.__proto__ = FightEvent.prototype;
+    }
+    Model.setEventPrototype = setEventPrototype;
+    class Event {
+        constructor(type, day) {
+            this.type = type;
+            this.day = day;
+        }
+        getDescription() { Util.assert(false); return ''; }
+    }
+    Model.Event = Event;
+    class FightEvent extends Event {
+        constructor(day) {
+            super('fight', day);
+        }
+        getDescription() {
+            return 'Fight (day ' + this.day.toString() + ')';
+        }
+    }
+    Model.FightEvent = FightEvent;
+})(Model || (Model = {}));
+"use strict";
+var Model;
+(function (Model) {
     var Fight;
     (function (Fight) {
-        var AttackResult = (function () {
-            function AttackResult(name, description, attackDamage, defense, sourceID, targetID) {
+        class AttackResult {
+            constructor(name, description, attackDamage, defense, sourceID, targetID) {
                 this.name = name;
                 this.description = description;
                 this.attackDamage = attackDamage;
@@ -893,109 +862,146 @@ var Model;
                 this.sourceID = sourceID;
                 this.targetID = targetID;
             }
-            return AttackResult;
-        }());
+        }
         Fight.AttackResult = AttackResult;
-        var State = (function () {
-            function State(teamA, teamB) {
+        class State {
+            constructor(teamA, teamB) {
                 this.teams = [teamA, teamB];
                 this.text = '';
                 this.nextTeamIndex = 0;
                 this.steps = 0;
                 this.finished = false;
             }
-            State.prototype.step = function () {
+            step() {
                 // Assume 2 teams of 1 fighter each. 
-                var attacker = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
+                let attacker = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
                 this.nextTeamIndex = (this.nextTeamIndex + 1) % this.teams.length;
-                var defender = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
-                var result = this.attack(attacker, defender);
+                let defender = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
+                let result = this.attack(attacker, defender);
                 this.text += result.description + '<br>';
                 this.finished = defender.isDead();
                 Model.saveState();
                 return result;
-            };
-            State.prototype.attack = function (attacker, defender) {
-                var attacks = attacker.getAttacks();
-                var attack = attacks[Util.getRandomInt(attacks.length)];
-                var defenderSpeciesData = defender.getSpeciesData();
-                var targetID = defender.chooseRandomBodyPart();
-                var target = defender.bodyParts[targetID];
-                var targetData = target.getData(defenderSpeciesData);
-                var armour = defender.getBodyPartArmour(target.id);
-                var armourData = armour ? Data.Armour.Types[armour.tag] : null;
-                var defense = armourData ? armourData.getDefense(attack.data.type) : 0;
-                var damage = attack.data.damage * (100 - defense) / 100;
-                var oldHealth = target.health;
+            }
+            attack(attacker, defender) {
+                let attacks = attacker.getAttacks();
+                let attack = attacks[Util.getRandomInt(attacks.length)];
+                let defenderSpeciesData = defender.getSpeciesData();
+                let targetID = defender.chooseRandomBodyPart();
+                let target = defender.bodyParts[targetID];
+                let targetData = target.getData(defenderSpeciesData);
+                let armour = defender.getBodyPartArmour(target.id);
+                let armourData = armour ? Data.Armour.Types[armour.tag] : null;
+                let defense = armourData ? armourData.getDefense(attack.data.type) : 0;
+                let damage = attack.data.damage * (100 - defense) / 100;
+                let oldHealth = target.health;
                 target.health = Math.max(0, oldHealth - damage);
-                var msg = attacker.name + ' uses ' + attack.data.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
+                let msg = attacker.name + ' uses ' + attack.data.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
                 msg += 'Damage = ' + attack.data.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
                 msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + target.health.toFixed(1) + '. ';
                 return new AttackResult(attack.data.name, msg, attack.data.damage, defense, attack.sourceID, targetID);
-            };
-            return State;
-        }());
+            }
+        }
         Fight.State = State;
     })(Fight = Model.Fight || (Model.Fight = {}));
 })(Model || (Model = {}));
 "use strict";
 var Model;
 (function (Model) {
-    var minutesPerDay = 60 * 12;
-    var State = (function () {
-        function State() {
+    const minutesPerDay = 60 * 12;
+    var Phase;
+    (function (Phase) {
+        Phase[Phase["Dawn"] = 0] = "Dawn";
+        Phase[Phase["News"] = 1] = "News";
+        Phase[Phase["Event"] = 2] = "Event";
+        Phase[Phase["Fight"] = 3] = "Fight";
+        Phase[Phase["Day"] = 4] = "Day";
+        Phase[Phase["Dusk"] = 5] = "Dusk";
+    })(Phase = Model.Phase || (Model.Phase = {}));
+    class State {
+        constructor() {
             this.money = 1000;
-            this.phase = 'dawn';
+            this.phase = Phase.Dawn;
             this.buildings = new Model.Buildings.State();
             this.fight = null;
             this.fighters = {};
+            this.news = [];
+            this.events = [];
             this.nextFighterID = 1;
             this.time = 0; // Minutes.
             this.speed = 1; // Game minutes per second. 
+            this.news.push(new Model.News("It's the first day. There will be a fight tomorrow."));
+            this.events.push(new Model.FightEvent(1));
         }
-        State.prototype.update = function (seconds) {
-            var changed = false;
-            if (!this.isNight()) {
-                var oldDay = this.getDay();
-                var minutesPassed = seconds * this.speed;
-                this.time += minutesPassed;
-                var hoursPassed = minutesPassed / 60;
-                changed = this.updateActivities(hoursPassed);
-                if (this.getDay() > oldDay)
-                    this.phase = 'dusk';
-            }
+        update(seconds) {
+            Util.assert(this.phase == Phase.Day);
+            let changed = this.addMinutes(seconds * this.speed);
             Model.saveState();
             return changed;
-        };
-        State.prototype.isNight = function () { return this.phase != 'day'; };
-        State.prototype.getMorningNews = function () {
-            // TODO: Any random events must be generated the previous day, and saved. 
-            return true;
-        };
-        State.prototype.advancePhase = function () {
-            if (this.phase == 'dusk')
-                this.phase = 'dawn';
-            else if (this.phase == 'dawn')
-                this.phase = 'day';
-            else
-                Util.assert(false);
+        }
+        skipToNextDay() {
+            let newTime = (this.getDay() + 1) * minutesPerDay;
+            let changed = this.addMinutes(newTime - this.time);
             Model.saveState();
-        };
-        State.prototype.updateActivities = function (hours) {
-            var workPower = {}; // Activity -> power.
-            var workers = {}; // Activity -> workers.
-            for (var id in Data.Activities.Types) {
+            return changed;
+        }
+        addMinutes(minutes) {
+            let oldDay = this.getDay();
+            this.time += minutes;
+            let hoursPassed = minutes / 60;
+            let changed = this.updateActivities(hoursPassed);
+            if (this.getDay() > oldDay) {
+                this.phase = Phase.Dusk;
+            }
+        }
+        isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
+        advancePhase() {
+            switch (this.phase) {
+                case Phase.Dawn:
+                    this.phase = Phase.News;
+                    if (this.news.length == 0)
+                        this.advancePhase();
+                    break;
+                case Phase.News:
+                    this.news.length = 0;
+                    this.phase = Phase.Event;
+                    if (this.getEventsForToday().length == 0)
+                        this.advancePhase();
+                    break;
+                case Phase.Event:
+                    Util.assert(this.fight == null); // Otherwise startFight sets the phase. 
+                    let today = this.getDay();
+                    this.events = this.events.filter(e => e.day != today);
+                    this.phase = Phase.Day;
+                    break;
+                case Phase.Day:
+                    this.phase = Phase.Dusk;
+                    break;
+                case Phase.Dusk:
+                    this.phase = Phase.Dawn;
+                    break;
+            }
+            Model.saveState();
+        }
+        getEventsForToday() {
+            let today = this.getDay();
+            return this.events.filter(e => e.day == today);
+        }
+        updateActivities(hours) {
+            let workPower = {}; // Activity -> power.
+            let workers = {}; // Activity -> workers.
+            for (let id in Data.Activities.Types) {
                 workPower[id] = Data.Activities.Types[id].freeWork;
                 workers[id] = [];
             }
-            var UpdateExperience = function (activity) {
+            let UpdateExperience = function (activity) {
                 if (activity in workers)
-                    for (var i = 0, fighter = void 0; fighter = workers[activity][i]; ++i)
+                    for (let i = 0, fighter; fighter = workers[activity][i]; ++i)
                         fighter.addExperience(activity, hours);
             };
-            for (var id in this.fighters) {
-                var fighter = this.fighters[id];
-                var activity = fighter.getActivity();
+            for (let id in this.fighters) {
+                let fighter = this.fighters[id];
+                let activity = fighter.getActivity();
                 Util.assert(activity in Data.Activities.Types);
                 if (Data.Activities.Types[activity].job) {
                     workPower[activity] += 1 + fighter.getExperience(activity) * Data.Misc.ExperienceBenefit;
@@ -1005,123 +1011,128 @@ var Model;
                 }
             }
             // Building, training animals, training gladiators, crafting, repairing:
-            var redraw = false;
+            let redraw = false;
             if ('build' in workPower && this.buildings.update(hours * workPower['build'])) {
                 UpdateExperience('build');
                 redraw = true;
             }
             return redraw;
-        };
-        State.prototype.setSpeed = function (speed) {
+        }
+        setSpeed(speed) {
             if (speed > this.speed) {
                 this.time = Math.floor(this.time / speed) * speed;
             }
             this.speed = speed;
-        };
-        State.prototype.getDay = function () {
+        }
+        getDay() {
             return Math.floor(this.time / minutesPerDay);
-        };
-        State.prototype.getTimeString = function () {
-            var dusk = this.phase == 'dusk';
-            var days = this.getDay() - (dusk ? 1 : 0);
-            var hours = dusk ? 12 : Math.floor((this.time % minutesPerDay) / 60);
-            var mins = dusk ? 0 : Math.floor(this.time % 60);
+        }
+        getTimeString() {
+            let dusk = this.phase == Phase.Dusk;
+            let days = this.getDay() - (dusk ? 1 : 0);
+            let hours = dusk ? 12 : Math.floor((this.time % minutesPerDay) / 60);
+            let mins = dusk ? 0 : Math.floor(this.time % 60);
             return 'Day ' + (days + 1).toString() + ' ' + ('00' + (hours + 6)).slice(-2) + ':' + ('00' + mins).slice(-2);
-        };
-        State.prototype.getMoney = function () { return Model.state.money; };
-        State.prototype.spendMoney = function (amount) {
+        }
+        getMoney() { return Model.state.money; }
+        spendMoney(amount) {
             Util.assert(amount >= 0 && Model.state.money >= amount);
             Model.state.money -= amount;
             Model.saveState();
-        };
-        State.prototype.addMoney = function (amount) {
+        }
+        addMoney(amount) {
             Util.assert(amount >= 0);
             Model.state.money += amount;
             Model.saveState();
-        };
-        State.prototype.buyAnimal = function (tag) {
+        }
+        buyAnimal(tag) {
             Util.assert(tag in Data.Animals.Types);
             this.spendMoney(Data.Animals.Types[tag].cost);
             this.fighters[this.nextFighterID] = new Model.Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
             ++this.nextFighterID;
             Model.saveState();
-        };
-        State.prototype.buyPerson = function (tag) {
+        }
+        buyPerson(tag) {
             Util.assert(tag in Data.People.Types);
             this.spendMoney(Data.People.Types[tag].cost);
             this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
             ++this.nextFighterID;
             Model.saveState();
-        };
-        State.prototype.getPeople = function () {
-            var people = [];
-            for (var id in this.fighters)
+        }
+        getPeople() {
+            let people = [];
+            for (let id in this.fighters)
                 if (this.fighters[id] instanceof Model.Person)
                     people.push(this.fighters[id]);
             return people;
-        };
-        State.prototype.getAnimals = function () {
-            var animals = [];
-            for (var id in this.fighters)
+        }
+        getAnimals() {
+            let animals = [];
+            for (let id in this.fighters)
                 if (this.fighters[id] instanceof Model.Animal)
                     animals.push(this.fighters[id]);
             return animals;
-        };
-        State.prototype.getFighterIDs = function () {
-            var ids = [];
-            for (var id in this.fighters)
+        }
+        getFighterIDs() {
+            let ids = [];
+            for (let id in this.fighters)
                 ids.push(id);
             return ids;
-        };
-        State.prototype.startFight = function (teamA, teamB) {
+        }
+        startFight(teamA, teamB) {
             Util.assert(this.fight == null);
+            Util.assert(this.phase == Phase.Event);
             this.fight = new Model.Fight.State(teamA, teamB);
+            this.phase = Phase.Fight;
             Model.saveState();
-        };
-        State.prototype.endFight = function () {
+        }
+        endFight() {
             Util.assert(!!this.fight);
+            Util.assert(this.time / minutesPerDay == this.getDay()); // Fight must happen at dawn.
             this.fight = null;
+            this.time += minutesPerDay; // Skip to tomorrow.
+            this.phase = Phase.Dusk;
             Model.saveState();
-        };
-        State.prototype.getUniqueFighterName = function (name) {
-            var _this = this;
-            var find = function (name) {
-                for (var id in _this.fighters)
-                    if (_this.fighters[id].name == name)
+        }
+        getUniqueFighterName(name) {
+            let find = (name) => {
+                for (let id in this.fighters)
+                    if (this.fighters[id].name == name)
                         return true;
                 return false;
             };
-            var tryName = '';
-            var i = 1;
+            let tryName = '';
+            let i = 1;
             while (true) {
-                var tryName_1 = name + ' ' + i.toString();
-                if (!find(tryName_1))
-                    return tryName_1;
+                let tryName = name + ' ' + i.toString();
+                if (!find(tryName))
+                    return tryName;
                 ++i;
             }
-        };
-        return State;
-    }());
-    State.key = "state.v11";
+        }
+    }
+    State.key = "state.v15";
     Model.State = State;
     function init() {
-        var str = localStorage.getItem(State.key);
+        let str = localStorage.getItem(State.key);
         if (str) {
             Model.state = JSON.parse(str);
             Model.state.__proto__ = State.prototype;
             Model.state.buildings.__proto__ = Model.Buildings.State.prototype;
             if (Model.state.fight)
                 Model.state.fight.__proto__ = Model.Fight.State.prototype;
-            for (var id in Model.state.fighters) {
-                var fighter = Model.state.fighters[id];
+            for (let id in Model.state.fighters) {
+                let fighter = Model.state.fighters[id];
                 if (fighter.species == 'human')
                     fighter.__proto__ = Model.Person.prototype;
                 else
                     fighter.__proto__ = Model.Animal.prototype;
                 fighter.onLoad();
             }
-            if (Model.state.phase == 'dusk')
-                Model.state.phase = 'dawn';
+            for (let event of Model.state.events)
+                Model.setEventPrototype(event);
+            if (Model.state.phase == Phase.Dusk)
+                Model.state.phase = Phase.Dawn;
         }
         else
             resetState();
@@ -1137,84 +1148,87 @@ var Model;
     }
     Model.resetState = resetState;
 })(Model || (Model = {}));
+"use strict";
+var Model;
+(function (Model) {
+    class News {
+        constructor(description) {
+            this.description = description;
+        }
+    }
+    Model.News = News;
+})(Model || (Model = {}));
 /// <reference path="fighter.ts" />
 "use strict";
 var Model;
 (function (Model) {
-    var Person = (function (_super) {
-        __extends(Person, _super);
-        function Person(id, tag, name) {
-            var _this = this;
-            var type = Data.People.Types[tag];
-            _this = _super.call(this, id, 'human', name, type.shopImage, type.weapons, type.armour) || this;
-            return _this;
+    class Person extends Model.Fighter {
+        constructor(id, tag, name) {
+            let type = Data.People.Types[tag];
+            super(id, 'human', name, type.shopImage, type.weapons, type.armour);
         }
-        return Person;
-    }(Model.Fighter));
+    }
     Model.Person = Person;
 })(Model || (Model = {}));
 "use strict";
-var Point = (function () {
-    function Point(x, y) {
+class Point {
+    constructor(x, y) {
         this.x = x;
         this.y = y;
     }
-    Point.prototype.clone = function () { return new Point(this.x, this.y); };
-    Point.prototype.translate = function (ctx) { ctx.translate(this.x, this.y); };
+    clone() { return new Point(this.x, this.y); }
+    translate(ctx) { ctx.translate(this.x, this.y); }
     ;
-    return Point;
-}());
-var Rect = (function () {
-    function Rect(left, top, right, bottom) {
+}
+class Rect {
+    constructor(left, top, right, bottom) {
         this.left = left;
         this.top = top;
         this.right = right;
         this.bottom = bottom;
     }
-    Rect.prototype.clone = function () { return new Rect(this.left, this.top, this.right, this.bottom); };
-    Rect.prototype.width = function () { return this.right - this.left; };
-    Rect.prototype.height = function () { return this.bottom - this.top; };
-    Rect.prototype.centre = function () { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); };
-    Rect.prototype.path = function (ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); };
+    clone() { return new Rect(this.left, this.top, this.right, this.bottom); }
+    width() { return this.right - this.left; }
+    height() { return this.bottom - this.top; }
+    centre() { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); }
+    path(ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); }
     ;
-    Rect.prototype.fill = function (ctx) { ctx.fillRect(this.left, this.top, this.width(), this.height()); };
+    fill(ctx) { ctx.fillRect(this.left, this.top, this.width(), this.height()); }
     ;
-    Rect.prototype.stroke = function (ctx) { ctx.strokeRect(this.left, this.top, this.width(), this.height()); };
+    stroke(ctx) { ctx.strokeRect(this.left, this.top, this.width(), this.height()); }
     ;
-    Rect.prototype.expand = function (left, top, right, bottom) {
+    expand(left, top, right, bottom) {
         this.left += left;
         this.top += top;
         this.right += right;
         this.bottom += bottom;
-    };
-    Rect.prototype.pointInRect = function (point) {
+    }
+    pointInRect(point) {
         return point.x >= this.left && point.y >= this.top && point.x < this.right && point.y < this.bottom;
-    };
-    Rect.prototype.offset = function (dx, dy) {
+    }
+    offset(dx, dy) {
         this.left += dx;
         this.right += dx;
         this.top += dy;
         this.bottom += dy;
-    };
-    return Rect;
-}());
-var Xform = (function () {
-    function Xform() {
+    }
+}
+class Xform {
+    constructor() {
         this.matrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix();
     }
-    Xform.prototype.transformPoint = function (point) {
-        var svgPoint = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGPoint();
+    transformPoint(point) {
+        let svgPoint = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGPoint();
         svgPoint.x = point.x;
         svgPoint.y = point.y;
         svgPoint = svgPoint.matrixTransform(this.matrix);
         return new Point(svgPoint.x, svgPoint.y);
-    };
-    Xform.prototype.apply = function (ctx) {
-        var m = this.matrix;
+    }
+    apply(ctx) {
+        let m = this.matrix;
         ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
-    };
-    return Xform;
-}());
+    }
+}
 "use strict";
 var Util;
 (function (Util) {
@@ -1233,9 +1247,9 @@ var Util;
     }
     Util.assert = assert;
     function formatRows(rows) {
-        var columns = [];
-        for (var i = 0; i < rows.length; ++i)
-            for (var j = 0; j < rows[i].length; ++j) {
+        let columns = [];
+        for (let i = 0; i < rows.length; ++i)
+            for (let j = 0; j < rows[i].length; ++j) {
                 if (i == 0)
                     columns[j] = '<table>';
                 columns[j] += '<tr><td>' + rows[i][j] + '</tr></td>';
@@ -1267,89 +1281,87 @@ var Util;
 "use strict";
 var View;
 (function (View) {
-    var Animation = (function () {
-        function Animation(duration) {
+    class Animation {
+        constructor(duration) {
             this.duration = duration;
             this.startTime = 0;
             this.progress = 0;
             this.onStart = null;
         }
-        Animation.prototype.start = function (speed) {
+        start(speed) {
             this.duration /= speed;
             this.startTime = new Date().getTime();
             if (this.onStart)
                 this.onStart();
-        };
-        Animation.prototype.update = function () {
-            var now = new Date().getTime();
+        }
+        update() {
+            let now = new Date().getTime();
             this.progress = (now - this.startTime) / this.duration;
             if (this.progress >= 1) {
                 this.progress = 1;
                 return false;
             }
             return true;
-        };
-        Animation.prototype.draw = function (ctx, xform) { };
-        return Animation;
-    }());
+        }
+        draw(ctx, xform) { }
+    }
     View.Animation = Animation;
-    var Sequence = (function () {
-        function Sequence(speed) {
+    class Sequence {
+        constructor(speed) {
             this.speed = speed;
             this.items = [];
         }
-        Sequence.prototype.start = function () {
+        start() {
             if (this.items.length) {
                 this.items[0].start(this.speed);
                 return true;
             }
             return false;
-        };
-        Sequence.prototype.update = function () {
+        }
+        update() {
             if (this.items.length) {
                 if (this.items[0].update())
                     return true;
                 this.items.shift(); // Finished.
             }
             return this.start();
-        };
-        Sequence.prototype.draw = function (ctx, xform) {
+        }
+        draw(ctx, xform) {
             if (this.items.length) {
                 ctx.save();
                 this.items[0].draw(ctx, xform ? xform : new Xform());
             }
-        };
-        return Sequence;
-    }());
+        }
+    }
     View.Sequence = Sequence;
 })(View || (View = {}));
 "use strict";
 var View;
 (function (View) {
-    var Page = (function () {
-        function Page(title) {
+    class Page {
+        constructor(title) {
             this.title = title;
             Util.assert(Page.Current == null);
             Page.Current = this;
             this.div = document.createElement('div');
         }
-        Page.hideCurrent = function () {
+        static hideCurrent() {
             if (Page.Current && Page.Current.onClose()) {
                 Page.Current = null;
-                var elem = document.getElementById('page');
+                let elem = document.getElementById('page');
                 elem.className = '';
                 elem.innerHTML = '';
             }
-        };
-        Page.prototype.show = function () {
-            var elem = document.getElementById('page');
+        }
+        show() {
+            let elem = document.getElementById('page');
             elem.innerHTML = '';
             if (this.title) {
-                var title = document.createElement('p');
+                let title = document.createElement('p');
                 title.innerText = this.title;
                 elem.appendChild(title);
             }
-            var backButton = document.createElement('button');
+            let backButton = document.createElement('button');
             backButton.id = 'back_button';
             backButton.innerText = 'Back';
             backButton.addEventListener('click', Page.hideCurrent);
@@ -1357,31 +1369,227 @@ var View;
             elem.appendChild(this.div);
             elem.className = 'show';
             this.onShow();
-        };
-        Page.prototype.onShow = function () { };
-        Page.prototype.onClose = function () { return true; };
-        return Page;
-    }());
+        }
+        onShow() { }
+        onClose() { return true; }
+    }
     Page.Current = null;
     View.Page = Page;
-    var ListPage = (function (_super) {
-        __extends(ListPage, _super);
-        function ListPage(title) {
-            var _this = _super.call(this, title) || this;
-            _this.tableFactory = new View.Table.Factory();
-            _this.div.appendChild(_this.tableFactory.element);
-            return _this;
+    class ListPage extends Page {
+        constructor(title) {
+            super(title);
+            this.tableFactory = new View.Table.Factory();
+            this.div.appendChild(this.tableFactory.element);
         }
-        ListPage.prototype.addItem = function (title, description, image, locked, handler) {
-            var cells = [new View.Table.TextCell('<h4>' + title + '</h4>', 20), new View.Table.ImageCell(image, 20), new View.Table.TextCell(description)];
+        addItem(title, description, image, locked, handler) {
+            let cells = [new View.Table.TextCell('<h4>' + title + '</h4>', 20), new View.Table.ImageCell(image, 20), new View.Table.TextCell(description)];
             this.tableFactory.addRow(cells, locked, function () {
                 Page.hideCurrent();
                 handler();
             });
-        };
-        return ListPage;
-    }(Page));
+        }
+    }
     View.ListPage = ListPage;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    class ArenaPage extends View.Page {
+        constructor() {
+            super('Choose Fighters');
+            this.onStartButton = () => {
+                let teams = [];
+                let fighterIDs = Model.state.getFighterIDs();
+                teams.push([fighterIDs[this.selectA.selectedIndex]]);
+                teams.push([fighterIDs[this.selectB.selectedIndex]]);
+                Model.state.startFight(teams[0], teams[1]);
+                View.Page.hideCurrent();
+            };
+            this.onFightersChanged = () => {
+                this.updateStartButton();
+            };
+            let topDiv = document.createElement('div');
+            this.selectA = document.createElement('select');
+            this.selectB = document.createElement('select');
+            this.selectA.addEventListener('change', this.onFightersChanged);
+            this.selectB.addEventListener('change', this.onFightersChanged);
+            let makeOption = function (id) {
+                let option = document.createElement('option');
+                option.text = Model.state.fighters[id].name;
+                if (Model.state.fighters[id].isDead())
+                    option.text += ' (x_x)';
+                return option;
+            };
+            for (let id in Model.state.fighters) {
+                this.selectB.options.add(makeOption(id));
+                this.selectA.options.add(makeOption(id));
+            }
+            if (this.selectB.options.length > 1)
+                this.selectB.selectedIndex = 1;
+            this.button = document.createElement('button');
+            this.button.addEventListener('click', this.onStartButton);
+            topDiv.appendChild(this.selectA);
+            topDiv.appendChild(this.selectB);
+            topDiv.appendChild(this.button);
+            this.div.appendChild(topDiv);
+            this.updateStartButton();
+        }
+        onShow() {
+        }
+        onClose() {
+            if (Model.state.fight == null)
+                Model.state.advancePhase();
+            return true;
+        }
+        getFighters() {
+            let fighterIDs = Model.state.getFighterIDs();
+            let fighterA = this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]];
+            let fighterB = this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]];
+            return [fighterA, fighterB];
+        }
+        updateStartButton() {
+            if (Model.state.fight) {
+                this.button.innerText = 'Stop';
+                this.button.disabled = false;
+                return;
+            }
+            this.button.innerText = 'Start';
+            let fighters = this.getFighters();
+            this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
+        }
+    }
+    View.ArenaPage = ArenaPage;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    class BarracksPage extends View.Page {
+        constructor() {
+            super('Barracks');
+            let tableFactory = new View.Table.Factory();
+            this.div.appendChild(tableFactory.element);
+            tableFactory.addColumnHeader('Name', 20);
+            tableFactory.addColumnHeader('Image', 30);
+            tableFactory.addColumnHeader('Part', 10);
+            tableFactory.addColumnHeader('Health', 10);
+            tableFactory.addColumnHeader('Armour', 10);
+            tableFactory.addColumnHeader('Weapon', 10);
+            tableFactory.addColumnHeader('Activity', 10);
+            const activityItems = [];
+            for (let id in Data.Activities.Types)
+                activityItems.push(new View.Table.SelectCellItem(id, Data.Activities.Types[id].name));
+            for (let person of Model.state.getPeople()) {
+                let cells = [new View.Table.TextCell('<h4>' + person.name + '</h4>'), new View.Table.ImageCell(person.image)];
+                for (let c of Util.formatRows(person.getStatus()))
+                    cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
+                let cell = new View.Table.SelectCell(100, activityItems, (value) => { person.setActivity(value); });
+                cell.selectedTag = person.getActivity();
+                cells.push(cell);
+                tableFactory.addRow(cells, false, null);
+            }
+        }
+    }
+    View.BarracksPage = BarracksPage;
+})(View || (View = {}));
+"use strict";
+var View;
+(function (View) {
+    class CanvasObject {
+        constructor() { }
+        draw(ctx) { }
+        getRect() { return null; }
+        onClick() { }
+        isEnabled() { return true; }
+    }
+    View.CanvasObject = CanvasObject;
+    class CanvasImage extends CanvasObject {
+        constructor() {
+            super(...arguments);
+            this.pos = new Point(0, 0);
+        }
+        loadImage(path, onLoad) {
+            this.image = new Image();
+            this.image.onload = () => { onLoad(); };
+            this.image.src = path;
+        }
+        draw(ctx) {
+            ctx.drawImage(this.image, this.pos.x, this.pos.y);
+        }
+        getRect() {
+            return new Rect(this.pos.x, this.pos.y, this.pos.x + this.image.width, this.pos.y + this.image.height);
+        }
+        isComplete() {
+            return this.image && this.image.complete;
+        }
+    }
+    View.CanvasImage = CanvasImage;
+    class Canvas {
+        constructor(element) {
+            this.element = element;
+        }
+        devToLog(x, y) {
+            let scale = this.element.clientWidth / this.element.width;
+            return new Point(x / scale, y / scale);
+        }
+        draw() {
+            Util.assert(false);
+        }
+    }
+    View.Canvas = Canvas;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    class DebugPage extends View.Page {
+        constructor() {
+            super('Debug');
+            this.onBuyAllAnimals = () => {
+                for (let tag in Data.Animals.Types) {
+                    Model.state.addMoney(Data.Animals.Types[tag].cost);
+                    Model.state.buyAnimal(tag);
+                }
+                View.Page.hideCurrent();
+            };
+            this.onBuyAllPeople = () => {
+                for (let tag in Data.People.Types) {
+                    Model.state.addMoney(Data.People.Types[tag].cost);
+                    Model.state.buyPerson(tag);
+                }
+                View.Page.hideCurrent();
+            };
+            this.onBuyAllBuildings = () => {
+                for (let tag in Data.Buildings.Levels) {
+                    if (Model.state.buildings.canUpgrade(tag)) {
+                        var level = Data.Buildings.getLevel(tag, Model.state.buildings.getNextUpgradeIndex(tag));
+                        if (level.cost)
+                            Model.state.addMoney(level.cost);
+                        Model.state.buildings.buyUpgrade(tag);
+                    }
+                }
+                View.Page.hideCurrent();
+            };
+            this.onHeal = () => {
+                for (let id in Model.state.fighters)
+                    Model.state.fighters[id].resetHealth();
+                View.Page.hideCurrent();
+            };
+            this.addButton('Buy all animals', this.onBuyAllAnimals);
+            this.addButton('Buy all people', this.onBuyAllPeople);
+            this.addButton('Buy all buildings', this.onBuyAllBuildings);
+            this.addButton('Heal fighters', this.onHeal);
+        }
+        addButton(caption, handler) {
+            let button = document.createElement('button');
+            button.innerText = caption;
+            button.addEventListener('click', handler);
+            this.div.appendChild(button);
+            this.div.appendChild(document.createElement('br'));
+        }
+    }
+    View.DebugPage = DebugPage;
 })(View || (View = {}));
 /// <reference path="page.ts" />
 "use strict";
@@ -1394,23 +1602,20 @@ var View;
         ctx.fillStyle = '#ff0000';
         ctx.fillText(name, 0, 0);
     }
-    var GrowAnimation = (function (_super) {
-        __extends(GrowAnimation, _super);
-        function GrowAnimation(name, point) {
-            var _this = _super.call(this, 300) || this;
-            _this.name = name;
-            _this.point = point;
-            return _this;
+    class GrowAnimation extends View.Animation {
+        constructor(name, point) {
+            super(300);
+            this.name = name;
+            this.point = point;
         }
-        GrowAnimation.prototype.draw = function (ctx, xform) {
-            var scale = Util.querp(0, 1, this.progress);
-            var point = xform.transformPoint(this.point);
+        draw(ctx, xform) {
+            let scale = Util.querp(0, 1, this.progress);
+            let point = xform.transformPoint(this.point);
             ctx.translate(point.x, point.y);
             ctx.scale(scale, scale);
             drawAttack(this.name, ctx);
-        };
-        return GrowAnimation;
-    }(View.Animation));
+        }
+    }
     //class ExplodeAnimation extends Animation
     //{
     //	constructor(private name: string, private point: Point)
@@ -1427,296 +1632,234 @@ var View;
     //		ctx.globalAlpha = 1;
     //	}
     //}
-    var DamageAnimation = (function (_super) {
-        __extends(DamageAnimation, _super);
-        function DamageAnimation(name, point) {
-            var _this = _super.call(this, 1000) || this;
-            _this.name = name;
-            _this.point = point;
-            return _this;
+    class DamageAnimation extends View.Animation {
+        constructor(name, point) {
+            super(1000);
+            this.name = name;
+            this.point = point;
         }
-        DamageAnimation.prototype.draw = function (ctx, xform) {
-            var offset = Util.querp(0, 100, this.progress);
-            var point = xform.transformPoint(this.point);
+        draw(ctx, xform) {
+            let offset = Util.querp(0, 100, this.progress);
+            let point = xform.transformPoint(this.point);
             ctx.translate(point.x, point.y - offset);
             ctx.globalAlpha = 1 - this.progress * this.progress;
             drawAttack(this.name, ctx);
             ctx.globalAlpha = 1;
-        };
-        return DamageAnimation;
-    }(View.Animation));
-    var PauseAnimation = (function (_super) {
-        __extends(PauseAnimation, _super);
-        function PauseAnimation(name, point, duration) {
-            var _this = _super.call(this, duration) || this;
-            _this.name = name;
-            _this.point = point;
-            return _this;
         }
-        PauseAnimation.prototype.draw = function (ctx, xform) {
-            var point = xform.transformPoint(this.point);
+    }
+    class PauseAnimation extends View.Animation {
+        constructor(name, point, duration) {
+            super(duration);
+            this.name = name;
+            this.point = point;
+        }
+        draw(ctx, xform) {
+            let point = xform.transformPoint(this.point);
             ctx.translate(point.x, point.y);
             drawAttack(this.name, ctx);
-        };
-        return PauseAnimation;
-    }(View.Animation));
-    var MoveAnimation = (function (_super) {
-        __extends(MoveAnimation, _super);
-        function MoveAnimation(name, pointA, pointB) {
-            var _this = _super.call(this, 500) || this;
-            _this.name = name;
-            _this.pointA = pointA;
-            _this.pointB = pointB;
-            return _this;
         }
-        MoveAnimation.prototype.draw = function (ctx, xform) {
-            var pointA = xform.transformPoint(this.pointA);
-            var pointB = xform.transformPoint(this.pointB);
-            var x = Util.querp(pointA.x, pointB.x, this.progress);
-            var y = Util.querp(pointA.y, pointB.y, this.progress);
+    }
+    class MoveAnimation extends View.Animation {
+        constructor(name, pointA, pointB) {
+            super(500);
+            this.name = name;
+            this.pointA = pointA;
+            this.pointB = pointB;
+        }
+        draw(ctx, xform) {
+            let pointA = xform.transformPoint(this.pointA);
+            let pointB = xform.transformPoint(this.pointB);
+            let x = Util.querp(pointA.x, pointB.x, this.progress);
+            let y = Util.querp(pointA.y, pointB.y, this.progress);
             ctx.translate(x, y);
             ctx.rotate(2 * Math.PI * this.progress * 2 * (pointA.x > pointB.x ? -1 : 1));
             drawAttack(this.name, ctx);
-        };
-        return MoveAnimation;
-    }(View.Animation));
-    var ArenaPage = (function (_super) {
-        __extends(ArenaPage, _super);
-        function ArenaPage() {
-            var _this = _super.call(this, 'Arena') || this;
-            _this.backgroundImage = new View.CanvasImage();
-            _this.imageA = new View.CanvasImage();
-            _this.imageB = new View.CanvasImage();
-            _this.sequence = null;
-            _this.timer = 0;
-            _this.healths = [];
-            _this.onStartButton = function () {
-                if (Model.state.fight) {
-                    Model.state.endFight();
-                    _this.updateStartButton();
-                    _this.sequence = null;
-                    _this.draw();
-                    return;
+        }
+    }
+    class FightPage extends View.Page {
+        constructor() {
+            super('Fight');
+            this.backgroundImage = new View.CanvasImage();
+            this.imageA = new View.CanvasImage();
+            this.imageB = new View.CanvasImage();
+            this.sequence = null;
+            this.timer = 0;
+            this.healths = [];
+            this.onStartButton = () => {
+                Util.assert(Model.state.fight != null);
+                if (this.timer) {
+                    this.stopFight();
                 }
-                var teams = [];
-                var fighterIDs = Model.state.getFighterIDs();
-                teams.push([fighterIDs[_this.selectA.selectedIndex]]);
-                teams.push([fighterIDs[_this.selectB.selectedIndex]]);
-                Model.state.startFight(teams[0], teams[1]);
-                _this.selectA.disabled = _this.selectB.disabled = true;
-                _this.updateStartButton();
-                _this.doAttack();
+                else {
+                    this.button.innerText = 'Stop';
+                    this.doAttack();
+                    this.timer = window.setInterval(this.onTick, 40);
+                }
             };
-            _this.onTick = function () {
-                if (_this.sequence) {
-                    if (_this.sequence.update()) {
-                        _this.draw();
+            this.onTick = () => {
+                if (this.sequence) {
+                    if (this.sequence.update()) {
+                        this.draw();
                     }
                     else {
-                        _this.sequence = null;
+                        this.sequence = null;
                         if (Model.state.fight)
-                            _this.doAttack();
-                        else
-                            window.clearInterval(_this.timer);
+                            this.doAttack();
+                        else {
+                            window.clearInterval(this.timer);
+                            this.timer = 0;
+                        }
                     }
                 }
             };
-            _this.onFightersChanged = function () {
-                _this.updateStartButton();
-                _this.updateHealths();
-                _this.updateImages();
-            };
-            var topDiv = document.createElement('div');
-            topDiv.id = 'arena_top_div';
-            _this.selectA = document.createElement('select');
-            _this.selectB = document.createElement('select');
-            _this.selectA.addEventListener('change', _this.onFightersChanged);
-            _this.selectB.addEventListener('change', _this.onFightersChanged);
-            var makeOption = function (id) {
-                var option = document.createElement('option');
-                option.text = Model.state.fighters[id].name;
-                if (Model.state.fighters[id].isDead())
-                    option.text += ' (x_x)';
-                return option;
-            };
-            for (var id in Model.state.fighters) {
-                _this.selectB.options.add(makeOption(id));
-                _this.selectA.options.add(makeOption(id));
-            }
-            if (_this.selectB.options.length > 1)
-                _this.selectB.selectedIndex = 1;
-            _this.button = document.createElement('button');
-            _this.button.addEventListener('click', _this.onStartButton);
-            _this.speedCheckbox = document.createElement('input');
-            _this.speedCheckbox.type = 'checkbox';
-            _this.speedCheckboxLabel = document.createElement('span');
-            _this.speedCheckboxLabel.innerText = 'Oh, just get on with it!';
-            topDiv.appendChild(_this.selectA);
-            topDiv.appendChild(_this.selectB);
-            topDiv.appendChild(_this.button);
-            topDiv.appendChild(_this.speedCheckbox);
-            topDiv.appendChild(_this.speedCheckboxLabel);
-            _this.para = document.createElement('p');
-            _this.para.style.margin = '0';
-            _this.scroller = document.createElement('div');
-            _this.scroller.id = 'arena_scroller';
-            _this.scroller.className = 'scroller';
-            _this.scroller.appendChild(_this.para);
-            var canvas = document.createElement('canvas');
-            canvas.id = 'arena_canvas';
-            _this.canvas = new View.Canvas(canvas);
-            _this.div.appendChild(topDiv);
-            _this.div.appendChild(canvas);
-            _this.div.appendChild(_this.scroller);
-            _this.backgroundImage.loadImage(Data.Misc.ArenaBackgroundImage, function () { _this.draw(); });
-            _this.update();
-            _this.updateStartButton();
-            _this.updateHealths();
-            _this.updateImages();
-            return _this;
+            Util.assert(Model.state.fight != null);
+            let topDiv = document.createElement('div');
+            topDiv.id = 'fight_top_div';
+            this.button = document.createElement('button');
+            this.button.addEventListener('click', this.onStartButton);
+            this.button.innerText = 'Start';
+            this.speedCheckbox = document.createElement('input');
+            this.speedCheckbox.type = 'checkbox';
+            this.speedCheckboxLabel = document.createElement('span');
+            this.speedCheckboxLabel.innerText = 'Oh, just get on with it!';
+            topDiv.appendChild(this.button);
+            topDiv.appendChild(this.speedCheckbox);
+            topDiv.appendChild(this.speedCheckboxLabel);
+            this.para = document.createElement('p');
+            this.para.style.margin = '0';
+            this.scroller = document.createElement('div');
+            this.scroller.id = 'fight_scroller';
+            this.scroller.className = 'scroller';
+            this.scroller.appendChild(this.para);
+            let canvas = document.createElement('canvas');
+            canvas.id = 'fight_canvas';
+            this.canvas = new View.Canvas(canvas);
+            this.div.appendChild(topDiv);
+            this.div.appendChild(canvas);
+            this.div.appendChild(this.scroller);
+            this.backgroundImage.loadImage(Data.Misc.FightBackgroundImage, () => { this.draw(); });
+            let fighters = Model.state.fighters;
+            this.fighters = [fighters[Model.state.fight.teams[0][0]], fighters[Model.state.fight.teams[1][0]]];
+            this.update();
+            this.updateHealths();
+            this.updateImages();
         }
-        ArenaPage.prototype.onShow = function () {
+        onShow() {
             this.canvas.element.width = View.Width;
             this.canvas.element.height = View.Width * this.canvas.element.clientHeight / this.canvas.element.clientWidth;
-            if (Model.state.fight) {
-                var fighterIDs = Model.state.getFighterIDs();
-                this.selectA.selectedIndex = fighterIDs.indexOf(Model.state.fight.teams[0][0]);
-                this.selectB.selectedIndex = fighterIDs.indexOf(Model.state.fight.teams[1][0]);
-                this.doAttack();
-            }
             this.draw();
-        };
-        ArenaPage.prototype.onClose = function () {
-            return Model.state.fight == null;
-        };
-        ArenaPage.prototype.doAttack = function () {
-            var _this = this;
+        }
+        onClose() {
+            if (Model.state.fight)
+                return false;
+            Util.assert(this.timer == 0);
+            return true;
+        }
+        stopFight() {
+            Model.state.endFight();
+            this.button.disabled = true;
+        }
+        doAttack() {
             Util.assert(!!Model.state.fight);
-            if (!this.timer)
-                this.timer = window.setInterval(this.onTick, 40);
-            var attackerIndex = Model.state.fight.nextTeamIndex;
-            var result = Model.state.fight.step();
-            var defenderIndex = Model.state.fight.nextTeamIndex;
+            let attackerIndex = Model.state.fight.nextTeamIndex;
+            let result = Model.state.fight.step();
+            let defenderIndex = Model.state.fight.nextTeamIndex;
             this.update();
-            if (Model.state.fight.finished) {
-                Model.state.endFight();
-                this.updateStartButton();
-            }
-            var fighters = this.getFighters();
-            var sourcePart = fighters[attackerIndex].bodyParts[result.sourceID];
-            var targetPart = fighters[defenderIndex].bodyParts[result.targetID];
+            if (Model.state.fight.finished)
+                this.stopFight();
+            let sourcePart = this.fighters[attackerIndex].bodyParts[result.sourceID];
+            let targetPart = this.fighters[defenderIndex].bodyParts[result.targetID];
             this.sequence = new View.Sequence(this.speedCheckbox.checked ? 5 : 1);
-            var pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
-            var pointB = this.getBodyPartPoint(defenderIndex, targetPart);
+            let pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
+            let pointB = this.getBodyPartPoint(defenderIndex, targetPart);
             this.sequence.items.push(new GrowAnimation(result.name, pointA));
             this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
             this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
-            var damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
-            var damageAnim = new DamageAnimation(damageString, pointB);
-            damageAnim.onStart = function () { _this.updateHealths(); };
+            let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
+            let damageAnim = new DamageAnimation(damageString, pointB);
+            damageAnim.onStart = () => { this.updateHealths(); };
             this.sequence.items.push(damageAnim);
             this.sequence.items.push(new View.Animation(1000));
             this.sequence.start();
-        };
-        ArenaPage.prototype.getFighters = function () {
-            var fighterIDs = Model.state.getFighterIDs();
-            var fighterA = this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]];
-            var fighterB = this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]];
-            return [fighterA, fighterB];
-        };
-        ArenaPage.prototype.updateStartButton = function () {
-            if (Model.state.fight) {
-                this.button.innerText = 'Stop';
-                this.button.disabled = false;
-                return;
-            }
-            this.button.innerText = 'Start';
-            var fighters = this.getFighters();
-            this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
-        };
-        ArenaPage.prototype.update = function () {
+        }
+        update() {
             if (!Model.state.fight)
                 return;
-            var atEnd = Math.abs(this.scroller.scrollTop + this.scroller.clientHeight - this.scroller.scrollHeight) <= 10;
+            let atEnd = Math.abs(this.scroller.scrollTop + this.scroller.clientHeight - this.scroller.scrollHeight) <= 10;
             this.para.innerHTML = Model.state.fight.text;
             if (atEnd)
                 this.scroller.scrollTop = this.scroller.scrollHeight;
-        };
-        ArenaPage.prototype.updateImages = function () {
-            var _this = this;
-            var fighters = this.getFighters();
-            if (fighters.indexOf(null) >= 0)
+        }
+        updateImages() {
+            if (this.fighters.indexOf(null) >= 0)
                 return;
-            this.imageA.loadImage(fighters[0].image, function () { _this.draw(); });
-            this.imageB.loadImage(fighters[1].image, function () { _this.draw(); });
+            this.imageA.loadImage(this.fighters[0].image, () => { this.draw(); });
+            this.imageB.loadImage(this.fighters[1].image, () => { this.draw(); });
             this.draw();
-        };
-        ArenaPage.prototype.updateHealths = function () {
-            var fighters = this.getFighters();
+        }
+        updateHealths() {
             this.healths.length = 0;
-            for (var i = 0; i < 2; ++i) {
+            for (let i = 0; i < 2; ++i) {
                 this.healths.push([]);
-                if (fighters[i])
-                    for (var _i = 0, _a = fighters[i].getBodyParts(); _i < _a.length; _i++) {
-                        var part = _a[_i];
+                if (this.fighters[i])
+                    for (let part of this.fighters[i].getBodyParts())
                         this.healths[this.healths.length - 1].push(part.health);
-                    }
             }
-        };
-        ArenaPage.prototype.getImageRect = function (index) {
-            var image = index ? this.imageB : this.imageA;
-            var rect = new Rect(0, 0, image.image.width, image.image.height);
-            var x = this.canvas.element.width / 2 + (index ? 50 : -50 - rect.width());
-            var y = this.canvas.element.height - rect.height();
+        }
+        getImageRect(index) {
+            let image = index ? this.imageB : this.imageA;
+            let rect = new Rect(0, 0, image.image.width, image.image.height);
+            let x = this.canvas.element.width / 2 + (index ? 50 : -50 - rect.width());
+            let y = this.canvas.element.height - rect.height();
             rect.offset(x, y);
             return rect;
-        };
-        ArenaPage.prototype.getBodyPartPoint = function (fighterIndex, part) {
-            var fighter = this.getFighters()[fighterIndex];
-            var rect = this.getImageRect(fighterIndex);
-            var data = part.getInstanceData(fighter.getSpeciesData());
+        }
+        getBodyPartPoint(fighterIndex, part) {
+            let fighter = this.fighters[fighterIndex];
+            let rect = this.getImageRect(fighterIndex);
+            let data = part.getInstanceData(fighter.getSpeciesData());
             return new Point(fighterIndex ? rect.right - data.x : rect.left + data.x, rect.top + data.y);
-        };
-        ArenaPage.prototype.drawHealthBar = function (ctx, centre, current, max) {
-            var scale = 5, height = 8;
+        }
+        drawHealthBar(ctx, centre, current, max) {
+            let scale = 5, height = 8;
             ctx.lineWidth = 2;
             ctx.strokeStyle = '#802020';
             ctx.fillStyle = '#f08080';
-            var innerRect = new Rect(centre.x - scale * max / 2, centre.y - height / 2, centre.x + scale * max / 2, centre.y + height / 2);
-            var outerRect = innerRect.clone();
+            let innerRect = new Rect(centre.x - scale * max / 2, centre.y - height / 2, centre.x + scale * max / 2, centre.y + height / 2);
+            let outerRect = innerRect.clone();
             outerRect.expand(1, 1, 1, 1);
             innerRect.right = innerRect.left + innerRect.width() * current / max;
             innerRect.fill(ctx);
             outerRect.stroke(ctx);
-        };
-        ArenaPage.prototype.drawHealthBars = function (ctx, sceneXform, fighterIndex) {
-            var fighter = this.getFighters()[fighterIndex];
-            var parts = fighter.getBodyParts();
-            for (var i = 0; i < parts.length; ++i) {
-                var part = parts[i];
-                var data = part.getData(fighter.getSpeciesData());
-                var point = this.getBodyPartPoint(fighterIndex, part);
+        }
+        drawHealthBars(ctx, sceneXform, fighterIndex) {
+            let fighter = this.fighters[fighterIndex];
+            let parts = fighter.getBodyParts();
+            for (let i = 0; i < parts.length; ++i) {
+                let part = parts[i];
+                let data = part.getData(fighter.getSpeciesData());
+                let point = this.getBodyPartPoint(fighterIndex, part);
                 this.drawHealthBar(ctx, sceneXform.transformPoint(point), this.healths[fighterIndex][i], data.health);
             }
-        };
-        ArenaPage.prototype.draw = function () {
+        }
+        draw() {
             if (!this.backgroundImage.image.complete)
                 return;
-            var ctx = this.canvas.element.getContext("2d");
-            var width = this.canvas.element.width;
-            var height = this.canvas.element.height;
+            let ctx = this.canvas.element.getContext("2d");
+            let width = this.canvas.element.width;
+            let height = this.canvas.element.height;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, width, height);
-            var gotImages = this.imageA.isComplete() && this.imageB.isComplete();
-            var rectA, rectB;
-            var sceneXform = new Xform();
+            let gotImages = this.imageA.isComplete() && this.imageB.isComplete();
+            let rectA, rectB;
+            let sceneXform = new Xform();
             if (gotImages) {
                 rectA = this.getImageRect(0);
                 rectB = this.getImageRect(1);
                 // Scale to fit.
-                var scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
-                var scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
-                var scale = Math.max(Math.max(scaleX, scaleY), 0.4);
+                let scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
+                let scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
+                let scale = Math.max(Math.max(scaleX, scaleY), 0.4);
                 sceneXform.matrix = sceneXform.matrix.translate(640, height);
                 sceneXform.matrix = sceneXform.matrix.scale(1 / scale);
                 sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
@@ -1734,7 +1877,6 @@ var View;
             sceneXform.matrix = sceneXform.matrix.translate(640, height);
             sceneXform.matrix = sceneXform.matrix.scale(0.4);
             sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
-            var fighters = this.getFighters();
             ctx.fillStyle = '#80f080';
             ctx.save();
             sceneXform.apply(ctx);
@@ -1752,238 +1894,77 @@ var View;
             //sceneXform.apply(ctx);
             if (this.sequence)
                 this.sequence.draw(ctx, sceneXform);
-        };
-        return ArenaPage;
-    }(View.Page));
-    View.ArenaPage = ArenaPage;
+        }
+    }
+    View.FightPage = FightPage;
 })(View || (View = {}));
 /// <reference path="page.ts" />
 "use strict";
 var View;
 (function (View) {
-    var BarracksPage = (function (_super) {
-        __extends(BarracksPage, _super);
-        function BarracksPage() {
-            var _this = _super.call(this, 'Barracks') || this;
-            var tableFactory = new View.Table.Factory();
-            _this.div.appendChild(tableFactory.element);
-            tableFactory.addColumnHeader('Name', 20);
-            tableFactory.addColumnHeader('Image', 30);
-            tableFactory.addColumnHeader('Part', 10);
-            tableFactory.addColumnHeader('Health', 10);
-            tableFactory.addColumnHeader('Armour', 10);
-            tableFactory.addColumnHeader('Weapon', 10);
-            tableFactory.addColumnHeader('Activity', 10);
-            var activityItems = [];
-            for (var id in Data.Activities.Types)
-                activityItems.push(new View.Table.SelectCellItem(id, Data.Activities.Types[id].name));
-            var _loop_4 = function (person) {
-                var cells = [new View.Table.TextCell('<h4>' + person.name + '</h4>'), new View.Table.ImageCell(person.image)];
-                for (var _i = 0, _a = Util.formatRows(person.getStatus()); _i < _a.length; _i++) {
-                    var c = _a[_i];
-                    cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
-                }
-                var cell = new View.Table.SelectCell(100, activityItems, function (value) { person.setActivity(value); });
-                cell.selectedTag = person.getActivity();
-                cells.push(cell);
-                tableFactory.addRow(cells, false, null);
-            };
-            for (var _i = 0, _a = Model.state.getPeople(); _i < _a.length; _i++) {
-                var person = _a[_i];
-                _loop_4(person);
-            }
-            return _this;
-        }
-        return BarracksPage;
-    }(View.Page));
-    View.BarracksPage = BarracksPage;
-})(View || (View = {}));
-"use strict";
-var View;
-(function (View) {
-    var CanvasObject = (function () {
-        function CanvasObject() {
-        }
-        CanvasObject.prototype.draw = function (ctx) { };
-        CanvasObject.prototype.getRect = function () { return null; };
-        CanvasObject.prototype.onClick = function () { };
-        CanvasObject.prototype.isEnabled = function () { return true; };
-        return CanvasObject;
-    }());
-    View.CanvasObject = CanvasObject;
-    var CanvasImage = (function (_super) {
-        __extends(CanvasImage, _super);
-        function CanvasImage() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.pos = new Point(0, 0);
-            return _this;
-        }
-        CanvasImage.prototype.loadImage = function (path, onLoad) {
-            this.image = new Image();
-            this.image.onload = function () { onLoad(); };
-            this.image.src = path;
-        };
-        CanvasImage.prototype.draw = function (ctx) {
-            ctx.drawImage(this.image, this.pos.x, this.pos.y);
-        };
-        CanvasImage.prototype.getRect = function () {
-            return new Rect(this.pos.x, this.pos.y, this.pos.x + this.image.width, this.pos.y + this.image.height);
-        };
-        CanvasImage.prototype.isComplete = function () {
-            return this.image && this.image.complete;
-        };
-        return CanvasImage;
-    }(CanvasObject));
-    View.CanvasImage = CanvasImage;
-    var Canvas = (function () {
-        function Canvas(element) {
-            this.element = element;
-        }
-        Canvas.prototype.devToLog = function (x, y) {
-            var scale = this.element.clientWidth / this.element.width;
-            return new Point(x / scale, y / scale);
-        };
-        Canvas.prototype.draw = function () {
-            Util.assert(false);
-        };
-        return Canvas;
-    }());
-    View.Canvas = Canvas;
-})(View || (View = {}));
-/// <reference path="page.ts" />
-"use strict";
-var View;
-(function (View) {
-    var DebugPage = (function (_super) {
-        __extends(DebugPage, _super);
-        function DebugPage() {
-            var _this = _super.call(this, 'Debug') || this;
-            _this.onBuyAllAnimals = function () {
-                for (var tag in Data.Animals.Types) {
-                    Model.state.addMoney(Data.Animals.Types[tag].cost);
-                    Model.state.buyAnimal(tag);
-                }
-                View.Page.hideCurrent();
-            };
-            _this.onBuyAllPeople = function () {
-                for (var tag in Data.People.Types) {
-                    Model.state.addMoney(Data.People.Types[tag].cost);
-                    Model.state.buyPerson(tag);
-                }
-                View.Page.hideCurrent();
-            };
-            _this.onBuyAllBuildings = function () {
-                for (var tag in Data.Buildings.Levels) {
-                    if (Model.state.buildings.canUpgrade(tag)) {
-                        var level = Data.Buildings.getLevel(tag, Model.state.buildings.getNextUpgradeIndex(tag));
-                        if (level.cost)
-                            Model.state.addMoney(level.cost);
-                        Model.state.buildings.buyUpgrade(tag);
-                    }
-                }
-                View.Page.hideCurrent();
-            };
-            _this.onHeal = function () {
-                for (var id in Model.state.fighters)
-                    Model.state.fighters[id].resetHealth();
-                View.Page.hideCurrent();
-            };
-            _this.addButton('Buy all animals', _this.onBuyAllAnimals);
-            _this.addButton('Buy all people', _this.onBuyAllPeople);
-            _this.addButton('Buy all buildings', _this.onBuyAllBuildings);
-            _this.addButton('Heal fighters', _this.onHeal);
-            return _this;
-        }
-        DebugPage.prototype.addButton = function (caption, handler) {
-            var button = document.createElement('button');
-            button.innerText = caption;
-            button.addEventListener('click', handler);
-            this.div.appendChild(button);
-            this.div.appendChild(document.createElement('br'));
-        };
-        return DebugPage;
-    }(View.Page));
-    View.DebugPage = DebugPage;
-})(View || (View = {}));
-/// <reference path="page.ts" />
-"use strict";
-var View;
-(function (View) {
-    var KennelsPage = (function (_super) {
-        __extends(KennelsPage, _super);
-        function KennelsPage() {
-            var _this = _super.call(this, 'Kennels') || this;
-            var tableFactory = new View.Table.Factory();
-            _this.div.appendChild(tableFactory.element);
+    class KennelsPage extends View.Page {
+        constructor() {
+            super('Kennels');
+            let tableFactory = new View.Table.Factory();
+            this.div.appendChild(tableFactory.element);
             tableFactory.addColumnHeader('Name', 20);
             tableFactory.addColumnHeader('Image', 30);
             tableFactory.addColumnHeader('Part', 10);
             tableFactory.addColumnHeader('Health', 10);
             tableFactory.addColumnHeader('Armour', 15);
             tableFactory.addColumnHeader('Weapon', 15);
-            for (var _i = 0, _a = Model.state.getAnimals(); _i < _a.length; _i++) {
-                var animal = _a[_i];
-                var cells = [new View.Table.TextCell('<h4>' + animal.name + '</h4>'), new View.Table.ImageCell(animal.image)];
-                for (var _b = 0, _c = Util.formatRows(animal.getStatus()); _b < _c.length; _b++) {
-                    var c = _c[_b];
+            for (let animal of Model.state.getAnimals()) {
+                let cells = [new View.Table.TextCell('<h4>' + animal.name + '</h4>'), new View.Table.ImageCell(animal.image)];
+                for (let c of Util.formatRows(animal.getStatus()))
                     cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
-                }
                 tableFactory.addRow(cells, false, null);
             }
-            return _this;
         }
-        return KennelsPage;
-    }(View.Page));
+    }
     View.KennelsPage = KennelsPage;
 })(View || (View = {}));
 "use strict";
 var View;
 (function (View) {
-    var Trigger = (function (_super) {
-        __extends(Trigger, _super);
-        function Trigger(id, handler) {
-            var _this = _super.call(this) || this;
-            _this.id = id;
-            _this.handler = handler;
-            return _this;
+    class Trigger extends View.CanvasImage {
+        constructor(id, handler) {
+            super();
+            this.id = id;
+            this.handler = handler;
         }
-        Trigger.prototype.onClick = function () {
+        onClick() {
             if (this.isEnabled())
                 this.handler(this.id);
-        };
-        return Trigger;
-    }(View.CanvasImage));
-    View.Trigger = Trigger;
-    var Building = (function (_super) {
-        __extends(Building, _super);
-        function Building(id, handler) {
-            var _this = _super.call(this, id, handler) || this;
-            _this.handler = handler;
-            _this.levelIndex = -1;
-            _this.progress = -1;
-            return _this;
         }
-        Building.prototype.isEnabled = function () {
+    }
+    View.Trigger = Trigger;
+    class Building extends Trigger {
+        constructor(id, handler) {
+            super(id, handler);
+            this.handler = handler;
+            this.levelIndex = -1;
+            this.progress = -1;
+        }
+        isEnabled() {
             return Model.state.buildings.getCurrentLevelIndex(this.id) >= 0;
-        };
-        Building.prototype.update = function () {
-            var _this = this;
-            var changed = false;
+        }
+        update() {
+            let changed = false;
             var index = Model.state.buildings.getCurrentLevelIndex(this.id);
             if (index < 0 && !this.image) {
-                var level_1 = Data.Buildings.getLevel(this.id, 0);
-                this.loadImage(Data.Misc.ConstructionImage, function () { _this.onload(); });
-                this.pos = new Point(level_1.mapX, level_1.mapY);
+                let level = Data.Buildings.getLevel(this.id, 0);
+                this.loadImage(Data.Misc.ConstructionImage, () => { this.onload(); });
+                this.pos = new Point(level.mapX, level.mapY);
                 changed = true;
             }
             else if (this.levelIndex != index) {
                 this.levelIndex = index;
                 var level = Data.Buildings.getLevel(this.id, index);
-                this.loadImage(level.mapImage, function () { _this.onload(); });
+                this.loadImage(level.mapImage, () => { this.onload(); });
                 this.pos = new Point(level.mapX, level.mapY);
                 changed = true;
             }
-            var oldProgress = this.progress;
+            let oldProgress = this.progress;
             if (Model.state.buildings.isConstructing(this.id))
                 this.progress = Model.state.buildings.getConstructionProgress(this.id);
             else
@@ -1991,17 +1972,17 @@ var View;
             if (this.progress != oldProgress)
                 changed = true;
             return changed;
-        };
-        Building.prototype.onload = function () {
+        }
+        onload() {
             View.ludus.draw();
-        };
-        Building.prototype.draw = function (ctx) {
+        }
+        draw(ctx) {
             if (this.progress >= 0) {
-                var rect = this.getRect();
+                let rect = this.getRect();
                 rect.left = rect.right + 3;
                 rect.right += 10;
                 rect.top += 3;
-                var rect2 = Object.create(rect);
+                let rect2 = Object.create(rect);
                 rect2.top = rect2.bottom - rect2.height() * this.progress;
                 ctx.beginPath();
                 rect2.path(ctx);
@@ -2015,25 +1996,22 @@ var View;
                 ctx.strokeStyle = '#208020';
                 ctx.stroke();
             }
-            _super.prototype.draw.call(this, ctx);
-        };
-        return Building;
-    }(Trigger));
-    View.Building = Building;
-    var Ludus = (function (_super) {
-        __extends(Ludus, _super);
-        function Ludus() {
-            var _this = _super.call(this, document.getElementById('canvas_ludus')) || this;
-            _this.Objects = [];
-            _this.Buildings = {};
-            _this.BackgroundImage = new View.CanvasImage();
-            _this.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage, function () { _this.draw(); });
-            _this.element.width = View.Width;
-            _this.element.height = View.Height;
-            _this.initObjects();
-            return _this;
+            super.draw(ctx);
         }
-        Ludus.prototype.draw = function () {
+    }
+    View.Building = Building;
+    class Ludus extends View.Canvas {
+        constructor() {
+            super(document.getElementById('canvas_ludus'));
+            this.Objects = [];
+            this.Buildings = {};
+            this.BackgroundImage = new View.CanvasImage();
+            this.BackgroundImage.loadImage(Data.Misc.LudusBackgroundImage, () => { this.draw(); });
+            this.element.width = View.Width;
+            this.element.height = View.Height;
+            this.initObjects();
+        }
+        draw() {
             if (!this.BackgroundImage.image.complete)
                 return;
             var ctx = this.element.getContext("2d");
@@ -2051,24 +2029,23 @@ var View;
                     ctx.stroke();
                 }
             }
-        };
-        Ludus.prototype.initObjects = function () {
-            var _this = this;
+        }
+        initObjects() {
             this.Objects.length = 0;
             this.Buildings = {};
-            var town = Data.Misc.TownTrigger;
-            var trigger = new View.Trigger('town', Controller.onTownTriggerClicked);
-            trigger.loadImage(town.mapImage, function () { _this.draw(); });
+            let town = Data.Misc.TownTrigger;
+            let trigger = new View.Trigger('town', Controller.onTownTriggerClicked);
+            trigger.loadImage(town.mapImage, () => { this.draw(); });
             trigger.pos = new Point(town.mapX, town.mapY);
             this.Objects.push(trigger);
             this.updateObjects();
             this.draw();
-        };
-        Ludus.prototype.updateObjects = function () {
-            var redraw = false;
+        }
+        updateObjects() {
+            let redraw = false;
             for (var id in Data.Buildings.Levels) {
                 if (Model.state.buildings.getCurrentLevelIndex(id) >= 0 || Model.state.buildings.isConstructing(id)) {
-                    var building = this.Buildings[id];
+                    let building = this.Buildings[id];
                     if (!(id in this.Buildings)) {
                         building = new Building(id, Controller.onBuildingTriggerClicked);
                         this.Buildings[id] = building;
@@ -2080,132 +2057,145 @@ var View;
             }
             if (redraw)
                 this.draw();
-        };
-        return Ludus;
-    }(View.Canvas));
+        }
+    }
     View.Ludus = Ludus;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    class NewsPage extends View.Page {
+        constructor(closeHandler) {
+            super('News');
+            this.closeHandler = closeHandler;
+            this.div.style.overflow = 'auto';
+            for (let item of Model.state.news) {
+                let e = document.createElement('p');
+                e.innerText = item.description;
+                this.div.appendChild(e);
+            }
+            for (let item of Model.state.getEventsForToday()) {
+                let e = document.createElement('p');
+                e.innerText = item.getDescription();
+                this.div.appendChild(e);
+            }
+        }
+        onShow() {
+        }
+        onClose() {
+            this.closeHandler();
+            return true;
+        }
+    }
+    View.NewsPage = NewsPage;
 })(View || (View = {}));
 "use strict";
 var View;
 (function (View) {
     var Table;
     (function (Table) {
-        var Cell = (function () {
-            function Cell(width) {
+        class Cell {
+            constructor(width) {
                 this.width = width;
             } // %
-            Cell.prototype.getElement = function () {
-                var e = document.createElement('td');
+            getElement() {
+                let e = document.createElement('td');
                 if (this.width)
                     e.style.width = this.width.toString() + '%';
                 return e;
-            };
-            return Cell;
-        }());
-        Table.Cell = Cell;
-        var TextCell = (function (_super) {
-            __extends(TextCell, _super);
-            function TextCell(content, width) {
-                var _this = _super.call(this, width) || this;
-                _this.content = content;
-                return _this;
             }
-            TextCell.prototype.getElement = function () {
-                var e = _super.prototype.getElement.call(this);
+        }
+        Table.Cell = Cell;
+        class TextCell extends Cell {
+            constructor(content, width) {
+                super(width);
+                this.content = content;
+            }
+            getElement() {
+                let e = super.getElement();
                 e.innerHTML = this.content;
                 return e;
-            };
-            return TextCell;
-        }(Cell));
-        Table.TextCell = TextCell;
-        var ImageCell = (function (_super) {
-            __extends(ImageCell, _super);
-            function ImageCell(src, width) {
-                var _this = _super.call(this, width) || this;
-                _this.src = src;
-                return _this;
             }
-            ImageCell.prototype.getElement = function () {
-                var e = _super.prototype.getElement.call(this);
+        }
+        Table.TextCell = TextCell;
+        class ImageCell extends Cell {
+            constructor(src, width) {
+                super(width);
+                this.src = src;
+            }
+            getElement() {
+                let e = super.getElement();
                 e.style.position = 'relative';
-                var child = document.createElement('img');
+                let child = document.createElement('img');
                 child.className = "centre";
                 child.style.height = '90%';
                 child.src = this.src;
                 e.appendChild(child);
                 return e;
-            };
-            return ImageCell;
-        }(Cell));
+            }
+        }
         Table.ImageCell = ImageCell;
-        var SelectCellItem = (function () {
-            function SelectCellItem(tag, name) {
+        class SelectCellItem {
+            constructor(tag, name) {
                 this.tag = tag;
                 this.name = name;
             }
-            return SelectCellItem;
-        }());
+        }
         Table.SelectCellItem = SelectCellItem;
-        var SelectCell = (function (_super) {
-            __extends(SelectCell, _super);
-            function SelectCell(width, items, handler) {
-                var _this = _super.call(this, width) || this;
-                _this.items = items;
-                _this.handler = handler;
-                return _this;
+        class SelectCell extends Cell {
+            constructor(width, items, handler) {
+                super(width);
+                this.items = items;
+                this.handler = handler;
             }
-            SelectCell.prototype.getElement = function () {
-                var _this = this;
-                var e = _super.prototype.getElement.call(this);
-                var select = document.createElement('select');
-                for (var i = 0, item = void 0; item = this.items[i]; ++i) {
-                    var optionElement = document.createElement('option');
+            getElement() {
+                let e = super.getElement();
+                let select = document.createElement('select');
+                for (let i = 0, item; item = this.items[i]; ++i) {
+                    let optionElement = document.createElement('option');
                     optionElement.value = item.tag;
                     optionElement.innerText = item.name;
                     select.appendChild(optionElement);
                 }
                 select.value = this.selectedTag;
-                select.addEventListener('change', function () { _this.handler(select.value); });
+                select.addEventListener('change', () => { this.handler(select.value); });
                 e.appendChild(select);
                 return e;
-            };
-            return SelectCell;
-        }(Cell));
+            }
+        }
         Table.SelectCell = SelectCell;
-        var Factory = (function () {
-            function Factory() {
+        class Factory {
+            constructor() {
                 this.element = document.createElement('div');
                 this.table = document.createElement('table');
                 this.element.appendChild(this.table);
                 this.element.className = 'scroller';
             }
-            Factory.prototype.addColumnHeader = function (name, width) {
+            addColumnHeader(name, width) {
                 if (!this.headerRow) {
                     this.headerRow = this.table.insertRow(0);
                     this.headerRow.className = 'disabled';
                 }
-                var th = document.createElement('th');
+                let th = document.createElement('th');
                 this.headerRow.appendChild(th);
                 th.innerText = name;
                 if (width)
                     th.style.width = width.toString() + '%';
-            };
-            Factory.prototype.addRow = function (cells, locked, handler) {
-                var row = document.createElement('tr');
+            }
+            addRow(cells, locked, handler) {
+                let row = document.createElement('tr');
                 row.className = 'table_row';
                 this.table.appendChild(row);
-                for (var _i = 0, cells_1 = cells; _i < cells_1.length; _i++) {
-                    var cell = cells_1[_i];
+                for (let cell of cells)
                     row.appendChild(cell.getElement());
-                }
                 row.addEventListener('click', handler);
                 if (locked)
                     row.style.opacity = '0.5';
                 if (!locked && handler)
                     row.className += ' highlight';
-            };
-            return Factory;
-        }());
+            }
+        }
         Table.Factory = Factory;
     })(Table = View.Table || (View.Table = {}));
 })(View || (View = {}));
@@ -2214,18 +2204,17 @@ var View;
 (function (View) {
     View.Width = 1280;
     View.Height = 720;
-    var speeds = [0, 1, 10, 60];
-    var Transition = (function () {
-        function Transition(reverse, endHandler) {
+    let speeds = [0, 1, 10, 60];
+    class Transition {
+        constructor(reverse, endHandler) {
             this.reverse = reverse;
             this.endHandler = endHandler;
             this.progress = 0;
             this.id = 0;
         }
-        return Transition;
-    }());
+    }
     View.Transition = Transition;
-    var currentTransition = null;
+    let currentTransition = null;
     function setOpacity(opacity) {
         document.getElementById('master_div').style.opacity = opacity.toString();
     }
@@ -2234,20 +2223,17 @@ var View;
         View.updateLayout();
         document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
         document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
-        var _loop_5 = function (i) {
+        for (let i = 0; i < speeds.length; ++i) {
             document.getElementById('speed_label_' + i).innerText = 'x' + speeds[i];
-            var button = document.getElementById('speed_btn_' + i);
-            button.addEventListener('click', function () { Controller.setSpeed(speeds[i]); });
-        };
-        for (var i = 0; i < speeds.length; ++i) {
-            _loop_5(i);
+            let button = document.getElementById('speed_btn_' + i);
+            button.addEventListener('click', () => { Controller.setSpeed(speeds[i]); });
         }
         updateSpeedButtons();
         setOpacity(Model.state.isNight() ? 0 : 1);
     }
     View.init = init;
     function showInfo(title, description) {
-        var page = new View.Page(title);
+        let page = new View.Page(title);
         page.div.innerHTML = '<p>' + description + '</p>';
         page.show();
     }
@@ -2258,24 +2244,24 @@ var View;
     }
     View.setHUDText = setHUDText;
     function updateLayout() {
-        var width = document.documentElement.clientWidth;
-        var height = document.documentElement.clientHeight;
-        var offset = new Point(0, 0);
-        var scale = 1;
-        var sx = width / View.Width;
-        var sy = height / View.Height;
-        var imageAspect = View.Width / View.Height;
+        let width = document.documentElement.clientWidth;
+        let height = document.documentElement.clientHeight;
+        let offset = new Point(0, 0);
+        let scale = 1;
+        let sx = width / View.Width;
+        let sy = height / View.Height;
+        let imageAspect = View.Width / View.Height;
         if (sx < sy) {
-            var devHeight = width / imageAspect;
+            let devHeight = width / imageAspect;
             offset = new Point(0, (height - devHeight) / 2);
             scale = sx;
         }
         else {
-            var devWidth = height * imageAspect;
+            let devWidth = height * imageAspect;
             offset = new Point((width - devWidth) / 2, 0);
             scale = sy;
         }
-        var div = document.getElementById('master_div');
+        let div = document.getElementById('master_div');
         div.style.top = offset.y.toString() + 'px';
         div.style.bottom = offset.y.toString() + 'px';
         div.style.left = offset.x.toString() + 'px';
@@ -2285,8 +2271,8 @@ var View;
     }
     View.updateLayout = updateLayout;
     function updateSpeedButtons() {
-        for (var i = 0; i < speeds.length; ++i) {
-            var button = document.getElementById('speed_btn_' + i);
+        for (let i = 0; i < speeds.length; ++i) {
+            let button = document.getElementById('speed_btn_' + i);
             button.checked = Model.state.speed == speeds[i];
         }
     }
@@ -2301,18 +2287,22 @@ var View;
     }
     View.isTransitioning = isTransitioning;
     function onTransitionTick() {
-        var steps = 20;
+        const steps = 20;
         Util.assert(currentTransition != null);
-        var opacity = ++currentTransition.progress / steps;
+        let opacity = ++currentTransition.progress / steps;
         if (currentTransition.reverse)
             opacity = 1 - opacity;
         setOpacity(opacity);
         if (currentTransition.progress == steps) {
             window.clearInterval(currentTransition.id);
-            var handler = currentTransition.endHandler;
+            let handler = currentTransition.endHandler;
             currentTransition = null;
             handler();
         }
     }
     View.onTransitionTick = onTransitionTick;
+    function enable(enable) {
+        document.body.style.pointerEvents = enable ? 'auto' : 'none';
+    }
+    View.enable = enable;
 })(View || (View = {}));

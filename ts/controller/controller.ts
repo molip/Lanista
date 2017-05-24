@@ -17,7 +17,7 @@ namespace Controller
 		window.addEventListener('resize', View.updateLayout);
 
 		if (Model.state.fight)
-			onArenaTriggerClicked();
+			showFightPage();
 	}
 
 	export function setSpeed(speed: number)
@@ -39,17 +39,38 @@ namespace Controller
 		if (View.isTransitioning())
 			return;
 
-		let changed = Model.state.update(1);
-
-		if (changed)
+		switch (Model.state.phase)
 		{
-			View.ludus.updateObjects();
+			case Model.Phase.Day:
+				View.enable(true);
+				if (Model.state.update(1))
+					View.ludus.updateObjects();
+				break;
+			case Model.Phase.Dawn:
+				View.enable(false);
+				startTransition(false);
+				break;
+			case Model.Phase.Dusk:
+				View.enable(false);
+				startTransition(true);
+				break;
+			case Model.Phase.News:
+				new View.NewsPage(() => { Model.state.advancePhase(); }).show();
+				break;
+			case Model.Phase.Event:
+				new View.ArenaPage().show();
+				break;
+			case Model.Phase.Fight:
+				new View.FightPage().show();
+				break;
 		}
 
-		if (Model.state.isNight())
-			View.startTransition(new View.Transition(Model.state.phase == 'dusk', () => { Model.state.advancePhase(); }));
-
 		updateHUD();
+	}
+
+	function startTransition(dusk: boolean)
+	{
+		View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
 	}
 
 	export function onBuildingTriggerClicked(id: string)
@@ -142,13 +163,18 @@ namespace Controller
 
 	function onArenaTriggerClicked()
 	{
-		let page = new View.ArenaPage();
-		page.show();
+		View.showInfo('Arena', 'TODO.');
 	}
 	
 	export function onTownTriggerClicked()
 	{
 		Shop.showShopsPage();
+	}
+
+	function showFightPage()
+	{
+		let page = new View.FightPage();
+		page.show();
 	}
 
 	export function updateHUD()
