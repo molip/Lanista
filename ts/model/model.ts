@@ -55,6 +55,8 @@ namespace Model
 			{
 				this.phase = Phase.Dusk;
 			}
+
+			return changed;
 		}
 
 		isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }

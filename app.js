@@ -953,6 +953,7 @@ var Model;
             if (this.getDay() > oldDay) {
                 this.phase = Phase.Dusk;
             }
+            return changed;
         }
         isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
         advancePhase() {
