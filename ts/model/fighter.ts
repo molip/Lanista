@@ -63,14 +63,24 @@ namespace Model
 				this.addArmour(tag);
 		}
 
+		static initPrototype(fighter: Fighter)
+		{
+			if (fighter.species == 'human')
+				Util.setPrototype(fighter, Person);
+			else
+				Util.setPrototype(fighter, Animal);
+
+			fighter.onLoad();
+		}
+
 		onLoad()
 		{
 			for (let id in this.bodyParts)
-				this.bodyParts[id].__proto__ = BodyPart.prototype;
+				Util.setPrototype(this.bodyParts[id], BodyPart);
 			for (let weapon of this.weapons)
-				weapon.__proto__ = Weapon.prototype;
+				Util.setPrototype(weapon, Weapon);
 			for (let armour of this.armour)
-				armour.__proto__ = Armour.prototype;
+				Util.setPrototype(armour, Armour);
 		}
 
 		isHuman() { return this.species == 'human'; }

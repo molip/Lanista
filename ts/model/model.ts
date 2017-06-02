@@ -27,6 +27,30 @@ namespace Model
 			this.events.push(new FightEvent(1));
 		}
 
+		onLoad()
+		{
+			Util.setPrototype(this.buildings, Buildings.State);
+
+			if (this.fight)
+			{
+				Util.setPrototype(this.fight, Fight.State);
+				this.fight.onLoad();
+			}
+
+			for (let id in this.fighters)
+			{
+				let fighter = this.fighters[id];
+				Fighter.initPrototype(fighter);
+				fighter.onLoad();
+			}
+
+			for (let event of this.events)
+				Event.initPrototype(event);
+
+			if (this.phase == Phase.Dusk) // Skip it. 
+				this.phase = Phase.Dawn;
+		}
+
 		update(seconds: number)
 		{
 			Util.assert(this.phase == Phase.Day);
@@ -282,27 +306,8 @@ namespace Model
 		if (str)
 		{
 			state = JSON.parse(str);
-			state.__proto__ = State.prototype;
-			state.buildings.__proto__ = Buildings.State.prototype;
-			if (state.fight)
-				state.fight.__proto__ = Fight.State.prototype;
-
-			for (let id in state.fighters)
-			{
-				let fighter = state.fighters[id];
-				if (fighter.species == 'human')
-					fighter.__proto__ = Person.prototype;
-				else
-					fighter.__proto__ = Animal.prototype;
-
-				fighter.onLoad();
-			}
-
-			for (let event of state.events)
-				setEventPrototype(event);
-
-			if (state.phase == Phase.Dusk) // Skip it. 
-				state.phase = Phase.Dawn;
+			Util.setPrototype(state, State);
+			state.onLoad()
 		}
 		else
 			resetState();

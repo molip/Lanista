@@ -2,15 +2,15 @@
 
 namespace Model
 {
-	export function setEventPrototype(e: Event)
-	{
-		if (e.type == 'fight')
-			e.__proto__ = FightEvent.prototype;
-	}
-
 	export class Event
 	{
 		constructor(public type: string, public day: number) { }
+
+		static initPrototype(event: Event)
+		{
+			if (event.type == 'fight')
+				Util.setPrototype(event, FightEvent);
+		}
 
 		getDescription() { Util.assert(false); return ''; }
 	}
