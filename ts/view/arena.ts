@@ -65,13 +65,8 @@ namespace View
 
 		onStartButton = () =>
 		{
-			let teams: Model.Fight.Team[] = [];
-			let fighterIDs = Model.state.getFighterIDs();
-
-			teams.push([fighterIDs[this.selectA.selectedIndex]]);
-			teams.push([fighterIDs[this.selectB.selectedIndex]]);
-
-			Model.state.startFight(teams[0], teams[1]);
+			const fighterIDs = Model.state.getFighterIDs();
+			Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]));
 
 			Page.hideCurrent();
 		}

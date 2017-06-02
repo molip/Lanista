@@ -162,7 +162,7 @@ namespace View
 			this.backgroundImage.loadImage(Data.Misc.FightBackgroundImage, () => { this.draw() });
 
 			let fighters = Model.state.fighters;
-			this.fighters = [fighters[Model.state.fight.teams[0][0]], fighters[Model.state.fight.teams[1][0]]];
+			this.fighters = [Model.state.fight.getFighter(0), Model.state.fight.getFighter(1)];
 
 			this.update();
 			this.updateHealths();
