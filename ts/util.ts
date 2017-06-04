@@ -57,4 +57,9 @@ namespace Util
 		ctx.scale(scale, scale);
 		ctx.translate(-x, -y);
 	}
+
+	export function setPrototype(obj: any, type: any)
+	{
+		obj.__proto__ = type.prototype;
+	}
 }

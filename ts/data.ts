@@ -150,6 +150,15 @@ namespace Data
 		export let Types: { [key: string]: Type };
 	}
 
+	export namespace Events
+	{
+		export class Event
+		{
+			constructor(public day: number, public home: boolean, public name?: string) { }
+		}
+
+		export let Events: Event[];
+	}
 	export function validate()
 	{
 		console.log('Validating data...');

@@ -9,10 +9,25 @@ namespace Model
 			constructor(public name: string, public description: string, public attackDamage: number, public defense: number, public sourceID: string, public targetID: string) { }
 		}
 
-		export type Team = string[]; // Fighter IDs. 
+		export class Team 
+		{
+			constructor(private fighter: string | Fighter) { }
+
+			getFighter() 
+			{
+				return typeof this.fighter === "string" ? Model.state.fighters[this.fighter] : this.fighter;
+			}
+
+			onLoad()
+			{
+				if (typeof this.fighter !== "string")
+					Fighter.initPrototype(this.fighter);
+			}
+		}
+
 		export class State
 		{
-			teams: Team[]; 
+			private teams: Team[]; 
 			text: string;
 			nextTeamIndex: number;
 			steps: number;
@@ -26,12 +41,25 @@ namespace Model
 				this.finished = false;
 			}
 
+			onLoad()
+			{
+				for (let team of this.teams)
+				{
+					Util.setPrototype(team, Team);
+					team.onLoad();
+				}
+			}
+
+			getFighter(index: number) 
+			{
+				return this.teams[index].getFighter();
+			}
+
 			step()
 			{
-				// Assume 2 teams of 1 fighter each. 
-				let attacker = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
+				let attacker = this.getFighter(this.nextTeamIndex);
 				this.nextTeamIndex = (this.nextTeamIndex + 1) % this.teams.length;
-				let defender = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
+				let defender = this.getFighter(this.nextTeamIndex);
 
 				let result = this.attack(attacker, defender);
 
