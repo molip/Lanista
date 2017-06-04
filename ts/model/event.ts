@@ -17,14 +17,20 @@ namespace Model
 
 	export class FightEvent extends Event
 	{
-		constructor(day: number)
+		constructor(day: number, public home: boolean, public name?: string)
 		{
 			super('fight', day);
 		}
 
 		getDescription()
 		{
-			return 'Fight (day ' + this.day.toString() + ')';
+			return this.home ? "Home Fight" : this.name; // TODO: Specialise classes.
+		}
+
+		createNPC()
+		{
+			Util.assert(!this.home);
+			return new Model.Person(0, 'man', "Slapper Nuremberg");
 		}
 	}
 }

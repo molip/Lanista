@@ -17,13 +17,6 @@ namespace View
 				e.innerText = item.description;
 				this.div.appendChild(e);
 			}
-
-			for (let item of Model.state.getEventsForToday())
-			{
-				let e = document.createElement('p');
-				e.innerText = item.getDescription();
-				this.div.appendChild(e);
-			}
 		}
 
 		onShow()

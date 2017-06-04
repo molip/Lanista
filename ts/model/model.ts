@@ -8,7 +8,7 @@ namespace Model
 
 	export class State
 	{
-		static readonly key: string = "state.v15"
+		static readonly key: string = "state.v16"
 
 		private money = 1000;
 		phase: Phase = Phase.Dawn;
@@ -23,8 +23,12 @@ namespace Model
 
 		constructor()
 		{
-			this.news.push(new News("It's the first day. There will be a fight tomorrow."));
-			this.events.push(new FightEvent(1));
+			for (let data of Data.Events.Events)
+			{
+				const event = new FightEvent(data.day, data.home, data.name);
+				this.news.push(new EventNews(event));
+				this.events.push(event);
+			}
 		}
 
 		onLoad()

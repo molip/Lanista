@@ -89,7 +89,7 @@ var Controller;
                 new View.NewsPage(() => { Model.state.advancePhase(); }).show();
                 break;
             case Model.Phase.Event:
-                new View.ArenaPage().show();
+                showEventUI(Model.state.getEventsForToday());
                 break;
             case Model.Phase.Fight:
                 new View.FightPage().show();
@@ -98,6 +98,13 @@ var Controller;
         updateHUD();
     }
     Controller.onTick = onTick;
+    function showEventUI(events) {
+        Util.assert(events.length == 1);
+        if (events[0].type == 'fight')
+            new View.ArenaPage(events[0]).show();
+        else
+            Util.assert(false);
+    }
     function startTransition(dusk) {
         View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
     }
@@ -443,6 +450,17 @@ var Data;
         }
         Activities.Type = Type;
     })(Activities = Data.Activities || (Data.Activities = {}));
+    var Events;
+    (function (Events_1) {
+        class Event {
+            constructor(day, home, name) {
+                this.day = day;
+                this.home = home;
+                this.name = name;
+            }
+        }
+        Events_1.Event = Event;
+    })(Events = Data.Events || (Data.Events = {}));
     function validate() {
         console.log('Validating data...');
         for (let id in Armour.Types)
@@ -546,13 +564,20 @@ var Model;
             for (let tag of armour)
                 this.addArmour(tag);
         }
+        static initPrototype(fighter) {
+            if (fighter.species == 'human')
+                Util.setPrototype(fighter, Model.Person);
+            else
+                Util.setPrototype(fighter, Model.Animal);
+            fighter.onLoad();
+        }
         onLoad() {
             for (let id in this.bodyParts)
-                this.bodyParts[id].__proto__ = BodyPart.prototype;
+                Util.setPrototype(this.bodyParts[id], BodyPart);
             for (let weapon of this.weapons)
-                weapon.__proto__ = Model.Weapon.prototype;
+                Util.setPrototype(weapon, Model.Weapon);
             for (let armour of this.armour)
-                armour.__proto__ = Model.Armour.prototype;
+                Util.setPrototype(armour, Model.Armour);
         }
         isHuman() { return this.species == 'human'; }
         getAccessories(type) {
@@ -825,25 +850,30 @@ var Model;
 "use strict";
 var Model;
 (function (Model) {
-    function setEventPrototype(e) {
-        if (e.type == 'fight')
-            e.__proto__ = FightEvent.prototype;
-    }
-    Model.setEventPrototype = setEventPrototype;
     class Event {
         constructor(type, day) {
             this.type = type;
             this.day = day;
         }
+        static initPrototype(event) {
+            if (event.type == 'fight')
+                Util.setPrototype(event, FightEvent);
+        }
         getDescription() { Util.assert(false); return ''; }
     }
     Model.Event = Event;
     class FightEvent extends Event {
-        constructor(day) {
+        constructor(day, home, name) {
             super('fight', day);
+            this.home = home;
+            this.name = name;
         }
         getDescription() {
-            return 'Fight (day ' + this.day.toString() + ')';
+            return this.home ? "Home Fight" : this.name; // TODO: Specialise classes.
+        }
+        createNPC() {
+            Util.assert(!this.home);
+            return new Model.Person(0, 'man', "Slapper Nuremberg");
         }
     }
     Model.FightEvent = FightEvent;
@@ -864,6 +894,19 @@ var Model;
             }
         }
         Fight.AttackResult = AttackResult;
+        class Team {
+            constructor(fighter) {
+                this.fighter = fighter;
+            }
+            getFighter() {
+                return typeof this.fighter === "string" ? Model.state.fighters[this.fighter] : this.fighter;
+            }
+            onLoad() {
+                if (typeof this.fighter !== "string")
+                    Model.Fighter.initPrototype(this.fighter);
+            }
+        }
+        Fight.Team = Team;
         class State {
             constructor(teamA, teamB) {
                 this.teams = [teamA, teamB];
@@ -872,11 +915,19 @@ var Model;
                 this.steps = 0;
                 this.finished = false;
             }
+            onLoad() {
+                for (let team of this.teams) {
+                    Util.setPrototype(team, Team);
+                    team.onLoad();
+                }
+            }
+            getFighter(index) {
+                return this.teams[index].getFighter();
+            }
             step() {
-                // Assume 2 teams of 1 fighter each. 
-                let attacker = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
+                let attacker = this.getFighter(this.nextTeamIndex);
                 this.nextTeamIndex = (this.nextTeamIndex + 1) % this.teams.length;
-                let defender = Model.state.fighters[this.teams[this.nextTeamIndex][0]];
+                let defender = this.getFighter(this.nextTeamIndex);
                 let result = this.attack(attacker, defender);
                 this.text += result.description + '<br>';
                 this.finished = defender.isDead();
@@ -930,8 +981,27 @@ var Model;
             this.nextFighterID = 1;
             this.time = 0; // Minutes.
             this.speed = 1; // Game minutes per second. 
-            this.news.push(new Model.News("It's the first day. There will be a fight tomorrow."));
-            this.events.push(new Model.FightEvent(1));
+            for (let data of Data.Events.Events) {
+                const event = new Model.FightEvent(data.day, data.home, data.name);
+                this.news.push(new Model.EventNews(event));
+                this.events.push(event);
+            }
+        }
+        onLoad() {
+            Util.setPrototype(this.buildings, Model.Buildings.State);
+            if (this.fight) {
+                Util.setPrototype(this.fight, Model.Fight.State);
+                this.fight.onLoad();
+            }
+            for (let id in this.fighters) {
+                let fighter = this.fighters[id];
+                Model.Fighter.initPrototype(fighter);
+                fighter.onLoad();
+            }
+            for (let event of this.events)
+                Model.Event.initPrototype(event);
+            if (this.phase == Phase.Dusk)
+                this.phase = Phase.Dawn;
         }
         update(seconds) {
             Util.assert(this.phase == Phase.Day);
@@ -1112,28 +1182,14 @@ var Model;
             }
         }
     }
-    State.key = "state.v15";
+    State.key = "state.v16";
     Model.State = State;
     function init() {
         let str = localStorage.getItem(State.key);
         if (str) {
             Model.state = JSON.parse(str);
-            Model.state.__proto__ = State.prototype;
-            Model.state.buildings.__proto__ = Model.Buildings.State.prototype;
-            if (Model.state.fight)
-                Model.state.fight.__proto__ = Model.Fight.State.prototype;
-            for (let id in Model.state.fighters) {
-                let fighter = Model.state.fighters[id];
-                if (fighter.species == 'human')
-                    fighter.__proto__ = Model.Person.prototype;
-                else
-                    fighter.__proto__ = Model.Animal.prototype;
-                fighter.onLoad();
-            }
-            for (let event of Model.state.events)
-                Model.setEventPrototype(event);
-            if (Model.state.phase == Phase.Dusk)
-                Model.state.phase = Phase.Dawn;
+            Util.setPrototype(Model.state, State);
+            Model.state.onLoad();
         }
         else
             resetState();
@@ -1158,6 +1214,15 @@ var Model;
         }
     }
     Model.News = News;
+    class EventNews extends News {
+        constructor(event) {
+            let desc = 'Announcement: \n';
+            desc += 'There will be an event on day ' + (event.day + 1) + '.\n';
+            desc += 'The name of the event is "' + event.getDescription() + '".';
+            super(desc);
+        }
+    }
+    Model.EventNews = EventNews;
 })(Model || (Model = {}));
 /// <reference path="fighter.ts" />
 "use strict";
@@ -1278,6 +1343,10 @@ var Util;
         ctx.translate(-x, -y);
     }
     Util.scaleCentred = scaleCentred;
+    function setPrototype(obj, type) {
+        obj.__proto__ = type.prototype;
+    }
+    Util.setPrototype = setPrototype;
 })(Util || (Util = {}));
 "use strict";
 var View;
@@ -1397,24 +1466,37 @@ var View;
 var View;
 (function (View) {
     class ArenaPage extends View.Page {
-        constructor() {
+        constructor(event) {
             super('Choose Fighters');
             this.onStartButton = () => {
-                let teams = [];
-                let fighterIDs = Model.state.getFighterIDs();
-                teams.push([fighterIDs[this.selectA.selectedIndex]]);
-                teams.push([fighterIDs[this.selectB.selectedIndex]]);
-                Model.state.startFight(teams[0], teams[1]);
+                const fighterIDs = Model.state.getFighterIDs();
+                if (this.event.home)
+                    Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(fighterIDs[this.selectB.selectedIndex]));
+                else
+                    Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(this.event.createNPC()));
                 View.Page.hideCurrent();
             };
             this.onFightersChanged = () => {
                 this.updateStartButton();
             };
+            this.event = event;
+            Util.assert(!!this.event);
             let topDiv = document.createElement('div');
-            this.selectA = document.createElement('select');
-            this.selectB = document.createElement('select');
-            this.selectA.addEventListener('change', this.onFightersChanged);
-            this.selectB.addEventListener('change', this.onFightersChanged);
+            this.selectA = this.makeSelect();
+            topDiv.appendChild(this.selectA);
+            if (this.event.home) {
+                this.selectB = this.makeSelect();
+                if (this.selectB.options.length > 1)
+                    this.selectB.selectedIndex = 1;
+                topDiv.appendChild(this.selectB);
+            }
+            this.button = document.createElement('button');
+            this.button.addEventListener('click', this.onStartButton);
+            topDiv.appendChild(this.button);
+            this.div.appendChild(topDiv);
+            this.updateStartButton();
+        }
+        makeSelect() {
             let makeOption = function (id) {
                 let option = document.createElement('option');
                 option.text = Model.state.fighters[id].name;
@@ -1422,19 +1504,11 @@ var View;
                     option.text += ' (x_x)';
                 return option;
             };
-            for (let id in Model.state.fighters) {
-                this.selectB.options.add(makeOption(id));
-                this.selectA.options.add(makeOption(id));
-            }
-            if (this.selectB.options.length > 1)
-                this.selectB.selectedIndex = 1;
-            this.button = document.createElement('button');
-            this.button.addEventListener('click', this.onStartButton);
-            topDiv.appendChild(this.selectA);
-            topDiv.appendChild(this.selectB);
-            topDiv.appendChild(this.button);
-            this.div.appendChild(topDiv);
-            this.updateStartButton();
+            let select = document.createElement('select');
+            select.addEventListener('change', this.onFightersChanged);
+            for (let id in Model.state.fighters)
+                select.options.add(makeOption(id));
+            return select;
         }
         onShow() {
         }
@@ -1445,9 +1519,11 @@ var View;
         }
         getFighters() {
             let fighterIDs = Model.state.getFighterIDs();
-            let fighterA = this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]];
-            let fighterB = this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]];
-            return [fighterA, fighterB];
+            let fighters = [];
+            fighters.push(this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]]);
+            if (this.event.home)
+                fighters.push(this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]]);
+            return fighters;
         }
         updateStartButton() {
             if (Model.state.fight) {
@@ -1457,7 +1533,10 @@ var View;
             }
             this.button.innerText = 'Start';
             let fighters = this.getFighters();
-            this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
+            if (this.event.home)
+                this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
+            else
+                this.button.disabled = !fighters[0] || fighters[0].isDead();
         }
     }
     View.ArenaPage = ArenaPage;
@@ -1740,7 +1819,7 @@ var View;
             this.div.appendChild(this.scroller);
             this.backgroundImage.loadImage(Data.Misc.FightBackgroundImage, () => { this.draw(); });
             let fighters = Model.state.fighters;
-            this.fighters = [fighters[Model.state.fight.teams[0][0]], fighters[Model.state.fight.teams[1][0]]];
+            this.fighters = [Model.state.fight.getFighter(0), Model.state.fight.getFighter(1)];
             this.update();
             this.updateHealths();
             this.updateImages();
@@ -2074,11 +2153,6 @@ var View;
             for (let item of Model.state.news) {
                 let e = document.createElement('p');
                 e.innerText = item.description;
-                this.div.appendChild(e);
-            }
-            for (let item of Model.state.getEventsForToday()) {
-                let e = document.createElement('p');
-                e.innerText = item.getDescription();
                 this.div.appendChild(e);
             }
         }

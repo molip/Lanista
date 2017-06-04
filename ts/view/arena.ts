@@ -8,20 +8,41 @@ namespace View
 		button: HTMLButtonElement;
 		selectA: HTMLSelectElement;
 		selectB: HTMLSelectElement;
+		event: Model.FightEvent;
 
-		constructor()
+		constructor(event: Model.Event)
 		{
 			super('Choose Fighters');
 
+			this.event = event as Model.FightEvent;
+			Util.assert(!!this.event);
+
 			let topDiv = document.createElement('div');
 
-			this.selectA = document.createElement('select');
-			this.selectB = document.createElement('select');
+			this.selectA = this.makeSelect();
+			topDiv.appendChild(this.selectA);
 
-			this.selectA.addEventListener('change', this.onFightersChanged);
-			this.selectB.addEventListener('change', this.onFightersChanged);
+			if (this.event.home)
+			{
+				this.selectB = this.makeSelect();
+				if (this.selectB.options.length > 1)
+					this.selectB.selectedIndex = 1;
 
-			let makeOption = function(id: string)
+				topDiv.appendChild(this.selectB);
+			}
+
+			this.button = document.createElement('button');
+			this.button.addEventListener('click', this.onStartButton);
+			topDiv.appendChild(this.button);
+
+			this.div.appendChild(topDiv);
+
+			this.updateStartButton();
+		}
+
+		makeSelect()
+		{
+			let makeOption = function (id: string)
 			{
 				let option = document.createElement('option');
 				option.text = Model.state.fighters[id].name;
@@ -30,25 +51,13 @@ namespace View
 				return option;
 			};
 
+
+			let select = document.createElement('select');
+			select.addEventListener('change', this.onFightersChanged);
 			for (let id in Model.state.fighters)
-			{
-				this.selectB.options.add(makeOption(id));
-				this.selectA.options.add(makeOption(id));
-			}
+				select.options.add(makeOption(id));
 
-			if (this.selectB.options.length > 1)
-				this.selectB.selectedIndex = 1;
-
-			this.button = document.createElement('button');
-			this.button.addEventListener('click', this.onStartButton);
-
-			topDiv.appendChild(this.selectA);
-			topDiv.appendChild(this.selectB);
-			topDiv.appendChild(this.button);
-
-			this.div.appendChild(topDiv);
-
-			this.updateStartButton();
+			return select;
 		}
 
 		onShow()
@@ -66,7 +75,11 @@ namespace View
 		onStartButton = () =>
 		{
 			const fighterIDs = Model.state.getFighterIDs();
-			Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]));
+
+			if (this.event.home)
+				Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(fighterIDs[this.selectB.selectedIndex]));
+			else
+				Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(this.event.createNPC()));
 
 			Page.hideCurrent();
 		}
@@ -79,9 +92,13 @@ namespace View
 		getFighters()
 		{
 			let fighterIDs = Model.state.getFighterIDs();
-			let fighterA = this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]];
-			let fighterB = this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]];
-			return [fighterA, fighterB];
+			let fighters: Model.Fighter[] = [];
+			fighters.push(this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]]);
+
+			if (this.event.home)
+				fighters.push(this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]]);
+
+			return fighters;
 		}
 
 		updateStartButton()
@@ -95,7 +112,11 @@ namespace View
 
 			this.button.innerText = 'Start';
 			let fighters = this.getFighters();
-			this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
+
+			if (this.event.home)
+				this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
+			else
+				this.button.disabled = !fighters[0] || fighters[0].isDead();
 		}
 	}
 }

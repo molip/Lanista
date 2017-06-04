@@ -58,7 +58,7 @@ namespace Controller
 				new View.NewsPage(() => { Model.state.advancePhase(); }).show();
 				break;
 			case Model.Phase.Event:
-				new View.ArenaPage().show();
+				showEventUI(Model.state.getEventsForToday());
 				break;
 			case Model.Phase.Fight:
 				new View.FightPage().show();
@@ -66,6 +66,16 @@ namespace Controller
 		}
 
 		updateHUD();
+	}
+
+	function showEventUI(events: Model.Event[])
+	{
+		Util.assert(events.length == 1);
+
+		if (events[0].type == 'fight')
+			new View.ArenaPage(events[0]).show();
+		else
+			Util.assert(false);
 	}
 
 	function startTransition(dusk: boolean)
