@@ -29,6 +29,7 @@ namespace View
 
 		document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
 		document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
+		document.getElementById('skip_day_btn').addEventListener('click', Controller.onSkipDayClicked);
 
 		for (let i = 0; i < speeds.length; ++i)
 		{
@@ -131,5 +132,6 @@ namespace View
 	export function enable(enable: boolean)
 	{
 		document.body.style.pointerEvents = enable ? 'auto' : 'none';
+		(document.getElementById('skip_day_btn') as HTMLButtonElement).disabled = !enable;
 	}
 }

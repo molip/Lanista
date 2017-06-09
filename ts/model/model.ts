@@ -58,26 +58,29 @@ namespace Model
 		update(seconds: number)
 		{
 			Util.assert(this.phase == Phase.Day);
-			let changed = this.addMinutes(seconds * this.speed);
+			let changed = this.addMinutes(seconds * this.speed, true);
 			Model.saveState();
 			return changed;
 		}
 
-		skipToNextDay()
+		skipToNextDay(doWork: boolean)
 		{
+			Util.assert(this.phase == Phase.Day || this.phase == Phase.Fight);
+
 			let newTime = (this.getDay() + 1) * minutesPerDay;
-			let changed = this.addMinutes(newTime - this.time);
+			let changed = this.addMinutes(newTime - this.time, doWork);
+			this.phase = Phase.Dawn;
 			Model.saveState();
 			return changed;
 		}
 
-		private addMinutes(minutes: number)
+		private addMinutes(minutes: number, doWork: boolean)
 		{
 			let oldDay = this.getDay();
 			this.time += minutes;
 			let hoursPassed = minutes / 60;
 
-			let changed = this.updateActivities(hoursPassed);
+			let changed = doWork && this.updateActivities(hoursPassed);
 
 			if (this.getDay() > oldDay)
 			{
@@ -271,12 +274,10 @@ namespace Model
 		endFight()
 		{
 			Util.assert(!!this.fight);
-			Util.assert(this.time / minutesPerDay == this.getDay()); // Fight must happen at dawn.
+			Util.assert(this.time % minutesPerDay == 0); // Fight must happen at dawn.
 
 			this.fight = null;
-			this.time += minutesPerDay; // Skip to tomorrow.
-			this.phase = Phase.Dusk;
-			Model.saveState();
+			this.skipToNextDay(false);
 		}
 
 		private getUniqueFighterName(name: string)

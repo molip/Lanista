@@ -1,264 +1,4 @@
 ﻿"use strict";
-var Controller;
-(function (Controller) {
-    var Canvas;
-    (function (Canvas) {
-        Canvas.HotObject = null;
-        function init() {
-            var canvas = View.ludus.element;
-            canvas.addEventListener('click', Controller.Canvas.onClick);
-            canvas.addEventListener('mousemove', Controller.Canvas.onMouseMove);
-            canvas.addEventListener('mouseout', Controller.Canvas.onMouseOut);
-        }
-        Canvas.init = init;
-        function hitTestObjects(x, y) {
-            for (let obj of View.ludus.Objects)
-                if (obj.isEnabled() && obj.getRect().pointInRect(new Point(x, y)))
-                    return obj;
-            return null;
-        }
-        function onClick() {
-            if (Canvas.HotObject)
-                Canvas.HotObject.onClick();
-        }
-        Canvas.onClick = onClick;
-        function onMouseMove(e) {
-            let devPos = Util.getEventPos(e, View.ludus.element);
-            let logPos = View.ludus.devToLog(devPos.x, devPos.y);
-            let obj = hitTestObjects(logPos.x, logPos.y);
-            if (obj != Canvas.HotObject) {
-                Canvas.HotObject = obj;
-                View.ludus.draw();
-            }
-        }
-        Canvas.onMouseMove = onMouseMove;
-        function onMouseOut() {
-            if (Canvas.HotObject) {
-                Canvas.HotObject = null;
-                View.ludus.draw();
-            }
-        }
-        Canvas.onMouseOut = onMouseOut;
-    })(Canvas = Controller.Canvas || (Controller.Canvas = {}));
-})(Controller || (Controller = {}));
-"use strict";
-var Controller;
-(function (Controller) {
-    function onLoad() {
-        Data.validate();
-        Model.init();
-        View.init();
-        Controller.Canvas.init();
-        updateHUD();
-        window.setInterval(Controller.onTick, 1000);
-        window.addEventListener('keydown', Controller.onKeyDown);
-        window.addEventListener('resize', View.updateLayout);
-        if (Model.state.fight)
-            showFightPage();
-    }
-    Controller.onLoad = onLoad;
-    function setSpeed(speed) {
-        Model.state.setSpeed(speed);
-        View.updateSpeedButtons();
-    }
-    Controller.setSpeed = setSpeed;
-    function onResize() {
-        View.updateLayout();
-    }
-    Controller.onResize = onResize;
-    function onTick() {
-        if (View.Page.Current)
-            return;
-        if (View.isTransitioning())
-            return;
-        switch (Model.state.phase) {
-            case Model.Phase.Day:
-                View.enable(true);
-                if (Model.state.update(1))
-                    View.ludus.updateObjects();
-                break;
-            case Model.Phase.Dawn:
-                View.enable(false);
-                startTransition(false);
-                break;
-            case Model.Phase.Dusk:
-                View.enable(false);
-                startTransition(true);
-                break;
-            case Model.Phase.News:
-                new View.NewsPage(() => { Model.state.advancePhase(); }).show();
-                break;
-            case Model.Phase.Event:
-                showEventUI(Model.state.getEventsForToday());
-                break;
-            case Model.Phase.Fight:
-                new View.FightPage().show();
-                break;
-        }
-        updateHUD();
-    }
-    Controller.onTick = onTick;
-    function showEventUI(events) {
-        Util.assert(events.length == 1);
-        if (events[0].type == 'fight')
-            new View.ArenaPage(events[0]).show();
-        else
-            Util.assert(false);
-    }
-    function startTransition(dusk) {
-        View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
-    }
-    function onBuildingTriggerClicked(id) {
-        var handlers = {
-            'home': onHomeTriggerClicked,
-            'barracks': onBarracksTriggerClicked,
-            'kennels': onKennelsTriggerClicked,
-            'storage': onStorageTriggerClicked,
-            'weapon': onWeaponTriggerClicked,
-            'armour': onArmourTriggerClicked,
-            'training': onTrainingTriggerClicked,
-            'surgery': onSurgeryTriggerClicked,
-            'lab': onLabTriggerClicked,
-            'merch': onMerchTriggerClicked,
-            'arena': onArenaTriggerClicked,
-        };
-        Util.assert(handlers[id]);
-        handlers[id]();
-    }
-    Controller.onBuildingTriggerClicked = onBuildingTriggerClicked;
-    function onResetClicked() {
-        if (confirm('Reset game?')) {
-            Model.resetState();
-            updateHUD();
-            View.ludus.initObjects();
-            View.updateSpeedButtons();
-            Controller.onTick();
-        }
-    }
-    Controller.onResetClicked = onResetClicked;
-    function onDebugClicked() {
-        new View.DebugPage().show();
-    }
-    Controller.onDebugClicked = onDebugClicked;
-    function onHomeTriggerClicked() {
-        View.showInfo('Home', 'TODO: general stats etc. go here.');
-    }
-    function onBarracksTriggerClicked() {
-        let page = new View.BarracksPage();
-        page.show();
-    }
-    function onKennelsTriggerClicked() {
-        let page = new View.KennelsPage();
-        page.show();
-    }
-    function onStorageTriggerClicked() {
-        View.showInfo('Storage', 'TODO.');
-    }
-    function onWeaponTriggerClicked() {
-        View.showInfo('Weapon', 'TODO.');
-    }
-    function onArmourTriggerClicked() {
-        View.showInfo('Armour', 'TODO.');
-    }
-    function onTrainingTriggerClicked() {
-        View.showInfo('Training', 'TODO.');
-    }
-    function onSurgeryTriggerClicked() {
-        View.showInfo('Surgery', 'TODO.');
-    }
-    function onLabTriggerClicked() {
-        View.showInfo('Lab', 'TODO.');
-    }
-    function onMerchTriggerClicked() {
-        View.showInfo('Merch', 'TODO.');
-    }
-    function onArenaTriggerClicked() {
-        View.showInfo('Arena', 'TODO.');
-    }
-    function onTownTriggerClicked() {
-        Controller.Shop.showShopsPage();
-    }
-    Controller.onTownTriggerClicked = onTownTriggerClicked;
-    function showFightPage() {
-        let page = new View.FightPage();
-        page.show();
-    }
-    function updateHUD() {
-        let money = ' Money: ' + Util.formatMoney(Model.state.getMoney());
-        let time = Model.state.getTimeString();
-        View.setHUDText(money, time);
-    }
-    Controller.updateHUD = updateHUD;
-    function onKeyDown(evt) {
-        if (evt.keyCode == 27)
-            View.Page.hideCurrent();
-    }
-    Controller.onKeyDown = onKeyDown;
-})(Controller || (Controller = {}));
-"use strict";
-var Controller;
-(function (Controller) {
-    var Shop;
-    (function (Shop) {
-        function addItem(page, title, description, image, locked, price, handler) {
-            page.addItem(title, description + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
-        }
-        function getShopTitle(name) {
-            return name + ' (money available: ' + Util.formatMoney(Model.state.getMoney()) + ')';
-        }
-        function showShopsPage() {
-            let page = new View.ListPage('Let\'s go shopping!');
-            page.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
-            page.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
-            page.addItem('People Market', 'Buy people', 'images/people.png', false, onPeopleMarketClicked);
-            page.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', true, null);
-            page.show();
-        }
-        Shop.showShopsPage = showShopsPage;
-        function onBuildersMerchantClicked() {
-            let page = new View.ListPage(getShopTitle('Builders\' Merchant'));
-            for (let id of ['home', 'arena', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch']) {
-                var level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
-                if (level) {
-                    var handler = function () {
-                        Model.state.buildings.buyUpgrade(id);
-                        Controller.updateHUD();
-                        View.ludus.updateObjects();
-                    };
-                    addItem(page, level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, handler);
-                    page.show();
-                }
-            }
-        }
-        function onAnimalMarketClicked() {
-            let page = new View.ListPage(getShopTitle('Animal Market'));
-            let hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
-            for (let id in Data.Animals.Types) {
-                var handler = function () {
-                    Model.state.buyAnimal(id);
-                    Controller.updateHUD();
-                };
-                let type = Data.Animals.Types[id];
-                addItem(page, type.name, type.description, type.shopImage, !hasKennels, type.cost, handler);
-                page.show();
-            }
-        }
-        function onPeopleMarketClicked() {
-            let page = new View.ListPage(getShopTitle('People Market'));
-            let hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
-            for (let id in Data.People.Types) {
-                var handler = function () {
-                    Model.state.buyPerson(id);
-                    Controller.updateHUD();
-                };
-                let type = Data.People.Types[id];
-                addItem(page, type.name, type.description, type.shopImage, !hasBarracks, type.cost, handler);
-                page.show();
-            }
-        }
-    })(Shop = Controller.Shop || (Controller.Shop = {}));
-})(Controller || (Controller = {}));
-"use strict";
 var Data;
 (function (Data) {
     class Attack {
@@ -478,6 +218,383 @@ var Data;
     (function (Misc) {
     })(Misc = Data.Misc || (Data.Misc = {}));
 })(Data || (Data = {}));
+"use strict";
+class Point {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    clone() { return new Point(this.x, this.y); }
+    translate(ctx) { ctx.translate(this.x, this.y); }
+    ;
+}
+class Rect {
+    constructor(left, top, right, bottom) {
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
+    }
+    clone() { return new Rect(this.left, this.top, this.right, this.bottom); }
+    width() { return this.right - this.left; }
+    height() { return this.bottom - this.top; }
+    centre() { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); }
+    path(ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); }
+    ;
+    fill(ctx) { ctx.fillRect(this.left, this.top, this.width(), this.height()); }
+    ;
+    stroke(ctx) { ctx.strokeRect(this.left, this.top, this.width(), this.height()); }
+    ;
+    expand(left, top, right, bottom) {
+        this.left += left;
+        this.top += top;
+        this.right += right;
+        this.bottom += bottom;
+    }
+    pointInRect(point) {
+        return point.x >= this.left && point.y >= this.top && point.x < this.right && point.y < this.bottom;
+    }
+    offset(dx, dy) {
+        this.left += dx;
+        this.right += dx;
+        this.top += dy;
+        this.bottom += dy;
+    }
+}
+class Xform {
+    constructor() {
+        this.matrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix();
+    }
+    transformPoint(point) {
+        let svgPoint = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGPoint();
+        svgPoint.x = point.x;
+        svgPoint.y = point.y;
+        svgPoint = svgPoint.matrixTransform(this.matrix);
+        return new Point(svgPoint.x, svgPoint.y);
+    }
+    apply(ctx) {
+        let m = this.matrix;
+        ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
+    }
+}
+"use strict";
+var Util;
+(function (Util) {
+    function formatMoney(amount) {
+        return '§' + amount;
+    }
+    Util.formatMoney = formatMoney;
+    function getEventPos(event, element) {
+        var rect = element.getBoundingClientRect();
+        return new Point(event.clientX - rect.left, event.clientY - rect.top);
+    }
+    Util.getEventPos = getEventPos;
+    function assert(condition, message) {
+        if (!condition)
+            alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
+    }
+    Util.assert = assert;
+    function formatRows(rows) {
+        let columns = [];
+        for (let i = 0; i < rows.length; ++i)
+            for (let j = 0; j < rows[i].length; ++j) {
+                if (i == 0)
+                    columns[j] = '<table>';
+                columns[j] += '<tr><td>' + rows[i][j] + '</tr></td>';
+                if (i == rows.length - 1)
+                    columns[j] += '</table>';
+            }
+        return columns;
+    }
+    Util.formatRows = formatRows;
+    function getRandomInt(max) {
+        return Math.floor(Math.random() * max);
+    }
+    Util.getRandomInt = getRandomInt;
+    function lerp(start, end, param) {
+        return start + (end - start) * param;
+    }
+    Util.lerp = lerp;
+    function querp(start, end, param) {
+        return start + (end - start) * param * param;
+    }
+    Util.querp = querp;
+    function scaleCentred(ctx, scale, x, y) {
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.translate(-x, -y);
+    }
+    Util.scaleCentred = scaleCentred;
+    function setPrototype(obj, type) {
+        obj.__proto__ = type.prototype;
+    }
+    Util.setPrototype = setPrototype;
+})(Util || (Util = {}));
+"use strict";
+var Controller;
+(function (Controller) {
+    var Canvas;
+    (function (Canvas) {
+        Canvas.HotObject = null;
+        function init() {
+            var canvas = View.ludus.element;
+            canvas.addEventListener('click', Controller.Canvas.onClick);
+            canvas.addEventListener('mousemove', Controller.Canvas.onMouseMove);
+            canvas.addEventListener('mouseout', Controller.Canvas.onMouseOut);
+        }
+        Canvas.init = init;
+        function hitTestObjects(x, y) {
+            for (let obj of View.ludus.Objects)
+                if (obj.isEnabled() && obj.getRect().pointInRect(new Point(x, y)))
+                    return obj;
+            return null;
+        }
+        function onClick() {
+            if (Canvas.HotObject)
+                Canvas.HotObject.onClick();
+        }
+        Canvas.onClick = onClick;
+        function onMouseMove(e) {
+            let devPos = Util.getEventPos(e, View.ludus.element);
+            let logPos = View.ludus.devToLog(devPos.x, devPos.y);
+            let obj = hitTestObjects(logPos.x, logPos.y);
+            if (obj != Canvas.HotObject) {
+                Canvas.HotObject = obj;
+                View.ludus.draw();
+            }
+        }
+        Canvas.onMouseMove = onMouseMove;
+        function onMouseOut() {
+            if (Canvas.HotObject) {
+                Canvas.HotObject = null;
+                View.ludus.draw();
+            }
+        }
+        Canvas.onMouseOut = onMouseOut;
+    })(Canvas = Controller.Canvas || (Controller.Canvas = {}));
+})(Controller || (Controller = {}));
+"use strict";
+var Controller;
+(function (Controller) {
+    function onLoad() {
+        Data.validate();
+        Model.init();
+        View.init();
+        Controller.Canvas.init();
+        updateHUD();
+        window.setInterval(Controller.onTick, 1000);
+        window.addEventListener('keydown', Controller.onKeyDown);
+        window.addEventListener('resize', View.updateLayout);
+        if (Model.state.fight)
+            showFightPage();
+    }
+    Controller.onLoad = onLoad;
+    function setSpeed(speed) {
+        Model.state.setSpeed(speed);
+        View.updateSpeedButtons();
+    }
+    Controller.setSpeed = setSpeed;
+    function onResize() {
+        View.updateLayout();
+    }
+    Controller.onResize = onResize;
+    function onTick() {
+        if (View.Page.Current)
+            return;
+        if (View.isTransitioning())
+            return;
+        switch (Model.state.phase) {
+            case Model.Phase.Day:
+                View.enable(true);
+                if (Model.state.update(1))
+                    View.ludus.updateObjects();
+                break;
+            case Model.Phase.Dawn:
+                View.enable(false);
+                startTransition(false);
+                break;
+            case Model.Phase.Dusk:
+                View.enable(false);
+                startTransition(true);
+                break;
+            case Model.Phase.News:
+                new View.NewsPage(() => { Model.state.advancePhase(); }).show();
+                break;
+            case Model.Phase.Event:
+                showEventUI(Model.state.getEventsForToday());
+                break;
+            case Model.Phase.Fight:
+                new View.FightPage().show();
+                break;
+        }
+        updateHUD();
+    }
+    Controller.onTick = onTick;
+    function showEventUI(events) {
+        Util.assert(events.length == 1);
+        if (events[0].type == 'fight')
+            new View.ArenaPage(events[0]).show();
+        else
+            Util.assert(false);
+    }
+    function startTransition(dusk) {
+        View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
+    }
+    function onBuildingTriggerClicked(id) {
+        var handlers = {
+            'home': onHomeTriggerClicked,
+            'barracks': onBarracksTriggerClicked,
+            'kennels': onKennelsTriggerClicked,
+            'storage': onStorageTriggerClicked,
+            'weapon': onWeaponTriggerClicked,
+            'armour': onArmourTriggerClicked,
+            'training': onTrainingTriggerClicked,
+            'surgery': onSurgeryTriggerClicked,
+            'lab': onLabTriggerClicked,
+            'merch': onMerchTriggerClicked,
+            'arena': onArenaTriggerClicked,
+        };
+        Util.assert(handlers[id]);
+        handlers[id]();
+    }
+    Controller.onBuildingTriggerClicked = onBuildingTriggerClicked;
+    function onResetClicked() {
+        if (confirm('Reset game?')) {
+            Model.resetState();
+            updateHUD();
+            View.ludus.initObjects();
+            View.updateSpeedButtons();
+            Controller.onTick();
+        }
+    }
+    Controller.onResetClicked = onResetClicked;
+    function onDebugClicked() {
+        new View.DebugPage().show();
+    }
+    Controller.onDebugClicked = onDebugClicked;
+    function onSkipDayClicked() {
+        Model.state.skipToNextDay(true);
+        View.ludus.updateObjects();
+    }
+    Controller.onSkipDayClicked = onSkipDayClicked;
+    function onHomeTriggerClicked() {
+        View.showInfo('Home', 'TODO: general stats etc. go here.');
+    }
+    function onBarracksTriggerClicked() {
+        let page = new View.BarracksPage();
+        page.show();
+    }
+    function onKennelsTriggerClicked() {
+        let page = new View.KennelsPage();
+        page.show();
+    }
+    function onStorageTriggerClicked() {
+        View.showInfo('Storage', 'TODO.');
+    }
+    function onWeaponTriggerClicked() {
+        View.showInfo('Weapon', 'TODO.');
+    }
+    function onArmourTriggerClicked() {
+        View.showInfo('Armour', 'TODO.');
+    }
+    function onTrainingTriggerClicked() {
+        View.showInfo('Training', 'TODO.');
+    }
+    function onSurgeryTriggerClicked() {
+        View.showInfo('Surgery', 'TODO.');
+    }
+    function onLabTriggerClicked() {
+        View.showInfo('Lab', 'TODO.');
+    }
+    function onMerchTriggerClicked() {
+        View.showInfo('Merch', 'TODO.');
+    }
+    function onArenaTriggerClicked() {
+        View.showInfo('Arena', 'TODO.');
+    }
+    function onTownTriggerClicked() {
+        Controller.Shop.showShopsPage();
+    }
+    Controller.onTownTriggerClicked = onTownTriggerClicked;
+    function showFightPage() {
+        let page = new View.FightPage();
+        page.show();
+    }
+    function updateHUD() {
+        let money = ' Money: ' + Util.formatMoney(Model.state.getMoney());
+        let time = Model.state.getTimeString();
+        View.setHUDText(money, time);
+    }
+    Controller.updateHUD = updateHUD;
+    function onKeyDown(evt) {
+        if (evt.keyCode == 27)
+            View.Page.hideCurrent();
+    }
+    Controller.onKeyDown = onKeyDown;
+})(Controller || (Controller = {}));
+"use strict";
+var Controller;
+(function (Controller) {
+    var Shop;
+    (function (Shop) {
+        function addItem(page, title, description, image, locked, price, handler) {
+            page.addItem(title, description + '<br>' + Util.formatMoney(price), image, locked || price > Model.state.getMoney(), handler);
+        }
+        function getShopTitle(name) {
+            return name + ' (money available: ' + Util.formatMoney(Model.state.getMoney()) + ')';
+        }
+        function showShopsPage() {
+            let page = new View.ListPage('Let\'s go shopping!');
+            page.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
+            page.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
+            page.addItem('People Market', 'Buy people', 'images/people.png', false, onPeopleMarketClicked);
+            page.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', true, null);
+            page.show();
+        }
+        Shop.showShopsPage = showShopsPage;
+        function onBuildersMerchantClicked() {
+            let page = new View.ListPage(getShopTitle('Builders\' Merchant'));
+            for (let id of ['home', 'arena', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch']) {
+                var level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
+                if (level) {
+                    var handler = function () {
+                        Model.state.buildings.buyUpgrade(id);
+                        Controller.updateHUD();
+                        View.ludus.updateObjects();
+                    };
+                    addItem(page, level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, handler);
+                    page.show();
+                }
+            }
+        }
+        function onAnimalMarketClicked() {
+            let page = new View.ListPage(getShopTitle('Animal Market'));
+            let hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
+            for (let id in Data.Animals.Types) {
+                var handler = function () {
+                    Model.state.buyAnimal(id);
+                    Controller.updateHUD();
+                };
+                let type = Data.Animals.Types[id];
+                addItem(page, type.name, type.description, type.shopImage, !hasKennels, type.cost, handler);
+                page.show();
+            }
+        }
+        function onPeopleMarketClicked() {
+            let page = new View.ListPage(getShopTitle('People Market'));
+            let hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
+            for (let id in Data.People.Types) {
+                var handler = function () {
+                    Model.state.buyPerson(id);
+                    Controller.updateHUD();
+                };
+                let type = Data.People.Types[id];
+                addItem(page, type.name, type.description, type.shopImage, !hasBarracks, type.cost, handler);
+                page.show();
+            }
+        }
+    })(Shop = Controller.Shop || (Controller.Shop = {}));
+})(Controller || (Controller = {}));
 "use strict";
 var Model;
 (function (Model) {
@@ -1005,21 +1122,23 @@ var Model;
         }
         update(seconds) {
             Util.assert(this.phase == Phase.Day);
-            let changed = this.addMinutes(seconds * this.speed);
+            let changed = this.addMinutes(seconds * this.speed, true);
             Model.saveState();
             return changed;
         }
-        skipToNextDay() {
+        skipToNextDay(doWork) {
+            Util.assert(this.phase == Phase.Day || this.phase == Phase.Fight);
             let newTime = (this.getDay() + 1) * minutesPerDay;
-            let changed = this.addMinutes(newTime - this.time);
+            let changed = this.addMinutes(newTime - this.time, doWork);
+            this.phase = Phase.Dawn;
             Model.saveState();
             return changed;
         }
-        addMinutes(minutes) {
+        addMinutes(minutes, doWork) {
             let oldDay = this.getDay();
             this.time += minutes;
             let hoursPassed = minutes / 60;
-            let changed = this.updateActivities(hoursPassed);
+            let changed = doWork && this.updateActivities(hoursPassed);
             if (this.getDay() > oldDay) {
                 this.phase = Phase.Dusk;
             }
@@ -1079,6 +1198,7 @@ var Model;
                     workers[activity].push(fighter);
                 }
                 else {
+                    // TODO: Practising, convalescing, recreation
                 }
             }
             // Building, training animals, training gladiators, crafting, repairing:
@@ -1159,11 +1279,9 @@ var Model;
         }
         endFight() {
             Util.assert(!!this.fight);
-            Util.assert(this.time / minutesPerDay == this.getDay()); // Fight must happen at dawn.
+            Util.assert(this.time % minutesPerDay == 0); // Fight must happen at dawn.
             this.fight = null;
-            this.time += minutesPerDay; // Skip to tomorrow.
-            this.phase = Phase.Dusk;
-            Model.saveState();
+            this.skipToNextDay(false);
         }
         getUniqueFighterName(name) {
             let find = (name) => {
@@ -1236,118 +1354,6 @@ var Model;
     }
     Model.Person = Person;
 })(Model || (Model = {}));
-"use strict";
-class Point {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-    clone() { return new Point(this.x, this.y); }
-    translate(ctx) { ctx.translate(this.x, this.y); }
-    ;
-}
-class Rect {
-    constructor(left, top, right, bottom) {
-        this.left = left;
-        this.top = top;
-        this.right = right;
-        this.bottom = bottom;
-    }
-    clone() { return new Rect(this.left, this.top, this.right, this.bottom); }
-    width() { return this.right - this.left; }
-    height() { return this.bottom - this.top; }
-    centre() { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); }
-    path(ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); }
-    ;
-    fill(ctx) { ctx.fillRect(this.left, this.top, this.width(), this.height()); }
-    ;
-    stroke(ctx) { ctx.strokeRect(this.left, this.top, this.width(), this.height()); }
-    ;
-    expand(left, top, right, bottom) {
-        this.left += left;
-        this.top += top;
-        this.right += right;
-        this.bottom += bottom;
-    }
-    pointInRect(point) {
-        return point.x >= this.left && point.y >= this.top && point.x < this.right && point.y < this.bottom;
-    }
-    offset(dx, dy) {
-        this.left += dx;
-        this.right += dx;
-        this.top += dy;
-        this.bottom += dy;
-    }
-}
-class Xform {
-    constructor() {
-        this.matrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix();
-    }
-    transformPoint(point) {
-        let svgPoint = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGPoint();
-        svgPoint.x = point.x;
-        svgPoint.y = point.y;
-        svgPoint = svgPoint.matrixTransform(this.matrix);
-        return new Point(svgPoint.x, svgPoint.y);
-    }
-    apply(ctx) {
-        let m = this.matrix;
-        ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
-    }
-}
-"use strict";
-var Util;
-(function (Util) {
-    function formatMoney(amount) {
-        return '§' + amount;
-    }
-    Util.formatMoney = formatMoney;
-    function getEventPos(event, element) {
-        var rect = element.getBoundingClientRect();
-        return new Point(event.clientX - rect.left, event.clientY - rect.top);
-    }
-    Util.getEventPos = getEventPos;
-    function assert(condition, message) {
-        if (!condition)
-            alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
-    }
-    Util.assert = assert;
-    function formatRows(rows) {
-        let columns = [];
-        for (let i = 0; i < rows.length; ++i)
-            for (let j = 0; j < rows[i].length; ++j) {
-                if (i == 0)
-                    columns[j] = '<table>';
-                columns[j] += '<tr><td>' + rows[i][j] + '</tr></td>';
-                if (i == rows.length - 1)
-                    columns[j] += '</table>';
-            }
-        return columns;
-    }
-    Util.formatRows = formatRows;
-    function getRandomInt(max) {
-        return Math.floor(Math.random() * max);
-    }
-    Util.getRandomInt = getRandomInt;
-    function lerp(start, end, param) {
-        return start + (end - start) * param;
-    }
-    Util.lerp = lerp;
-    function querp(start, end, param) {
-        return start + (end - start) * param * param;
-    }
-    Util.querp = querp;
-    function scaleCentred(ctx, scale, x, y) {
-        ctx.translate(x, y);
-        ctx.scale(scale, scale);
-        ctx.translate(-x, -y);
-    }
-    Util.scaleCentred = scaleCentred;
-    function setPrototype(obj, type) {
-        obj.__proto__ = type.prototype;
-    }
-    Util.setPrototype = setPrototype;
-})(Util || (Util = {}));
 "use strict";
 var View;
 (function (View) {
@@ -2298,6 +2304,7 @@ var View;
         View.updateLayout();
         document.getElementById('reset_btn').addEventListener('click', Controller.onResetClicked);
         document.getElementById('debug_btn').addEventListener('click', Controller.onDebugClicked);
+        document.getElementById('skip_day_btn').addEventListener('click', Controller.onSkipDayClicked);
         for (let i = 0; i < speeds.length; ++i) {
             document.getElementById('speed_label_' + i).innerText = 'x' + speeds[i];
             let button = document.getElementById('speed_btn_' + i);
@@ -2378,6 +2385,7 @@ var View;
     View.onTransitionTick = onTransitionTick;
     function enable(enable) {
         document.body.style.pointerEvents = enable ? 'auto' : 'none';
+        document.getElementById('skip_day_btn').disabled = !enable;
     }
     View.enable = enable;
 })(View || (View = {}));

@@ -119,6 +119,12 @@ namespace Controller
 		new View.DebugPage().show();
 	}
 
+	export function onSkipDayClicked()
+	{
+		Model.state.skipToNextDay(true);
+		View.ludus.updateObjects();
+	}
+
 	function onHomeTriggerClicked()
 	{
 		View.showInfo('Home', 'TODO: general stats etc. go here.');
