@@ -45,8 +45,8 @@ namespace View
 			let makeOption = function (id: string)
 			{
 				let option = document.createElement('option');
-				option.text = Model.state.fighters[id].name;
-				if (Model.state.fighters[id].isDead())
+				option.text = Model.state.team.fighters[id].name;
+				if (Model.state.team.fighters[id].isDead())
 					option.text += ' (x_x)';
 				return option;
 			};
@@ -54,7 +54,7 @@ namespace View
 
 			let select = document.createElement('select');
 			select.addEventListener('change', this.onFightersChanged);
-			for (let id in Model.state.fighters)
+			for (let id in Model.state.team.fighters)
 				select.options.add(makeOption(id));
 
 			return select;
@@ -74,12 +74,12 @@ namespace View
 
 		onStartButton = () =>
 		{
-			const fighterIDs = Model.state.getFighterIDs();
+			const fighterIDs = Model.state.team.getFighterIDs();
 
 			if (this.event.home)
-				Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(fighterIDs[this.selectB.selectedIndex]));
+				Model.state.startFight(new Model.Fight.Side(fighterIDs[this.selectA.selectedIndex], null), new Model.Fight.Side(fighterIDs[this.selectB.selectedIndex], null));
 			else
-				Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(this.event.createNPC()));
+				Model.state.startFight(new Model.Fight.Side(fighterIDs[this.selectA.selectedIndex], null), this.event.createNPCSide());
 
 			Page.hideCurrent();
 		}
@@ -91,12 +91,12 @@ namespace View
 
 		getFighters()
 		{
-			let fighterIDs = Model.state.getFighterIDs();
+			let fighterIDs = Model.state.team.getFighterIDs();
 			let fighters: Model.Fighter[] = [];
-			fighters.push(this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]]);
+			fighters.push(this.selectA.selectedIndex < 0 ? null : Model.state.team.fighters[fighterIDs[this.selectA.selectedIndex]]);
 
 			if (this.event.home)
-				fighters.push(this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]]);
+				fighters.push(this.selectB.selectedIndex < 0 ? null : Model.state.team.fighters[fighterIDs[this.selectB.selectedIndex]]);
 
 			return fighters;
 		}

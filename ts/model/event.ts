@@ -27,10 +27,12 @@ namespace Model
 			return this.home ? "Home Fight" : this.name; // TODO: Specialise classes.
 		}
 
-		createNPC()
+		createNPCSide()
 		{
 			Util.assert(!this.home);
-			return new Model.Person(0, 'man', "Slapper Nuremberg");
+			let team = new Model.Team();
+			team.fighters[1] = new Model.Person(0, 'man', "Slapper Nuremberg");
+			return new Model.Fight.Side('1', team);
 		}
 	}
 }

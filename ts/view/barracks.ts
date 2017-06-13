@@ -24,7 +24,7 @@ namespace View
 			for (let id in Data.Activities.Types)
 				activityItems.push(new Table.SelectCellItem(id, Data.Activities.Types[id].name));
 
-			for (let person of Model.state.getPeople())
+			for (let person of Model.state.team.getPeople())
 			{
 				let cells: Table.Cell[] = [new Table.TextCell('<h4>' + person.name + '</h4>'), new Table.ImageCell(person.image)];
 

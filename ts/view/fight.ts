@@ -161,7 +161,6 @@ namespace View
 
 			this.backgroundImage.loadImage(Data.Misc.FightBackgroundImage, () => { this.draw() });
 
-			let fighters = Model.state.fighters;
 			this.fighters = [Model.state.fight.getFighter(0), Model.state.fight.getFighter(1)];
 
 			this.update();
@@ -212,9 +211,9 @@ namespace View
 		{
 			Util.assert(!!Model.state.fight);
 
-			let attackerIndex = Model.state.fight.nextTeamIndex;
+			let attackerIndex = Model.state.fight.nextSideIndex;
 			let result = Model.state.fight.step();
-			let defenderIndex = Model.state.fight.nextTeamIndex;
+			let defenderIndex = Model.state.fight.nextSideIndex;
 
 			this.update();
 			if (Model.state.fight.finished)

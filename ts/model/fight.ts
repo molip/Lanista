@@ -9,57 +9,68 @@ namespace Model
 			constructor(public name: string, public description: string, public attackDamage: number, public defense: number, public sourceID: string, public targetID: string) { }
 		}
 
-		export class Team 
+		export class Side
 		{
-			constructor(private fighter: string | Fighter) { }
+			constructor(private fighterID: string, private npcTeam: Team)
+			{
+				Util.assert(!npcTeam || npcTeam !== Model.state.team); // Use null for player team.
+			}
 
 			getFighter() 
 			{
-				return typeof this.fighter === "string" ? Model.state.fighters[this.fighter] : this.fighter;
+				return this.getTeam().fighters[this.fighterID];
+			}
+
+			getTeam()
+			{
+				return this.npcTeam ? this.npcTeam : Model.state.team;
 			}
 
 			onLoad()
 			{
-				if (typeof this.fighter !== "string")
-					Fighter.initPrototype(this.fighter);
+				if (this.npcTeam)
+				{
+					Util.setPrototype(this.npcTeam, Team);
+					this.npcTeam.onLoad();
+				}
 			}
 		}
 
 		export class State
 		{
-			private teams: Team[]; 
+			private sides: Side[];
 			text: string;
-			nextTeamIndex: number;
+			nextSideIndex: number;
 			steps: number;
 			finished: boolean;
-			constructor(teamA: Team, teamB: Team)
+			constructor(sideA: Side, sideB: Side)
 			{
-				this.teams = [teamA, teamB];
+				this.sides = [sideA, sideB];
 				this.text = '';
-				this.nextTeamIndex = 0;
+				this.nextSideIndex = 0;
 				this.steps = 0;
 				this.finished = false;
 			}
 
 			onLoad()
 			{
-				for (let team of this.teams)
+				for (let side of this.sides)
 				{
-					Util.setPrototype(team, Team);
-					team.onLoad();
+					Util.setPrototype(side, Side);
+					side.onLoad();
 				}
 			}
 
 			getFighter(index: number) 
 			{
-				return this.teams[index].getFighter();
+				return this.sides[index].getFighter();
 			}
 
 			step()
 			{
-				let attacker = this.getFighter(this.nextTeamIndex);
-				this.nextTeamIndex = (this.nextTeamIndex + 1) % this.teams.length;
-				let defender = this.getFighter(this.nextTeamIndex);
+				let attacker = this.getFighter(this.nextSideIndex);
+				this.nextSideIndex = (this.nextSideIndex + 1) % this.sides.length;
+				let defender = this.getFighter(this.nextSideIndex);
 
 				let result = this.attack(attacker, defender);
 
