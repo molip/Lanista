@@ -89,7 +89,7 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public readonly cost: number, public readonly shopImage: string, public readonly species: string, public readonly name: string, public readonly description: string, public readonly armour: string[], public readonly weapons: string[]) { }
+			constructor(public readonly cost: number, public readonly shopImage: string, public readonly species: string, public readonly name: string, public readonly description: string) { }
 			validate()
 			{
 				if (!Species.Types[this.species])
@@ -97,14 +97,6 @@ namespace Data
 
 				if (!Species.Types[this.species].bodyParts)
 					console.log('Animal: "%s" has no body parts', this.name);
-
-				for (let weapon of this.weapons)
-					if (!Weapons.Types[weapon])
-						console.log('Animal: "%s" references unknown weapon "%s"', this.name, weapon);
-
-				for (let armour of this.armour)
-					if (!Armour.Types[armour])
-						console.log('Animal: "%s" references unknown armour "%s"', this.name, armour);
 			}
 		}
 		export let Types: { [key: string]: Type };
@@ -114,16 +106,9 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public cost: number, public shopImage: string, public name: string, public description: string, public armour: string[], public weapons: string[]) { }
+			constructor(public cost: number, public shopImage: string, public name: string, public description: string) { }
 			validate()
 			{
-				for (let weapon of this.weapons)
-					if (!Weapons.Types[weapon])
-						console.log('People: "%s" references unknown weapon "%s"', this.name, weapon);
-
-				for (let armour of this.armour)
-					if (!Armour.Types[armour])
-						console.log('People: "%s" references unknown armour "%s"', this.name, armour);
 			}
 		}
 		export let Types: { [key: string]: Type };

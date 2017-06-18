@@ -11,9 +11,12 @@ namespace Model
 
 		export class Side
 		{
+			loadout: Loadout;
+
 			constructor(private fighterID: string, private npcTeam: Team)
 			{
 				Util.assert(!npcTeam || npcTeam !== Model.state.team); // Use null for player team.
+				this.loadout = new Loadout();
 			}
 
 			getFighter() 
@@ -33,6 +36,9 @@ namespace Model
 					Util.setPrototype(this.npcTeam, Team);
 					this.npcTeam.onLoad();
 				}
+
+				Util.setPrototype(this.loadout, Loadout);
+				this.loadout.onLoad();
 			}
 		}
 
@@ -68,23 +74,26 @@ namespace Model
 
 			step()
 			{
-				let attacker = this.getFighter(this.nextSideIndex);
+				let attackerSide = this.sides[this.nextSideIndex];
 				this.nextSideIndex = (this.nextSideIndex + 1) % this.sides.length;
-				let defender = this.getFighter(this.nextSideIndex);
+				let defenderSide = this.sides[this.nextSideIndex];
 
-				let result = this.attack(attacker, defender);
+				let result = this.attack(attackerSide, defenderSide);
 
 				this.text += result.description + '<br>';
-				this.finished = defender.isDead();
+				this.finished = defenderSide.getFighter().isDead();
 
 				Model.saveState();
 
 				return result;
 			}
 
-			attack(attacker: Fighter, defender: Fighter)
+			attack(attackerSide: Side, defenderSide: Side)
 			{
-				let attacks = attacker.getAttacks();
+				let attacker = attackerSide.getFighter();
+				let defender = defenderSide.getFighter();
+
+				let attacks = attacker.getAttacks(attackerSide.loadout);
 				let attack = attacks[Util.getRandomInt(attacks.length)];
 
 				let defenderSpeciesData = defender.getSpeciesData();
@@ -92,7 +101,7 @@ namespace Model
 				let target = defender.bodyParts[targetID];
 				let targetData = target.getData(defenderSpeciesData);
 
-				let armour = defender.getBodyPartArmour(target.id);
+				let armour = defenderSide.loadout.getBodyPartArmour(target.id);
 				let armourData = armour ? Data.Armour.Types[armour.tag] : null;
 
 				let defense = armourData ? armourData.getDefense(attack.data.type) : 0;

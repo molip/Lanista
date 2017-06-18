@@ -16,8 +16,6 @@ namespace View
 
 			tableFactory.addColumnHeader('Part', 10);
 			tableFactory.addColumnHeader('Health', 10);
-			tableFactory.addColumnHeader('Armour', 10);
-			tableFactory.addColumnHeader('Weapon', 10);
 			tableFactory.addColumnHeader('Activity', 10);
 
 			const activityItems: Table.SelectCellItem[] = [];
