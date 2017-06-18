@@ -97,7 +97,7 @@ namespace Model
 			return rows;
 		}
 
-		getAttacks(loadout: Loadout)
+		getAttacks(loadout: Loadout, team: Team)
 		{
 			let attacks: Attack[] = [];
 
@@ -112,7 +112,7 @@ namespace Model
 
 			for (let weapon of loadout.weapons)
 			{
-				let data = Data.Weapons.Types[weapon.tag];
+				let data = team.getWeaponData(weapon.id);
 				for (let attack of data.attacks)
 					attacks.push(new Attack(attack, weapon.bodyPartIDs[0])); // Just use the first body part for the source. 
 			}

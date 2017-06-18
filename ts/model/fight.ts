@@ -16,7 +16,17 @@ namespace Model
 			constructor(private fighterID: string, private npcTeam: Team)
 			{
 				Util.assert(!npcTeam || npcTeam !== Model.state.team); // Use null for player team.
-				this.loadout = new Loadout();
+
+				let team = this.getTeam();
+				this.loadout = new Loadout(fighterID);
+
+				for (let id in team.armour)
+					if (this.loadout.canAddArmour(id, team))
+						this.loadout.addArmour(id, team);
+
+				for (let id in team.weapons)
+					if (this.loadout.canAddWeapon(id, team))
+						this.loadout.addWeapon(id, team);
 			}
 
 			getFighter() 
@@ -93,7 +103,7 @@ namespace Model
 				let attacker = attackerSide.getFighter();
 				let defender = defenderSide.getFighter();
 
-				let attacks = attacker.getAttacks(attackerSide.loadout);
+				let attacks = attacker.getAttacks(attackerSide.loadout, attackerSide.getTeam());
 				let attack = attacks[Util.getRandomInt(attacks.length)];
 
 				let defenderSpeciesData = defender.getSpeciesData();
@@ -101,8 +111,7 @@ namespace Model
 				let target = defender.bodyParts[targetID];
 				let targetData = target.getData(defenderSpeciesData);
 
-				let armour = defenderSide.loadout.getBodyPartArmour(target.id);
-				let armourData = armour ? Data.Armour.Types[armour.tag] : null;
+				let armourData = defenderSide.loadout.getBodyPartArmourData(target.id, defenderSide.getTeam());
 
 				let defense = armourData ? armourData.getDefense(attack.data.type) : 0;
 				let damage = attack.data.damage * (100 - defense) / 100;
