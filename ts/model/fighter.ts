@@ -2,8 +2,6 @@
 
 namespace Model
 {
-	export enum AccessoryType { Weapon, Armour };
-
 	export class BodyPart
 	{
 		constructor(public id: string, public tag: string, public index: number, public health: number) { }
@@ -19,9 +17,9 @@ namespace Model
 		}
 
 		// Gets tag of armour or weapon site, if present.
-		getSiteTag(accType: AccessoryType, speciesData: Data.Species.Type)
+		getSiteTag(accType: ItemType, speciesData: Data.Species.Type)
 		{
-			if (accType == AccessoryType.Armour) // We are our own armour site.
+			if (accType == ItemType.Armour) // We are our own armour site.
 				return this.tag;
 
 			let site = this.getData(speciesData).weaponSite;
@@ -110,12 +108,13 @@ namespace Model
 					attacks.push(new Attack(data.attack, id)); // TODO: Check body part health. Also, skip parts with weapon.
 			}
 
-			for (let weapon of loadout.weapons)
-			{
-				let data = team.getWeaponData(weapon.id);
-				for (let attack of data.attacks)
-					attacks.push(new Attack(attack, weapon.bodyPartIDs[0])); // Just use the first body part for the source. 
-			}
+			for (let itemPos of loadout.itemPositions)
+				if (team.getItem(itemPos.id).type == ItemType.Weapon)
+				{
+					let data = team.getWeaponData(itemPos.id);
+					for (let attack of data.attacks)
+						attacks.push(new Attack(attack, itemPos.bodyPartIDs[0])); // Just use the first body part for the source. 
+				}
 
 			return attacks;
 		}

@@ -2,28 +2,28 @@
 
 namespace Model
 {
+	export enum ItemType { Weapon, Armour };
+
 	export class Item
 	{
-		constructor(public tag: string) { }
+		constructor(public type: ItemType, public tag: string) { }
 	}
 
 	export class Team 
 	{
 		fighters: { [id: string]: Fighter } = {};
-		weapons: { [id: string]: Item } = {};
-		armour: { [id: string]: Item } = {};
+		items: { [id: string]: Item } = {};
 		nextFighterID = 1;
-		nextWeaponID = 1;
-		nextArmourID = 1;
+		nextItemID = 1;
 
 		constructor()
 		{
-			this.addArmour('chestplate');
-			this.addArmour('helmet');
-			this.addArmour('leg bits');
-			this.addArmour('arm bits');
+			this.addItem(ItemType.Armour, 'chestplate');
+			this.addItem(ItemType.Armour, 'helmet');
+			this.addItem(ItemType.Armour, 'leg bits');
+			this.addItem(ItemType.Armour, 'arm bits');
 
-			this.addWeapon('halberd');
+			this.addItem(ItemType.Weapon, 'halberd');
 		}
 
 		onLoad()
@@ -50,18 +50,12 @@ namespace Model
 			++this.nextFighterID;
 		}
 
-		addWeapon(tag: string)
+		addItem(type: ItemType, tag: string)
 		{
-			Util.assert(tag in Data.Weapons.Types);
-			this.weapons[this.nextWeaponID] = new Item(tag);
-			++this.nextWeaponID;
-		}
-
-		addArmour(tag: string)
-		{
-			Util.assert(tag in Data.Armour.Types);
-			this.armour[this.nextArmourID] = new Item(tag);
-			++this.nextArmourID;
+			let data = type == ItemType.Armour ? Data.Armour.Types : Data.Weapons.Types;
+			Util.assert(tag in data);
+			this.items[this.nextItemID] = new Item(type, tag);
+			++this.nextItemID;
 		}
 
 		getPeople()
@@ -90,18 +84,32 @@ namespace Model
 			return ids;
 		}
 
-		getWeaponData(id: string)
+		getItem(id: string)
 		{
-			Util.assert(id in this.weapons);
-			Util.assert(this.weapons[id].tag in Data.Weapons.Types);
-			return Data.Weapons.Types[this.weapons[id].tag];
+			Util.assert(id in this.items);
+			return this.items[id];
+		}
+
+		getItemData(id: string)
+		{
+			let item = this.getItem(id);
+			let data = item.type == ItemType.Armour ? Data.Armour.Types : Data.Weapons.Types;
+			Util.assert(item.tag in data);
+			return data[item.tag];
 		}
 
 		getArmourData(id: string)
 		{
-			Util.assert(id in this.armour);
-			Util.assert(this.armour[id].tag in Data.Armour.Types);
-			return Data.Armour.Types[this.armour[id].tag];
+			let data = this.getItemData(id) as Data.Armour.Type;
+			Util.assert(data != null);
+			return data;
+		}
+
+		getWeaponData(id: string)
+		{
+			let data = this.getItemData(id) as Data.Weapons.Type;
+			Util.assert(data != null);
+			return data;
 		}
 
 		private getUniqueFighterName(name: string)

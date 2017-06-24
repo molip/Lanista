@@ -2,10 +2,16 @@
 
 namespace Model
 {
+	export class ItemPosition
+	{
+		constructor(public id: string, public bodyPartIDs: string[])
+		{
+		}
+	}
+
 	export class Loadout
 	{
-		weapons: Weapon[] = [];
-		armour: Armour[] = [];
+		itemPositions: ItemPosition[] = [];
 
 		constructor(private fighterID: string)
 		{
@@ -13,10 +19,6 @@ namespace Model
 
 		onLoad()
 		{
-			for (let weapon of this.weapons)
-				Util.setPrototype(weapon, Weapon);
-			for (let armour of this.armour)
-				Util.setPrototype(armour, Armour);
 		}
 
 		private getFighter(team: Team)
@@ -25,21 +27,17 @@ namespace Model
 			return team.fighters[this.fighterID];
 		}
 
-		private getAccessories(type: AccessoryType)
-		{
-			return type == AccessoryType.Weapon ? this.weapons : this.armour;
-		}
-
-		private getOccupiedSites(accType: AccessoryType)
+		private getOccupiedSites(itemType: ItemType, team: Team)
 		{
 			let bodyPartIDs: string[] = [];
-			for (let acc of this.getAccessories(accType))
-				bodyPartIDs = bodyPartIDs.concat(acc.bodyPartIDs);
+			for (let itemPos of this.itemPositions)
+				if (team.getItem(itemPos.id).type == itemType)
+					bodyPartIDs = bodyPartIDs.concat(itemPos.bodyPartIDs);
 			return bodyPartIDs;
 		}
 
 		// Returns first available body parts compatible with specified site.
-		private findBodyPartsForSite(accType: AccessoryType, site: Data.Site, team: Team)
+		private findBodyPartsForSite(accType: ItemType, site: Data.Site, team: Team)
 		{
 			let fighter = this.getFighter(team);
 
@@ -48,7 +46,7 @@ namespace Model
 
 			let bodyPartIDs: string[] = [];
 
-			let occupied = this.getOccupiedSites(accType);
+			let occupied = this.getOccupiedSites(accType, team);
 			let speciesData = fighter.getSpeciesData()
 			for (let id in fighter.bodyParts)
 			{
@@ -66,47 +64,30 @@ namespace Model
 			return null;
 		}
 
-		private findBodyPartsForAccessory(accType: AccessoryType, accID: string, team: Team)
+		private findBodyPartsForItem(itemID: string, team: Team)
 		{
-			let data = accType == AccessoryType.Weapon ? team.getWeaponData(accID) : team.getArmourData(accID);
+			let data = team.getItemData(itemID);
 			for (let site of data.sites)
 			{
-				let bodyPartIDs = this.findBodyPartsForSite(accType, site, team);
+				let bodyPartIDs = this.findBodyPartsForSite(team.getItem(itemID).type, site, team);
 				if (bodyPartIDs)
 					return bodyPartIDs;
 			}
 			return null;
 		}
 
-		canAddWeapon(weaponID: string, team: Team)
+		canAddItem(itemID: string, team: Team)
 		{
-			return !!this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponID, team);
+			return !!this.findBodyPartsForItem(itemID, team);
 		}
 
-		canAddArmour(armourID: string, team: Team)
-		{
-			return !!this.findBodyPartsForAccessory(AccessoryType.Armour, armourID, team);
-		}
-
-		addWeapon(weaponID: string, team: Team)
+		addItem(itemID: string, team: Team)
 		{
 			// TODO: Choose site.
-			let bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Weapon, weaponID, team);
+			let bodyPartIDs = this.findBodyPartsForItem(itemID, team);
 			if (bodyPartIDs)
 			{
-				this.weapons.push(new Weapon(weaponID, bodyPartIDs));
-				return;
-			}
-			Util.assert(false);
-		}
-
-		addArmour(armourID: string, team: Team)
-		{
-			// TODO: Choose site.
-			let bodyPartIDs = this.findBodyPartsForAccessory(AccessoryType.Armour, armourID, team);
-			if (bodyPartIDs)
-			{
-				this.armour.push(new Armour(armourID, bodyPartIDs));
+				this.itemPositions.push(new ItemPosition(itemID, bodyPartIDs));
 				return;
 			}
 			Util.assert(false);
@@ -114,10 +95,13 @@ namespace Model
 
 		getBodyPartArmourData(bodyPartID: string, team: Team)
 		{
-			for (let armour of this.armour)
-				for (let id of armour.bodyPartIDs)
-					if (id == bodyPartID)
-						return team.getArmourData(armour.id);
+			for (let itemPos of this.itemPositions)
+			{
+				if (team.getItem(itemPos.id).type == ItemType.Armour)
+					for (let id of itemPos.bodyPartIDs)
+						if (id == bodyPartID)
+							return team.getArmourData(itemPos.id);
+			}
 			return null;
 		}
 	}

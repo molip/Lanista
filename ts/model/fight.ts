@@ -20,13 +20,9 @@ namespace Model
 				let team = this.getTeam();
 				this.loadout = new Loadout(fighterID);
 
-				for (let id in team.armour)
-					if (this.loadout.canAddArmour(id, team))
-						this.loadout.addArmour(id, team);
-
-				for (let id in team.weapons)
-					if (this.loadout.canAddWeapon(id, team))
-						this.loadout.addWeapon(id, team);
+				for (let id in team.items)
+					if (this.loadout.canAddItem(id, team))
+						this.loadout.addItem(id, team);
 			}
 
 			getFighter() 
