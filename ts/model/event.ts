@@ -32,7 +32,8 @@ namespace Model
 			Util.assert(!this.home);
 			let team = new Model.Team();
 			team.fighters[1] = new Model.Person(0, 'man', "Slapper Nuremberg");
-			return new Model.Fight.Side('1', team);
+			let loadout = new Model.Loadout('1');
+			return new Model.Fight.Side(loadout, team);
 		}
 	}
 }

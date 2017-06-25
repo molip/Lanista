@@ -11,23 +11,17 @@ namespace Model
 
 		export class Side
 		{
-			loadout: Loadout;
-
-			constructor(private fighterID: string, private npcTeam: Team)
+			constructor(public loadout: Model.Loadout, private npcTeam: Team)
 			{
 				Util.assert(!npcTeam || npcTeam !== Model.state.team); // Use null for player team.
 
 				let team = this.getTeam();
-				this.loadout = new Loadout(fighterID);
-
-				for (let id in team.items)
-					if (this.loadout.canAddItem(id, team))
-						this.loadout.addItem(id, team);
+				Util.assert(!!team.fighters[loadout.fighterID]);
 			}
 
 			getFighter() 
 			{
-				return this.getTeam().fighters[this.fighterID];
+				return this.getTeam().fighters[this.loadout.fighterID];
 			}
 
 			getTeam()

@@ -84,6 +84,27 @@ namespace View
 			}
 		}
 
+		export class CheckboxCell extends Cell
+		{
+			public checkbox: HTMLInputElement;
+
+			constructor(private handler: (value: boolean) => void)
+			{
+				super(20);
+			}
+
+			getElement(): HTMLTableDataCellElement
+			{
+				this.checkbox = document.createElement('input');
+				this.checkbox.type = 'checkbox';
+				this.checkbox.addEventListener('click', () => { this.handler(this.checkbox.checked); });
+
+				let e = super.getElement();
+				e.appendChild(this.checkbox);
+				return e;
+			}
+		}
+
 		export class Factory
 		{
 			element: HTMLDivElement;

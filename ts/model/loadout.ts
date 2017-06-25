@@ -13,7 +13,7 @@ namespace Model
 	{
 		itemPositions: ItemPosition[] = [];
 
-		constructor(private fighterID: string)
+		constructor(public fighterID: string)
 		{
 		}
 
@@ -91,6 +91,27 @@ namespace Model
 				return;
 			}
 			Util.assert(false);
+		}
+
+		removeItem(itemID: string)
+		{
+			for (let i = 0, itemPos: ItemPosition; itemPos = this.itemPositions[i]; ++i)
+				if (itemPos.id == itemID)
+				{
+					this.itemPositions.splice(i, 1);
+					return;
+				}
+
+			Util.assert(false);
+		}
+
+		hasItemID(id: string)
+		{
+			for (let itemPos of this.itemPositions)
+				if (itemPos.id == id)
+					return true;
+
+			return false;
 		}
 
 		getBodyPartArmourData(bodyPartID: string, team: Team)
