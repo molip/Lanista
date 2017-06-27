@@ -110,6 +110,16 @@ namespace View
 		return currentTransition != null;
 	}
 
+	export function cancelTransition() // Doesn't call handler. 
+	{
+		if (!currentTransition)
+			return;
+
+		window.clearInterval(currentTransition.id);
+		currentTransition = null;
+		setOpacity(1);
+	}
+
 	export function onTransitionTick()
 	{
 		const steps = 20;

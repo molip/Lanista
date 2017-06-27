@@ -87,6 +87,13 @@ namespace Model
 
 		isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
 
+		cancelNight()
+		{
+			Util.assert(this.isNight());
+			this.phase = Phase.Dawn;
+			this.advancePhase();
+		}
+
 		advancePhase()
 		{
 			switch (this.phase)
