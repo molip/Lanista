@@ -98,15 +98,7 @@ namespace Model
 		getAttacks(loadout: Loadout, team: Team)
 		{
 			let attacks: Attack[] = [];
-
-			let speciesData = this.getSpeciesData()
-			for (let id in this.bodyParts)
-			{
-				let part = this.bodyParts[id];
-				let data = speciesData.bodyParts[part.tag];
-				if (data.attack)
-					attacks.push(new Attack(data.attack, id)); // TODO: Check body part health. Also, skip parts with weapon.
-			}
+			let usedBodyParts = new Set<string>();
 
 			for (let itemPos of loadout.itemPositions)
 				if (team.getItem(itemPos.id).type == ItemType.Weapon)
@@ -114,7 +106,22 @@ namespace Model
 					let data = team.getWeaponData(itemPos.id);
 					for (let attack of data.attacks)
 						attacks.push(new Attack(attack, itemPos.bodyPartIDs[0])); // Just use the first body part for the source. 
+
+					for (let bpid of itemPos.bodyPartIDs)
+						usedBodyParts.add(bpid);
 				}
+
+			let speciesData = this.getSpeciesData()
+			for (let id in this.bodyParts)
+			{
+				if (usedBodyParts.has(id))
+					continue;
+
+				let part = this.bodyParts[id];
+				let data = speciesData.bodyParts[part.tag];
+				if (data.attack)
+					attacks.push(new Attack(data.attack, id)); // TODO: Check body part health.
+			}
 
 			return attacks;
 		}
