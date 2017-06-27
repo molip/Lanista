@@ -195,8 +195,15 @@ var Controller;
     }
     Controller.updateHUD = updateHUD;
     function onKeyDown(evt) {
-        if (evt.keyCode == 27)
-            View.Page.hideCurrent();
+        if (evt.keyCode == 27) {
+            if (View.Page.Current) {
+                View.Page.hideCurrent();
+            }
+            else if (View.isTransitioning()) {
+                View.cancelTransition();
+                Model.state.cancelNight();
+            }
+        }
     }
     Controller.onKeyDown = onKeyDown;
 })(Controller || (Controller = {}));
@@ -470,35 +477,6 @@ var Data;
 "use strict";
 var Model;
 (function (Model) {
-    class Accessory {
-        constructor(tag, bodyPartIDs) {
-            this.tag = tag;
-            this.bodyPartIDs = bodyPartIDs;
-        }
-    }
-    Model.Accessory = Accessory;
-    class Weapon extends Accessory {
-        constructor(tag, bodyPartIDs) {
-            super(tag, bodyPartIDs);
-        }
-    }
-    Model.Weapon = Weapon;
-    class Armour extends Accessory {
-        constructor(tag, bodyPartIDs) {
-            super(tag, bodyPartIDs);
-        }
-    }
-    Model.Armour = Armour;
-})(Model || (Model = {}));
-"use strict";
-var Model;
-(function (Model) {
-    var AccessoryType;
-    (function (AccessoryType) {
-        AccessoryType[AccessoryType["Weapon"] = 0] = "Weapon";
-        AccessoryType[AccessoryType["Armour"] = 1] = "Armour";
-    })(AccessoryType = Model.AccessoryType || (Model.AccessoryType = {}));
-    ;
     class BodyPart {
         constructor(id, tag, index, health) {
             this.id = id;
@@ -514,7 +492,7 @@ var Model;
         }
         // Gets tag of armour or weapon site, if present.
         getSiteTag(accType, speciesData) {
-            if (accType == AccessoryType.Armour)
+            if (accType == Model.ItemType.Armour)
                 return this.tag;
             let site = this.getData(speciesData).weaponSite;
             return site ? site.type : null;
@@ -578,19 +556,25 @@ var Model;
             }
             return rows;
         }
-        getAttacks(loadout) {
+        getAttacks(loadout, team) {
             let attacks = [];
+            let usedBodyParts = new Set();
+            for (let itemPos of loadout.itemPositions)
+                if (team.getItem(itemPos.id).type == Model.ItemType.Weapon) {
+                    let data = team.getWeaponData(itemPos.id);
+                    for (let attack of data.attacks)
+                        attacks.push(new Attack(attack, itemPos.bodyPartIDs[0])); // Just use the first body part for the source. 
+                    for (let bpid of itemPos.bodyPartIDs)
+                        usedBodyParts.add(bpid);
+                }
             let speciesData = this.getSpeciesData();
             for (let id in this.bodyParts) {
+                if (usedBodyParts.has(id))
+                    continue;
                 let part = this.bodyParts[id];
                 let data = speciesData.bodyParts[part.tag];
                 if (data.attack)
-                    attacks.push(new Attack(data.attack, id)); // TODO: Check body part health. Also, skip parts with weapon. 
-            }
-            for (let weapon of loadout.weapons) {
-                let data = Data.Weapons.Types[weapon.tag];
-                for (let attack of data.attacks)
-                    attacks.push(new Attack(attack, weapon.bodyPartIDs[0])); // Just use the first body part for the source. 
+                    attacks.push(new Attack(data.attack, id)); // TODO: Check body part health.
             }
             return attacks;
         }
@@ -766,9 +750,12 @@ var Model;
         getDescription() {
             return this.home ? "Home Fight" : this.name; // TODO: Specialise classes.
         }
-        createNPC() {
+        createNPCSide() {
             Util.assert(!this.home);
-            return new Model.Person(0, 'man', "Slapper Nuremberg");
+            let team = new Model.Team();
+            team.fighters[1] = new Model.Person(0, 'man', "Slapper Nuremberg");
+            let loadout = new Model.Loadout('1');
+            return new Model.Fight.Side(loadout, team);
         }
     }
     Model.FightEvent = FightEvent;
@@ -789,63 +776,67 @@ var Model;
             }
         }
         Fight.AttackResult = AttackResult;
-        class Team {
-            constructor(fighter) {
-                this.fighter = fighter;
+        class Side {
+            constructor(loadout, npcTeam) {
+                this.loadout = loadout;
+                this.npcTeam = npcTeam;
+                Util.assert(!npcTeam || npcTeam !== Model.state.team); // Use null for player team.
+                let team = this.getTeam();
+                Util.assert(!!team.fighters[loadout.fighterID]);
             }
             getFighter() {
-                return typeof this.fighter === "string" ? Model.state.team.fighters[this.fighter] : this.fighter;
+                return this.getTeam().fighters[this.loadout.fighterID];
+            }
+            getTeam() {
+                return this.npcTeam ? this.npcTeam : Model.state.team;
             }
             onLoad() {
-                if (typeof this.fighter !== "string")
-                    Model.Fighter.initPrototype(this.fighter);
+                if (this.npcTeam) {
+                    Util.setPrototype(this.npcTeam, Model.Team);
+                    this.npcTeam.onLoad();
+                }
+                Util.setPrototype(this.loadout, Model.Loadout);
+                this.loadout.onLoad();
             }
         }
-        Fight.Team = Team;
+        Fight.Side = Side;
         class State {
-            constructor(teamA, teamB) {
-                this.teams = [teamA, teamB];
+            constructor(sideA, sideB) {
+                this.sides = [sideA, sideB];
                 this.text = '';
-                this.nextTeamIndex = 0;
+                this.nextSideIndex = 0;
                 this.steps = 0;
                 this.finished = false;
-                this.loadouts.push(new Model.Loadout(teamA.getFighter()));
-                this.loadouts.push(new Model.Loadout(teamB.getFighter()));
             }
             onLoad() {
-                for (let team of this.teams) {
-                    Util.setPrototype(team, Team);
-                    team.onLoad();
-                }
-                for (let loadout of this.loadouts) {
-                    Util.setPrototype(loadout, Model.Loadout);
-                    loadout.onLoad();
+                for (let side of this.sides) {
+                    Util.setPrototype(side, Side);
+                    side.onLoad();
                 }
             }
             getFighter(index) {
-                return this.teams[index].getFighter();
+                return this.sides[index].getFighter();
             }
             step() {
-                let attackerIndex = this.nextTeamIndex;
-                this.nextTeamIndex = (this.nextTeamIndex + 1) % this.teams.length;
-                let defenderIndex = this.nextTeamIndex;
-                let result = this.attack(attackerIndex, defenderIndex);
+                let attackerSide = this.sides[this.nextSideIndex];
+                this.nextSideIndex = (this.nextSideIndex + 1) % this.sides.length;
+                let defenderSide = this.sides[this.nextSideIndex];
+                let result = this.attack(attackerSide, defenderSide);
                 this.text += result.description + '<br>';
-                this.finished = this.getFighter(defenderIndex).isDead();
+                this.finished = defenderSide.getFighter().isDead();
                 Model.saveState();
                 return result;
             }
-            attack(attackerIndex, defenderIndex) {
-                let attacker = this.getFighter(attackerIndex);
-                let defender = this.getFighter(defenderIndex);
-                let attacks = attacker.getAttacks(this.loadouts[attackerIndex]);
+            attack(attackerSide, defenderSide) {
+                let attacker = attackerSide.getFighter();
+                let defender = defenderSide.getFighter();
+                let attacks = attacker.getAttacks(attackerSide.loadout, attackerSide.getTeam());
                 let attack = attacks[Util.getRandomInt(attacks.length)];
                 let defenderSpeciesData = defender.getSpeciesData();
                 let targetID = defender.chooseRandomBodyPart();
                 let target = defender.bodyParts[targetID];
                 let targetData = target.getData(defenderSpeciesData);
-                let armour = this.loadouts[defenderIndex].getBodyPartArmour(target.id);
-                let armourData = armour ? Data.Armour.Types[armour.tag] : null;
+                let armourData = defenderSide.loadout.getBodyPartArmourData(target.id, defenderSide.getTeam());
                 let defense = armourData ? armourData.getDefense(attack.data.type) : 0;
                 let damage = attack.data.damage * (100 - defense) / 100;
                 let oldHealth = target.health;
@@ -858,6 +849,101 @@ var Model;
         }
         Fight.State = State;
     })(Fight = Model.Fight || (Model.Fight = {}));
+})(Model || (Model = {}));
+"use strict";
+var Model;
+(function (Model) {
+    class ItemPosition {
+        constructor(id, bodyPartIDs) {
+            this.id = id;
+            this.bodyPartIDs = bodyPartIDs;
+        }
+    }
+    Model.ItemPosition = ItemPosition;
+    class Loadout {
+        constructor(fighterID) {
+            this.fighterID = fighterID;
+            this.itemPositions = [];
+        }
+        onLoad() {
+        }
+        getFighter(team) {
+            Util.assert(this.fighterID in team.fighters);
+            return team.fighters[this.fighterID];
+        }
+        getOccupiedSites(itemType, team) {
+            let bodyPartIDs = [];
+            for (let itemPos of this.itemPositions)
+                if (team.getItem(itemPos.id).type == itemType)
+                    bodyPartIDs = bodyPartIDs.concat(itemPos.bodyPartIDs);
+            return bodyPartIDs;
+        }
+        // Returns first available body parts compatible with specified site.
+        findBodyPartsForSite(accType, site, team) {
+            let fighter = this.getFighter(team);
+            if (site.species != fighter.species)
+                return null;
+            let bodyPartIDs = [];
+            let occupied = this.getOccupiedSites(accType, team);
+            let speciesData = fighter.getSpeciesData();
+            for (let id in fighter.bodyParts) {
+                let part = fighter.bodyParts[id];
+                if (occupied.indexOf(id) < 0) {
+                    if (part.getSiteTag(accType, speciesData) == site.type) {
+                        bodyPartIDs.push(id);
+                        if (bodyPartIDs.length == site.count)
+                            return bodyPartIDs;
+                    }
+                }
+            }
+            return null;
+        }
+        findBodyPartsForItem(itemID, team) {
+            let data = team.getItemData(itemID);
+            for (let site of data.sites) {
+                let bodyPartIDs = this.findBodyPartsForSite(team.getItem(itemID).type, site, team);
+                if (bodyPartIDs)
+                    return bodyPartIDs;
+            }
+            return null;
+        }
+        canAddItem(itemID, team) {
+            return !!this.findBodyPartsForItem(itemID, team);
+        }
+        addItem(itemID, team) {
+            // TODO: Choose site.
+            let bodyPartIDs = this.findBodyPartsForItem(itemID, team);
+            if (bodyPartIDs) {
+                this.itemPositions.push(new ItemPosition(itemID, bodyPartIDs));
+                return;
+            }
+            Util.assert(false);
+        }
+        removeItem(itemID) {
+            for (let i = 0, itemPos; itemPos = this.itemPositions[i]; ++i)
+                if (itemPos.id == itemID) {
+                    this.itemPositions.splice(i, 1);
+                    return;
+                }
+            Util.assert(false);
+        }
+        hasItemID(id) {
+            for (let itemPos of this.itemPositions)
+                if (itemPos.id == id)
+                    return true;
+            return false;
+        }
+        getBodyPartArmourData(bodyPartID, team) {
+            for (let itemPos of this.itemPositions) {
+                if (team.getItem(itemPos.id).type == Model.ItemType.Armour)
+                    for (let id of itemPos.bodyPartIDs)
+                        if (id == bodyPartID)
+                            return team.getArmourData(itemPos.id);
+            }
+            return null;
+        }
+    }
+    Model.Loadout = Loadout;
 })(Model || (Model = {}));
 "use strict";
 var Model;
@@ -912,7 +998,7 @@ var Model;
             Util.assert(this.phase == Phase.Day || this.phase == Phase.Fight);
             let newTime = (this.getDay() + 1) * minutesPerDay;
             let changed = this.addMinutes(newTime - this.time, doWork);
-            this.phase = Phase.Dawn;
+            this.phase = Phase.Dusk;
             Model.saveState();
             return changed;
         }
@@ -927,6 +1013,11 @@ var Model;
             return changed;
         }
         isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
+        cancelNight() {
+            Util.assert(this.isNight());
+            this.phase = Phase.Dawn;
+            this.advancePhase();
+        }
         advancePhase() {
             switch (this.phase) {
                 case Phase.Dawn:
@@ -1029,10 +1120,10 @@ var Model;
             this.team.addPerson(tag);
             Model.saveState();
         }
-        startFight(teamA, teamB) {
+        startFight(sideA, sideB) {
             Util.assert(this.fight == null);
             Util.assert(this.phase == Phase.Event);
-            this.fight = new Model.Fight.State(teamA, teamB);
+            this.fight = new Model.Fight.State(sideA, sideB);
             this.phase = Phase.Fight;
             Model.saveState();
         }
@@ -1043,7 +1134,7 @@ var Model;
             this.skipToNextDay(false);
         }
     }
-    State.key = "state.v17";
+    State.key = "state.v18";
     Model.State = State;
     function init() {
         let str = localStorage.getItem(State.key);
@@ -1100,10 +1191,36 @@ var Model;
 "use strict";
 var Model;
 (function (Model) {
+    var ItemType;
+    (function (ItemType) {
+        ItemType[ItemType["Weapon"] = 0] = "Weapon";
+        ItemType[ItemType["Armour"] = 1] = "Armour";
+    })(ItemType = Model.ItemType || (Model.ItemType = {}));
+    ;
+    class Item {
+        constructor(type, tag) {
+            this.type = type;
+            this.tag = tag;
+        }
+    }
+    Model.Item = Item;
     class Team {
         constructor() {
             this.fighters = {};
+            this.items = {};
             this.nextFighterID = 1;
+            this.nextItemID = 1;
+            this.addItem(ItemType.Armour, 'chestplate');
+            this.addItem(ItemType.Armour, 'chestplate');
+            this.addItem(ItemType.Armour, 'helmet');
+            this.addItem(ItemType.Armour, 'helmet');
+            this.addItem(ItemType.Armour, 'leg bits');
+            this.addItem(ItemType.Armour, 'leg bits');
+            this.addItem(ItemType.Armour, 'arm bits');
+            this.addItem(ItemType.Armour, 'arm bits');
+            this.addItem(ItemType.Weapon, 'halberd');
+            this.addItem(ItemType.Weapon, 'sword');
+            this.addItem(ItemType.Weapon, 'sword');
         }
         onLoad() {
             for (let id in this.fighters) {
@@ -1121,6 +1238,12 @@ var Model;
             Util.assert(tag in Data.People.Types);
             this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
             ++this.nextFighterID;
+        }
+        addItem(type, tag) {
+            let data = type == ItemType.Armour ? Data.Armour.Types : Data.Weapons.Types;
+            Util.assert(tag in data);
+            this.items[this.nextItemID] = new Item(type, tag);
+            ++this.nextItemID;
         }
         getPeople() {
             let people = [];
@@ -1141,6 +1264,26 @@ var Model;
             for (let id in this.fighters)
                 ids.push(id);
             return ids;
+        }
+        getItem(id) {
+            Util.assert(id in this.items);
+            return this.items[id];
+        }
+        getItemData(id) {
+            let item = this.getItem(id);
+            let data = item.type == ItemType.Armour ? Data.Armour.Types : Data.Weapons.Types;
+            Util.assert(item.tag in data);
+            return data[item.tag];
+        }
+        getArmourData(id) {
+            let data = this.getItemData(id);
+            Util.assert(data != null);
+            return data;
+        }
+        getWeaponData(id) {
+            let data = this.getItemData(id);
+            Util.assert(data != null);
+            return data;
         }
         getUniqueFighterName(name) {
             let find = (name) => {
@@ -1390,38 +1533,15 @@ var View;
 "use strict";
 var View;
 (function (View) {
-    class ArenaPage extends View.Page {
-        constructor(event) {
-            super('Choose Fighters');
-            this.onStartButton = () => {
-                const fighterIDs = Model.state.team.getFighterIDs();
-                if (this.event.home)
-                    Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(fighterIDs[this.selectB.selectedIndex]));
-                else
-                    Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(this.event.createNPC()));
-                View.Page.hideCurrent();
-            };
-            this.onFightersChanged = () => {
-                this.updateStartButton();
-            };
-            this.event = event;
-            Util.assert(!!this.event);
-            let topDiv = document.createElement('div');
-            this.selectA = this.makeSelect();
-            topDiv.appendChild(this.selectA);
-            if (this.event.home) {
-                this.selectB = this.makeSelect();
-                if (this.selectB.options.length > 1)
-                    this.selectB.selectedIndex = 1;
-                topDiv.appendChild(this.selectB);
-            }
-            this.button = document.createElement('button');
-            this.button.addEventListener('click', this.onStartButton);
-            topDiv.appendChild(this.button);
-            this.div.appendChild(topDiv);
-            this.updateStartButton();
-        }
-        makeSelect() {
+    class FighterUI {
+        constructor(index, arenaPage) {
+            this.loadout = null;
+            this.itemIDs = [];
+            this.checkboxCells = [];
+            this.other = null;
+            this.div = document.createElement('div');
+            this.div.id = 'fighter_ui_div';
+            // Fighter select.
             let makeOption = function (id) {
                 let option = document.createElement('option');
                 option.text = Model.state.team.fighters[id].name;
@@ -1429,11 +1549,106 @@ var View;
                     option.text += ' (x_x)';
                 return option;
             };
-            let select = document.createElement('select');
-            select.addEventListener('change', this.onFightersChanged);
+            this.select = document.createElement('select');
+            this.select.addEventListener('change', () => { arenaPage.onFighterSelected(index); });
             for (let id in Model.state.team.fighters)
-                select.options.add(makeOption(id));
-            return select;
+                this.select.options.add(makeOption(id));
+            this.div.appendChild(this.select);
+            // Item table.
+            let tableFactory = new View.Table.Factory();
+            tableFactory.addColumnHeader('Item');
+            tableFactory.addColumnHeader('Equip');
+            for (let id in Model.state.team.items) {
+                let item = Model.state.team.items[id];
+                let handler = (value) => { arenaPage.onItemChecked(index, id, value); };
+                let checkboxCell = new View.Table.CheckboxCell(handler);
+                let cells = [new View.Table.TextCell(Model.state.team.getItemData(id).name), checkboxCell];
+                tableFactory.addRow(cells, false, null);
+                this.itemIDs.push(id);
+                this.checkboxCells.push(checkboxCell);
+            }
+            this.div.appendChild(tableFactory.element);
+        }
+        getOtherLoadout() {
+            return this.other ? this.other.loadout : null;
+        }
+        getFighterID() {
+            return this.select.selectedIndex < 0 ? null : Model.state.team.getFighterIDs()[this.select.selectedIndex];
+        }
+        getFighter() {
+            let id = this.getFighterID();
+            return id ? Model.state.team.fighters[id] : null;
+        }
+        updateFighter() {
+            if (this.select.selectedIndex < 0) {
+                this.loadout = null;
+                return;
+            }
+            let fighterID = Model.state.team.getFighterIDs()[this.select.selectedIndex];
+            let otherLoadout = this.getOtherLoadout();
+            if (otherLoadout && otherLoadout.fighterID == fighterID)
+                this.loadout = otherLoadout;
+            else
+                this.loadout = new Model.Loadout(fighterID);
+        }
+        equipItem(itemID, value) {
+            if (value)
+                this.loadout.addItem(itemID, Model.state.team);
+            else
+                this.loadout.removeItem(itemID);
+        }
+        updateItems() {
+            for (let i = 0; i < this.checkboxCells.length; ++i) {
+                let checkbox = this.checkboxCells[i].checkbox;
+                let itemID = this.itemIDs[i];
+                let otherLoadout = this.getOtherLoadout();
+                checkbox.checked = this.loadout && this.loadout.hasItemID(itemID);
+                checkbox.disabled = !this.loadout || (!checkbox.checked && ((otherLoadout && otherLoadout.hasItemID(itemID)) || !this.loadout.canAddItem(itemID, Model.state.team)));
+            }
+        }
+    }
+    class ArenaPage extends View.Page {
+        constructor(event) {
+            super('Choose Fighters');
+            this.fighterUIs = [];
+            this.onStartButton = () => {
+                let sideA = new Model.Fight.Side(this.fighterUIs[0].loadout, null);
+                let sideB = this.event.home ? new Model.Fight.Side(this.fighterUIs[1].loadout, null) : this.event.createNPCSide();
+                Model.state.startFight(sideA, sideB);
+                View.Page.hideCurrent();
+            };
+            this.onFighterSelected = (fighterIndex) => {
+                this.fighterUIs[fighterIndex].updateFighter();
+                this.updateStartButton();
+                this.updateItems();
+            };
+            this.onItemChecked = (fighterIndex, itemID, value) => {
+                this.fighterUIs[fighterIndex].equipItem(itemID, value);
+                this.updateItems();
+            };
+            this.event = event;
+            Util.assert(!!this.event);
+            this.addFighterUI();
+            if (this.event.home)
+                this.addFighterUI();
+            this.button = document.createElement('button');
+            this.button.addEventListener('click', this.onStartButton);
+            this.div.appendChild(this.button);
+            this.updateStartButton();
+        }
+        addFighterUI() {
+            let index = this.fighterUIs.length;
+            let fighterUI = new FighterUI(index, this);
+            this.fighterUIs.push(fighterUI);
+            this.div.appendChild(fighterUI.div);
+            if (index == 1) {
+                if (fighterUI.select.options.length > 1)
+                    fighterUI.select.selectedIndex = 1;
+                this.fighterUIs[0].other = fighterUI;
+                fighterUI.other = this.fighterUIs[0];
+            }
+            fighterUI.updateFighter();
+            fighterUI.updateItems();
         }
         onShow() {
         }
@@ -1442,13 +1657,9 @@ var View;
                 Model.state.advancePhase();
             return true;
         }
-        getFighters() {
-            let fighterIDs = Model.state.team.getFighterIDs();
-            let fighters = [];
-            fighters.push(this.selectA.selectedIndex < 0 ? null : Model.state.team.fighters[fighterIDs[this.selectA.selectedIndex]]);
-            if (this.event.home)
-                fighters.push(this.selectB.selectedIndex < 0 ? null : Model.state.team.fighters[fighterIDs[this.selectB.selectedIndex]]);
-            return fighters;
+        updateItems() {
+            for (let ui of this.fighterUIs)
+                ui.updateItems();
         }
         updateStartButton() {
             if (Model.state.fight) {
@@ -1457,11 +1668,12 @@ var View;
                 return;
             }
             this.button.innerText = 'Start';
-            let fighters = this.getFighters();
-            if (this.event.home)
-                this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
-            else
-                this.button.disabled = !fighters[0] || fighters[0].isDead();
+            let fighterA = this.fighterUIs[0].getFighter();
+            this.button.disabled = !fighterA || fighterA.isDead();
+            if (!this.button.disabled && this.event.home) {
+                let fighterB = this.fighterUIs[1].getFighter();
+                this.button.disabled = !fighterB || fighterB.isDead() || fighterA === fighterB;
+            }
         }
     }
     View.ArenaPage = ArenaPage;
@@ -1479,8 +1691,6 @@ var View;
             tableFactory.addColumnHeader('Image', 30);
             tableFactory.addColumnHeader('Part', 10);
             tableFactory.addColumnHeader('Health', 10);
-            tableFactory.addColumnHeader('Armour', 10);
-            tableFactory.addColumnHeader('Weapon', 10);
             tableFactory.addColumnHeader('Activity', 10);
             const activityItems = [];
             for (let id in Data.Activities.Types)
@@ -1765,9 +1975,9 @@ var View;
         }
         doAttack() {
             Util.assert(!!Model.state.fight);
-            let attackerIndex = Model.state.fight.nextTeamIndex;
+            let attackerIndex = Model.state.fight.nextSideIndex;
             let result = Model.state.fight.step();
-            let defenderIndex = Model.state.fight.nextTeamIndex;
+            let defenderIndex = Model.state.fight.nextSideIndex;
             this.update();
             if (Model.state.fight.finished)
                 this.stopFight();
@@ -1915,8 +2125,6 @@ var View;
             tableFactory.addColumnHeader('Image', 30);
             tableFactory.addColumnHeader('Part', 10);
             tableFactory.addColumnHeader('Health', 10);
-            tableFactory.addColumnHeader('Armour', 15);
-            tableFactory.addColumnHeader('Weapon', 15);
             for (let animal of Model.state.team.getAnimals()) {
                 let cells = [new View.Table.TextCell('<h4>' + animal.name + '</h4>'), new View.Table.ImageCell(animal.image)];
                 for (let c of Util.formatRows(animal.getStatus()))
@@ -2164,6 +2372,21 @@ var View;
             }
         }
         Table.SelectCell = SelectCell;
+        class CheckboxCell extends Cell {
+            constructor(handler) {
+                super(20);
+                this.handler = handler;
+            }
+            getElement() {
+                this.checkbox = document.createElement('input');
+                this.checkbox.type = 'checkbox';
+                this.checkbox.addEventListener('click', () => { this.handler(this.checkbox.checked); });
+                let e = super.getElement();
+                e.appendChild(this.checkbox);
+                return e;
+            }
+        }
+        Table.CheckboxCell = CheckboxCell;
         class Factory {
             constructor() {
                 this.element = document.createElement('div');
@@ -2286,6 +2509,14 @@ var View;
         return currentTransition != null;
     }
     View.isTransitioning = isTransitioning;
+    function cancelTransition() {
+        if (!currentTransition)
+            return;
+        window.clearInterval(currentTransition.id);
+        currentTransition = null;
+        setOpacity(1);
+    }
+    View.cancelTransition = cancelTransition;
     function onTransitionTick() {
         const steps = 20;
         Util.assert(currentTransition != null);
@@ -2307,89 +2538,3 @@ var View;
     }
     View.enable = enable;
 })(View || (View = {}));
-"use strict";
-var Model;
-(function (Model) {
-    class Loadout {
-        constructor(fighter) {
-            this.fighter = fighter;
-            this.weapons = [];
-            this.armour = [];
-        }
-        onLoad() {
-            for (let weapon of this.weapons)
-                Util.setPrototype(weapon, Model.Weapon);
-            for (let armour of this.armour)
-                Util.setPrototype(armour, Model.Armour);
-        }
-        getAccessories(type) {
-            return type == Model.AccessoryType.Weapon ? this.weapons : this.armour;
-        }
-        getOccupiedSites(accType) {
-            let bodyPartIDs = [];
-            for (let acc of this.getAccessories(accType))
-                bodyPartIDs = bodyPartIDs.concat(acc.bodyPartIDs);
-            return bodyPartIDs;
-        }
-        // Returns first available body parts compatible with specified site. 
-        findBodyPartsForSite(accType, site) {
-            if (site.species != this.fighter.species)
-                return null;
-            let bodyPartIDs = [];
-            let occupied = this.getOccupiedSites(accType);
-            let speciesData = this.fighter.getSpeciesData();
-            for (let id in this.fighter.bodyParts) {
-                let part = this.fighter.bodyParts[id];
-                if (occupied.indexOf(id) < 0) {
-                    if (part.getSiteTag(accType, speciesData) == site.type) {
-                        bodyPartIDs.push(id);
-                        if (bodyPartIDs.length == site.count)
-                            return bodyPartIDs;
-                    }
-                }
-            }
-            return null;
-        }
-        findBodyPartsForAccessory(accType, accTag) {
-            let data = accType == Model.AccessoryType.Weapon ? Data.Weapons.Types[accTag] : Data.Armour.Types[accTag];
-            for (let site of data.sites) {
-                let bodyPartIDs = this.findBodyPartsForSite(accType, site);
-                if (bodyPartIDs)
-                    return bodyPartIDs;
-            }
-            return null;
-        }
-        canAddWeapon(weaponTag) {
-            return !!this.findBodyPartsForAccessory(Model.AccessoryType.Weapon, weaponTag);
-        }
-        canAddArmour(armourTag) {
-            return !!this.findBodyPartsForAccessory(Model.AccessoryType.Armour, armourTag);
-        }
-        addWeapon(weaponTag) {
-            // TODO: Choose site.
-            let bodyPartIDs = this.findBodyPartsForAccessory(Model.AccessoryType.Weapon, weaponTag);
-            if (bodyPartIDs) {
-                this.weapons.push(new Model.Weapon(weaponTag, bodyPartIDs));
-                return;
-            }
-            Util.assert(false);
-        }
-        addArmour(armourTag) {
-            // TODO: Choose site.
-            let bodyPartIDs = this.findBodyPartsForAccessory(Model.AccessoryType.Armour, armourTag);
-            if (bodyPartIDs) {
-                this.armour.push(new Model.Armour(armourTag, bodyPartIDs));
-                return;
-            }
-            Util.assert(false);
-        }
-        getBodyPartArmour(bodyPartID) {
-            for (let armour of this.armour)
-                for (let id of armour.bodyPartIDs)
-                    if (id == bodyPartID)
-                        return armour;
-            return null;
-        }
-    }
-    Model.Loadout = Loadout;
-})(Model || (Model = {}));
