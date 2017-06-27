@@ -64,7 +64,7 @@ namespace Model
 
 			let newTime = (this.getDay() + 1) * minutesPerDay;
 			let changed = this.addMinutes(newTime - this.time, doWork);
-			this.phase = Phase.Dawn;
+			this.phase = Phase.Dusk;
 			Model.saveState();
 			return changed;
 		}
