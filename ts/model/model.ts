@@ -8,16 +8,15 @@ namespace Model
 
 	export class State
 	{
-		static readonly key: string = "state.v16"
+		static readonly key: string = "state.v18";
 
 		private money = 1000;
 		phase: Phase = Phase.Dawn;
 		buildings = new Buildings.State();
+		team: Team = new Team();
 		fight: Fight.State = null;
-		fighters: { [id: string]: Fighter } = {};
 		news: News[] = [];
 		events: Event[] = [];
-		nextFighterID = 1;
 		time: number = 0; // Minutes.
 		speed: number = 1; // Game minutes per second. 
 
@@ -41,12 +40,8 @@ namespace Model
 				this.fight.onLoad();
 			}
 
-			for (let id in this.fighters)
-			{
-				let fighter = this.fighters[id];
-				Fighter.initPrototype(fighter);
-				fighter.onLoad();
-			}
+			Util.setPrototype(this.team, Team);
+			this.team.onLoad();
 
 			for (let event of this.events)
 				Event.initPrototype(event);
@@ -69,7 +64,7 @@ namespace Model
 
 			let newTime = (this.getDay() + 1) * minutesPerDay;
 			let changed = this.addMinutes(newTime - this.time, doWork);
-			this.phase = Phase.Dawn;
+			this.phase = Phase.Dusk;
 			Model.saveState();
 			return changed;
 		}
@@ -91,6 +86,13 @@ namespace Model
 		}
 
 		isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
+
+		cancelNight()
+		{
+			Util.assert(this.isNight());
+			this.phase = Phase.Dawn;
+			this.advancePhase();
+		}
 
 		advancePhase()
 		{
@@ -148,9 +150,9 @@ namespace Model
 						fighter.addExperience(activity, hours);
 			};
 
-			for (let id in this.fighters)
+			for (let id in this.team.fighters)
 			{
-				let fighter = this.fighters[id];
+				let fighter = this.team.fighters[id];
 				let activity = fighter.getActivity();
 				Util.assert(activity in Data.Activities.Types);
 				if (Data.Activities.Types[activity].job)
@@ -222,8 +224,7 @@ namespace Model
 		{
 			Util.assert(tag in Data.Animals.Types);
 			this.spendMoney(Data.Animals.Types[tag].cost);
-			this.fighters[this.nextFighterID] = new Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
-			++this.nextFighterID;
+			this.team.addAnimal(tag);
 			Model.saveState();
 		}
 
@@ -231,42 +232,15 @@ namespace Model
 		{
 			Util.assert(tag in Data.People.Types);
 			this.spendMoney(Data.People.Types[tag].cost);
-			this.fighters[this.nextFighterID] = new Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
-			++this.nextFighterID;
+			this.team.addPerson(tag);
 			Model.saveState();
 		}
 
-		getPeople()
-		{
-			let people: Person[] = [];
-			for (let id in this.fighters)
-				if (this.fighters[id] instanceof Person)
-					people.push(this.fighters[id]);
-			return people;
-		}
-
-		getAnimals()
-		{
-			let animals: Animal[] = [];
-			for (let id in this.fighters)
-				if (this.fighters[id] instanceof Animal)
-					animals.push(this.fighters[id]);
-			return animals;
-		}
-
-		getFighterIDs()
-		{
-			let ids: string[] = [];
-			for (let id in this.fighters)
-				ids.push(id);
-			return ids;
-		}
-
-		startFight(teamA: Fight.Team, teamB: Fight.Team)
+		startFight(sideA: Fight.Side, sideB: Fight.Side)
 		{
 			Util.assert(this.fight == null);
 			Util.assert(this.phase == Phase.Event);
-			this.fight = new Fight.State(teamA, teamB);
+			this.fight = new Fight.State(sideA, sideB);
 			this.phase = Phase.Fight;
 			Model.saveState();
 		}
@@ -278,28 +252,6 @@ namespace Model
 
 			this.fight = null;
 			this.skipToNextDay(false);
-		}
-
-		private getUniqueFighterName(name: string)
-		{
-			let find = (name: string) =>
-			{
-				for (let id in this.fighters)
-					if (this.fighters[id].name == name)
-						return true;
-				return false;
-			}
-
-			let tryName = '';
-
-			let i = 1;
-			while (true)
-			{
-				let tryName = name + ' ' + i.toString();
-				if (!find(tryName))
-					return tryName;
-				++i;
-			}
 		}
 	}
 

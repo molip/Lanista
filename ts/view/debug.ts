@@ -62,8 +62,8 @@ namespace View
 
 		onHeal = () =>
 		{
-			for (let id in Model.state.fighters)
-				Model.state.fighters[id].resetHealth();
+			for (let id in Model.state.team.fighters)
+				Model.state.team.fighters[id].resetHealth();
 
 			Page.hideCurrent();
 		}

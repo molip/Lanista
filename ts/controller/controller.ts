@@ -202,7 +202,17 @@ namespace Controller
 
 	export function onKeyDown(evt: KeyboardEvent)
 	{
-		if (evt.keyCode == 27)
-			View.Page.hideCurrent();
+		if (evt.keyCode == 27) // Escape.
+		{
+			if (View.Page.Current)
+			{
+				View.Page.hideCurrent();
+			}
+			else if (View.isTransitioning())
+			{
+				View.cancelTransition();
+				Model.state.cancelNight();
+			}
+		}
 	}
 }

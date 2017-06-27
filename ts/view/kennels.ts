@@ -16,10 +16,8 @@ namespace View
 
 			tableFactory.addColumnHeader('Part', 10);
 			tableFactory.addColumnHeader('Health', 10);
-			tableFactory.addColumnHeader('Armour', 15);
-			tableFactory.addColumnHeader('Weapon', 15);
 
-			for (let animal of Model.state.getAnimals())
+			for (let animal of Model.state.team.getAnimals())
 			{
 				let cells = [new Table.TextCell('<h4>' + animal.name + '</h4>'), new Table.ImageCell(animal.image)];
 

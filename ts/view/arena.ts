@@ -3,11 +3,120 @@
 
 namespace View 
 {
+	class FighterUI
+	{
+		div: HTMLDivElement;
+		select: HTMLSelectElement;
+		loadout: Model.Loadout = null;
+		itemIDs: string[] = [];
+		checkboxCells: Table.CheckboxCell[] = [];
+		other: FighterUI = null;
+
+		constructor(index: number, arenaPage: ArenaPage)
+		{
+			this.div = document.createElement('div');
+			this.div.id = 'fighter_ui_div';
+
+			// Fighter select.
+
+			let makeOption = function (id: string)
+			{
+				let option = document.createElement('option');
+				option.text = Model.state.team.fighters[id].name;
+				if (Model.state.team.fighters[id].isDead())
+					option.text += ' (x_x)';
+				return option;
+			};
+
+			this.select = document.createElement('select');
+			this.select.addEventListener('change', () => { arenaPage.onFighterSelected(index); });
+			for (let id in Model.state.team.fighters)
+				this.select.options.add(makeOption(id));
+
+			this.div.appendChild(this.select);
+
+			// Item table.
+
+			let tableFactory = new Table.Factory();
+
+			tableFactory.addColumnHeader('Item');
+			tableFactory.addColumnHeader('Equip');
+
+			for (let id in Model.state.team.items)
+			{
+				let item = Model.state.team.items[id];
+				let handler = (value: boolean) => { arenaPage.onItemChecked(index, id, value); }
+				let checkboxCell = new Table.CheckboxCell(handler);
+				let cells = [new Table.TextCell(Model.state.team.getItemData(id).name), checkboxCell];
+				tableFactory.addRow(cells, false, null);
+
+				this.itemIDs.push(id);
+				this.checkboxCells.push(checkboxCell);
+			}
+
+			this.div.appendChild(tableFactory.element);
+		}
+
+		private getOtherLoadout()
+		{
+			return this.other ? this.other.loadout : null;
+		}
+
+		getFighterID()
+		{
+			return this.select.selectedIndex < 0 ? null : Model.state.team.getFighterIDs()[this.select.selectedIndex];
+		}
+
+		getFighter()
+		{
+			let id = this.getFighterID();
+			return id ? Model.state.team.fighters[id] : null;
+		}
+
+		updateFighter()
+		{
+			if (this.select.selectedIndex < 0)
+			{
+				this.loadout = null;
+				return;
+			}
+
+			let fighterID = Model.state.team.getFighterIDs()[this.select.selectedIndex];
+
+			let otherLoadout = this.getOtherLoadout();
+			if (otherLoadout && otherLoadout.fighterID == fighterID)
+				this.loadout = otherLoadout;
+			else
+				this.loadout = new Model.Loadout(fighterID);
+		}
+
+		equipItem(itemID: string, value: boolean)
+		{
+			if (value)
+				this.loadout.addItem(itemID, Model.state.team);
+			else
+				this.loadout.removeItem(itemID);
+		}
+
+		updateItems()
+		{
+			for (let i = 0; i < this.checkboxCells.length; ++i)
+			{
+				let checkbox = this.checkboxCells[i].checkbox;
+				let itemID = this.itemIDs[i];
+				let otherLoadout = this.getOtherLoadout();
+
+				checkbox.checked = this.loadout && this.loadout.hasItemID(itemID);
+				checkbox.disabled = !this.loadout || (!checkbox.checked && ((otherLoadout && otherLoadout.hasItemID(itemID)) || !this.loadout.canAddItem(itemID, Model.state.team)));
+			}
+		}
+	}
+
 	export class ArenaPage extends Page
 	{
 		button: HTMLButtonElement;
-		selectA: HTMLSelectElement;
-		selectB: HTMLSelectElement;
+		fighterUIs: FighterUI[] = [];
+
 		event: Model.FightEvent;
 
 		constructor(event: Model.Event)
@@ -17,47 +126,36 @@ namespace View
 			this.event = event as Model.FightEvent;
 			Util.assert(!!this.event);
 
-			let topDiv = document.createElement('div');
-
-			this.selectA = this.makeSelect();
-			topDiv.appendChild(this.selectA);
+			this.addFighterUI();
 
 			if (this.event.home)
-			{
-				this.selectB = this.makeSelect();
-				if (this.selectB.options.length > 1)
-					this.selectB.selectedIndex = 1;
-
-				topDiv.appendChild(this.selectB);
-			}
+				this.addFighterUI();
 
 			this.button = document.createElement('button');
 			this.button.addEventListener('click', this.onStartButton);
-			topDiv.appendChild(this.button);
-
-			this.div.appendChild(topDiv);
+			this.div.appendChild(this.button);
 
 			this.updateStartButton();
 		}
 
-		makeSelect()
+		addFighterUI()
 		{
-			let makeOption = function (id: string)
+			let index = this.fighterUIs.length;
+			let fighterUI = new FighterUI(index, this);
+			this.fighterUIs.push(fighterUI);
+			this.div.appendChild(fighterUI.div);
+
+			if (index == 1)
 			{
-				let option = document.createElement('option');
-				option.text = Model.state.fighters[id].name;
-				if (Model.state.fighters[id].isDead())
-					option.text += ' (x_x)';
-				return option;
-			};
+				if (fighterUI.select.options.length > 1)
+					fighterUI.select.selectedIndex = 1;
 
+				this.fighterUIs[0].other = fighterUI;
+				fighterUI.other = this.fighterUIs[0];
+			}
 
-			let select = document.createElement('select');
-			select.addEventListener('change', this.onFightersChanged);
-			for (let id in Model.state.fighters)
-				select.options.add(makeOption(id));
-
-			return select;
+			fighterUI.updateFighter();
+			fighterUI.updateItems();
 		}
 
 		onShow()
@@ -74,31 +172,31 @@ namespace View
 
 		onStartButton = () =>
 		{
-			const fighterIDs = Model.state.getFighterIDs();
+			let sideA = new Model.Fight.Side(this.fighterUIs[0].loadout, null);
+			let sideB = this.event.home ? new Model.Fight.Side(this.fighterUIs[1].loadout, null) : this.event.createNPCSide();
 
-			if (this.event.home)
-				Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(fighterIDs[this.selectB.selectedIndex]));
-			else
-				Model.state.startFight(new Model.Fight.Team(fighterIDs[this.selectA.selectedIndex]), new Model.Fight.Team(this.event.createNPC()));
+			Model.state.startFight(sideA, sideB);
 
 			Page.hideCurrent();
 		}
 		
-		onFightersChanged = () =>
+		onFighterSelected = (fighterIndex: number) =>
 		{
+			this.fighterUIs[fighterIndex].updateFighter();
 			this.updateStartButton();
+			this.updateItems();
 		}
 
-		getFighters()
+		onItemChecked = (fighterIndex: number, itemID: string, value: boolean) =>
 		{
-			let fighterIDs = Model.state.getFighterIDs();
-			let fighters: Model.Fighter[] = [];
-			fighters.push(this.selectA.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectA.selectedIndex]]);
+			this.fighterUIs[fighterIndex].equipItem(itemID, value);
+			this.updateItems();
+		}
 
-			if (this.event.home)
-				fighters.push(this.selectB.selectedIndex < 0 ? null : Model.state.fighters[fighterIDs[this.selectB.selectedIndex]]);
-
-			return fighters;
+		updateItems()
+		{
+			for (let ui of this.fighterUIs)
+				ui.updateItems();
 		}
 
 		updateStartButton()
@@ -111,12 +209,15 @@ namespace View
 			}
 
 			this.button.innerText = 'Start';
-			let fighters = this.getFighters();
+			let fighterA = this.fighterUIs[0].getFighter();
 
-			if (this.event.home)
-				this.button.disabled = !fighters[0] || !fighters[1] || fighters[0] == fighters[1] || fighters[0].isDead() || fighters[1].isDead();
-			else
-				this.button.disabled = !fighters[0] || fighters[0].isDead();
+			this.button.disabled = !fighterA || fighterA.isDead();
+
+			if (!this.button.disabled && this.event.home)
+			{
+				let fighterB = this.fighterUIs[1].getFighter();
+				this.button.disabled = !fighterB || fighterB.isDead() || fighterA === fighterB;
+			}
 		}
 	}
 }
