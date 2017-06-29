@@ -85,6 +85,11 @@ namespace Model
 			return changed;
 		}
 
+		private deleteEventsForToday()
+		{
+			this.events = this.events.filter(e => e.day != this.getDay());
+		}
+
 		isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
 
 		cancelNight()
@@ -111,8 +116,7 @@ namespace Model
 					break;
 				case Phase.Event:
 					Util.assert(this.fight == null); // Otherwise startFight sets the phase. 
-					let today = this.getDay();
-					this.events = this.events.filter(e => e.day != today);
+					this.deleteEventsForToday();
 					this.phase = Phase.Day;
 					break;
 				case Phase.Day:
@@ -257,6 +261,7 @@ namespace Model
 			Util.assert(this.fight == null);
 			Util.assert(this.phase == Phase.Event);
 			this.fight = new Fight.State(sideA, sideB);
+			this.deleteEventsForToday();
 			this.phase = Phase.Fight;
 			Model.saveState();
 		}
