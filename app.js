@@ -157,7 +157,8 @@ var Controller;
         page.show();
     }
     function onStorageTriggerClicked() {
-        View.showInfo('Storage', 'TODO.');
+        let page = new View.StoragePage();
+        page.show();
     }
     function onWeaponTriggerClicked() {
         View.showInfo('Weapon', 'TODO.');
@@ -223,7 +224,8 @@ var Controller;
             page.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
             page.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
             page.addItem('People Market', 'Buy people', 'images/people.png', false, onPeopleMarketClicked);
-            page.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', true, null);
+            page.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', false, onArmourMarketClicked);
+            page.addItem('Weaponer', 'Buy weapons', 'images/weapons.png', false, onWeaponMarketClicked);
             page.show();
         }
         Shop.showShopsPage = showShopsPage;
@@ -244,27 +246,53 @@ var Controller;
         }
         function onAnimalMarketClicked() {
             let page = new View.ListPage(getShopTitle('Animal Market'));
-            let hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
+            let disable = Model.state.team.getAnimals().length >= Model.state.buildings.getCapacity('kennels');
             for (let id in Data.Animals.Types) {
                 var handler = function () {
                     Model.state.buyAnimal(id);
                     Controller.updateHUD();
                 };
                 let type = Data.Animals.Types[id];
-                addItem(page, type.name, type.description, type.shopImage, !hasKennels, type.cost, handler);
+                addItem(page, type.name, type.description, type.shopImage, disable, type.cost, handler);
                 page.show();
             }
         }
         function onPeopleMarketClicked() {
             let page = new View.ListPage(getShopTitle('People Market'));
-            let hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
+            let disable = Model.state.team.getPeople().length >= Model.state.buildings.getCapacity('barracks');
             for (let id in Data.People.Types) {
                 var handler = function () {
                     Model.state.buyPerson(id);
                     Controller.updateHUD();
                 };
                 let type = Data.People.Types[id];
-                addItem(page, type.name, type.description, type.shopImage, !hasBarracks, type.cost, handler);
+                addItem(page, type.name, type.description, type.shopImage, disable, type.cost, handler);
+                page.show();
+            }
+        }
+        function onArmourMarketClicked() {
+            let page = new View.ListPage(getShopTitle('Armourer'));
+            let disable = Model.state.team.getItemCount() >= Model.state.buildings.getCapacity('storage');
+            for (let id in Data.Armour.Types) {
+                var handler = function () {
+                    Model.state.buyArmour(id);
+                    Controller.updateHUD();
+                };
+                let type = Data.Armour.Types[id];
+                addItem(page, type.name, type.description, null, disable, type.cost, handler);
+                page.show();
+            }
+        }
+        function onWeaponMarketClicked() {
+            let page = new View.ListPage(getShopTitle('Weaponer'));
+            let disable = Model.state.team.getItemCount() >= Model.state.buildings.getCapacity('storage');
+            for (let id in Data.Weapons.Types) {
+                var handler = function () {
+                    Model.state.buyWeapon(id);
+                    Controller.updateHUD();
+                };
+                let type = Data.Weapons.Types[id];
+                addItem(page, type.name, type.description, null, disable, type.cost, handler);
                 page.show();
             }
         }
@@ -415,11 +443,12 @@ var Data;
     var Buildings;
     (function (Buildings) {
         class Level {
-            constructor(cost, buildTime, mapX, mapY, mapImage, shopImage, name, description) {
+            constructor(cost, buildTime, mapX, mapY, capacity, mapImage, shopImage, name, description) {
                 this.cost = cost;
                 this.buildTime = buildTime;
                 this.mapX = mapX;
                 this.mapY = mapY;
+                this.capacity = capacity;
                 this.mapImage = mapImage;
                 this.shopImage = shopImage;
                 this.name = name;
@@ -659,6 +688,10 @@ var Model;
                         changed = true;
                 return changed;
             }
+            getCapacity(id) {
+                let level = this.getCurrentLevel(id);
+                return level ? level.capacity : 0;
+            }
             getCurrentLevelIndex(id) {
                 Util.assert(id in this.types);
                 return this.types[id].levelIndex;
@@ -715,6 +748,9 @@ var Model;
                 let level = this.getNextLevel(id);
                 Util.assert(level != null);
                 return progress / level.buildTime;
+            }
+            getCurrentLevel(id) {
+                return Data.Buildings.getLevel(id, this.getCurrentLevelIndex(id));
             }
             getNextLevel(id) {
                 return Data.Buildings.getLevel(id, this.getNextLevelIndex(id));
@@ -853,101 +889,6 @@ var Model;
 "use strict";
 var Model;
 (function (Model) {
-    class ItemPosition {
-        constructor(id, bodyPartIDs) {
-            this.id = id;
-            this.bodyPartIDs = bodyPartIDs;
-        }
-    }
-    Model.ItemPosition = ItemPosition;
-    class Loadout {
-        constructor(fighterID) {
-            this.fighterID = fighterID;
-            this.itemPositions = [];
-        }
-        onLoad() {
-        }
-        getFighter(team) {
-            Util.assert(this.fighterID in team.fighters);
-            return team.fighters[this.fighterID];
-        }
-        getOccupiedSites(itemType, team) {
-            let bodyPartIDs = [];
-            for (let itemPos of this.itemPositions)
-                if (team.getItem(itemPos.id).type == itemType)
-                    bodyPartIDs = bodyPartIDs.concat(itemPos.bodyPartIDs);
-            return bodyPartIDs;
-        }
-        // Returns first available body parts compatible with specified site.
-        findBodyPartsForSite(accType, site, team) {
-            let fighter = this.getFighter(team);
-            if (site.species != fighter.species)
-                return null;
-            let bodyPartIDs = [];
-            let occupied = this.getOccupiedSites(accType, team);
-            let speciesData = fighter.getSpeciesData();
-            for (let id in fighter.bodyParts) {
-                let part = fighter.bodyParts[id];
-                if (occupied.indexOf(id) < 0) {
-                    if (part.getSiteTag(accType, speciesData) == site.type) {
-                        bodyPartIDs.push(id);
-                        if (bodyPartIDs.length == site.count)
-                            return bodyPartIDs;
-                    }
-                }
-            }
-            return null;
-        }
-        findBodyPartsForItem(itemID, team) {
-            let data = team.getItemData(itemID);
-            for (let site of data.sites) {
-                let bodyPartIDs = this.findBodyPartsForSite(team.getItem(itemID).type, site, team);
-                if (bodyPartIDs)
-                    return bodyPartIDs;
-            }
-            return null;
-        }
-        canAddItem(itemID, team) {
-            return !!this.findBodyPartsForItem(itemID, team);
-        }
-        addItem(itemID, team) {
-            // TODO: Choose site.
-            let bodyPartIDs = this.findBodyPartsForItem(itemID, team);
-            if (bodyPartIDs) {
-                this.itemPositions.push(new ItemPosition(itemID, bodyPartIDs));
-                return;
-            }
-            Util.assert(false);
-        }
-        removeItem(itemID) {
-            for (let i = 0, itemPos; itemPos = this.itemPositions[i]; ++i)
-                if (itemPos.id == itemID) {
-                    this.itemPositions.splice(i, 1);
-                    return;
-                }
-            Util.assert(false);
-        }
-        hasItemID(id) {
-            for (let itemPos of this.itemPositions)
-                if (itemPos.id == id)
-                    return true;
-            return false;
-        }
-        getBodyPartArmourData(bodyPartID, team) {
-            for (let itemPos of this.itemPositions) {
-                if (team.getItem(itemPos.id).type == Model.ItemType.Armour)
-                    for (let id of itemPos.bodyPartIDs)
-                        if (id == bodyPartID)
-                            return team.getArmourData(itemPos.id);
-            }
-            return null;
-        }
-    }
-    Model.Loadout = Loadout;
-})(Model || (Model = {}));
-"use strict";
-var Model;
-(function (Model) {
     const minutesPerDay = 60 * 12;
     var Phase;
     (function (Phase) {
@@ -960,7 +901,7 @@ var Model;
     })(Phase = Model.Phase || (Model.Phase = {}));
     class State {
         constructor() {
-            this.money = 1000;
+            this.money = Data.Misc.StartingMoney;
             this.phase = Phase.Dawn;
             this.buildings = new Model.Buildings.State();
             this.team = new Model.Team();
@@ -1120,6 +1061,18 @@ var Model;
             this.team.addPerson(tag);
             Model.saveState();
         }
+        buyArmour(tag) {
+            Util.assert(tag in Data.Armour.Types);
+            this.spendMoney(Data.Armour.Types[tag].cost);
+            this.team.addItem(Model.ItemType.Armour, tag);
+            Model.saveState();
+        }
+        buyWeapon(tag) {
+            Util.assert(tag in Data.Weapons.Types);
+            this.spendMoney(Data.Weapons.Types[tag].cost);
+            this.team.addItem(Model.ItemType.Weapon, tag);
+            Model.saveState();
+        }
         startFight(sideA, sideB) {
             Util.assert(this.fight == null);
             Util.assert(this.phase == Phase.Event);
@@ -1187,122 +1140,6 @@ var Model;
         }
     }
     Model.Person = Person;
-})(Model || (Model = {}));
-"use strict";
-var Model;
-(function (Model) {
-    var ItemType;
-    (function (ItemType) {
-        ItemType[ItemType["Weapon"] = 0] = "Weapon";
-        ItemType[ItemType["Armour"] = 1] = "Armour";
-    })(ItemType = Model.ItemType || (Model.ItemType = {}));
-    ;
-    class Item {
-        constructor(type, tag) {
-            this.type = type;
-            this.tag = tag;
-        }
-    }
-    Model.Item = Item;
-    class Team {
-        constructor() {
-            this.fighters = {};
-            this.items = {};
-            this.nextFighterID = 1;
-            this.nextItemID = 1;
-            this.addItem(ItemType.Armour, 'chestplate');
-            this.addItem(ItemType.Armour, 'chestplate');
-            this.addItem(ItemType.Armour, 'helmet');
-            this.addItem(ItemType.Armour, 'helmet');
-            this.addItem(ItemType.Armour, 'leg bits');
-            this.addItem(ItemType.Armour, 'leg bits');
-            this.addItem(ItemType.Armour, 'arm bits');
-            this.addItem(ItemType.Armour, 'arm bits');
-            this.addItem(ItemType.Weapon, 'halberd');
-            this.addItem(ItemType.Weapon, 'sword');
-            this.addItem(ItemType.Weapon, 'sword');
-        }
-        onLoad() {
-            for (let id in this.fighters) {
-                let fighter = this.fighters[id];
-                Model.Fighter.initPrototype(fighter);
-                fighter.onLoad();
-            }
-        }
-        addAnimal(tag) {
-            Util.assert(tag in Data.Animals.Types);
-            this.fighters[this.nextFighterID] = new Model.Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
-            ++this.nextFighterID;
-        }
-        addPerson(tag) {
-            Util.assert(tag in Data.People.Types);
-            this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
-            ++this.nextFighterID;
-        }
-        addItem(type, tag) {
-            let data = type == ItemType.Armour ? Data.Armour.Types : Data.Weapons.Types;
-            Util.assert(tag in data);
-            this.items[this.nextItemID] = new Item(type, tag);
-            ++this.nextItemID;
-        }
-        getPeople() {
-            let people = [];
-            for (let id in this.fighters)
-                if (this.fighters[id] instanceof Model.Person)
-                    people.push(this.fighters[id]);
-            return people;
-        }
-        getAnimals() {
-            let animals = [];
-            for (let id in this.fighters)
-                if (this.fighters[id] instanceof Model.Animal)
-                    animals.push(this.fighters[id]);
-            return animals;
-        }
-        getFighterIDs() {
-            let ids = [];
-            for (let id in this.fighters)
-                ids.push(id);
-            return ids;
-        }
-        getItem(id) {
-            Util.assert(id in this.items);
-            return this.items[id];
-        }
-        getItemData(id) {
-            let item = this.getItem(id);
-            let data = item.type == ItemType.Armour ? Data.Armour.Types : Data.Weapons.Types;
-            Util.assert(item.tag in data);
-            return data[item.tag];
-        }
-        getArmourData(id) {
-            let data = this.getItemData(id);
-            Util.assert(data != null);
-            return data;
-        }
-        getWeaponData(id) {
-            let data = this.getItemData(id);
-            Util.assert(data != null);
-            return data;
-        }
-        getUniqueFighterName(name) {
-            let find = (name) => {
-                for (let id in this.fighters)
-                    if (this.fighters[id].name == name)
-                        return true;
-                return false;
-            };
-            let tryName = '';
-            let i = 1;
-            while (true) {
-                let tryName = name + ' ' + i.toString();
-                if (!find(tryName))
-                    return tryName;
-                ++i;
-            }
-        }
-    }
-    Model.Team = Team;
 })(Model || (Model = {}));
 "use strict";
 class Point {
@@ -1684,7 +1521,7 @@ var View;
 (function (View) {
     class BarracksPage extends View.Page {
         constructor() {
-            super('Barracks');
+            super('Barracks (' + Model.state.team.getPeople().length + '/' + Model.state.buildings.getCapacity('barracks') + ')');
             let tableFactory = new View.Table.Factory();
             this.div.appendChild(tableFactory.element);
             tableFactory.addColumnHeader('Name', 20);
@@ -2118,7 +1955,7 @@ var View;
 (function (View) {
     class KennelsPage extends View.Page {
         constructor() {
-            super('Kennels');
+            super('Kennels (' + Model.state.team.getAnimals().length + '/' + Model.state.buildings.getCapacity('kennels') + ')');
             let tableFactory = new View.Table.Factory();
             this.div.appendChild(tableFactory.element);
             tableFactory.addColumnHeader('Name', 20);
@@ -2537,4 +2374,231 @@ var View;
         document.getElementById('skip_day_btn').disabled = !enable;
     }
     View.enable = enable;
+})(View || (View = {}));
+"use strict";
+var Model;
+(function (Model) {
+    class ItemPosition {
+        constructor(id, bodyPartIDs) {
+            this.id = id;
+            this.bodyPartIDs = bodyPartIDs;
+        }
+    }
+    Model.ItemPosition = ItemPosition;
+    class Loadout {
+        constructor(fighterID) {
+            this.fighterID = fighterID;
+            this.itemPositions = [];
+        }
+        onLoad() {
+        }
+        getFighter(team) {
+            Util.assert(this.fighterID in team.fighters);
+            return team.fighters[this.fighterID];
+        }
+        getOccupiedSites(itemType, team) {
+            let bodyPartIDs = [];
+            for (let itemPos of this.itemPositions)
+                if (team.getItem(itemPos.id).type == itemType)
+                    bodyPartIDs = bodyPartIDs.concat(itemPos.bodyPartIDs);
+            return bodyPartIDs;
+        }
+        // Returns first available body parts compatible with specified site.
+        findBodyPartsForSite(accType, site, team) {
+            let fighter = this.getFighter(team);
+            if (site.species != fighter.species)
+                return null;
+            let bodyPartIDs = [];
+            let occupied = this.getOccupiedSites(accType, team);
+            let speciesData = fighter.getSpeciesData();
+            for (let id in fighter.bodyParts) {
+                let part = fighter.bodyParts[id];
+                if (occupied.indexOf(id) < 0) {
+                    if (part.getSiteTag(accType, speciesData) == site.type) {
+                        bodyPartIDs.push(id);
+                        if (bodyPartIDs.length == site.count)
+                            return bodyPartIDs;
+                    }
+                }
+            }
+            return null;
+        }
+        findBodyPartsForItem(itemID, team) {
+            let data = team.getItemData(itemID);
+            for (let site of data.sites) {
+                let bodyPartIDs = this.findBodyPartsForSite(team.getItem(itemID).type, site, team);
+                if (bodyPartIDs)
+                    return bodyPartIDs;
+            }
+            return null;
+        }
+        canAddItem(itemID, team) {
+            return !!this.findBodyPartsForItem(itemID, team);
+        }
+        addItem(itemID, team) {
+            // TODO: Choose site.
+            let bodyPartIDs = this.findBodyPartsForItem(itemID, team);
+            if (bodyPartIDs) {
+                this.itemPositions.push(new ItemPosition(itemID, bodyPartIDs));
+                return;
+            }
+            Util.assert(false);
+        }
+        removeItem(itemID) {
+            for (let i = 0, itemPos; itemPos = this.itemPositions[i]; ++i)
+                if (itemPos.id == itemID) {
+                    this.itemPositions.splice(i, 1);
+                    return;
+                }
+            Util.assert(false);
+        }
+        hasItemID(id) {
+            for (let itemPos of this.itemPositions)
+                if (itemPos.id == id)
+                    return true;
+            return false;
+        }
+        getBodyPartArmourData(bodyPartID, team) {
+            for (let itemPos of this.itemPositions) {
+                if (team.getItem(itemPos.id).type == Model.ItemType.Armour)
+                    for (let id of itemPos.bodyPartIDs)
+                        if (id == bodyPartID)
+                            return team.getArmourData(itemPos.id);
+            }
+            return null;
+        }
+    }
+    Model.Loadout = Loadout;
+})(Model || (Model = {}));
+"use strict";
+var Model;
+(function (Model) {
+    var ItemType;
+    (function (ItemType) {
+        ItemType[ItemType["Weapon"] = 0] = "Weapon";
+        ItemType[ItemType["Armour"] = 1] = "Armour";
+    })(ItemType = Model.ItemType || (Model.ItemType = {}));
+    ;
+    class Item {
+        constructor(type, tag) {
+            this.type = type;
+            this.tag = tag;
+        }
+    }
+    Model.Item = Item;
+    class Team {
+        constructor() {
+            this.fighters = {};
+            this.items = {};
+            this.nextFighterID = 1;
+            this.nextItemID = 1;
+        }
+        onLoad() {
+            for (let id in this.fighters) {
+                let fighter = this.fighters[id];
+                Model.Fighter.initPrototype(fighter);
+                fighter.onLoad();
+            }
+        }
+        addAnimal(tag) {
+            Util.assert(tag in Data.Animals.Types);
+            this.fighters[this.nextFighterID] = new Model.Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
+            ++this.nextFighterID;
+        }
+        addPerson(tag) {
+            Util.assert(tag in Data.People.Types);
+            this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
+            ++this.nextFighterID;
+        }
+        addItem(type, tag) {
+            let data = type == ItemType.Armour ? Data.Armour.Types : Data.Weapons.Types;
+            Util.assert(tag in data);
+            this.items[this.nextItemID] = new Item(type, tag);
+            ++this.nextItemID;
+        }
+        getPeople() {
+            let people = [];
+            for (let id in this.fighters)
+                if (this.fighters[id] instanceof Model.Person)
+                    people.push(this.fighters[id]);
+            return people;
+        }
+        getAnimals() {
+            let animals = [];
+            for (let id in this.fighters)
+                if (this.fighters[id] instanceof Model.Animal)
+                    animals.push(this.fighters[id]);
+            return animals;
+        }
+        getFighterIDs() {
+            let ids = [];
+            for (let id in this.fighters)
+                ids.push(id);
+            return ids;
+        }
+        getItem(id) {
+            Util.assert(id in this.items);
+            return this.items[id];
+        }
+        getItemCount() {
+            let count = 0;
+            for (let id in this.items)
+                ++count;
+            return count;
+        }
+        getItemData(id) {
+            let item = this.getItem(id);
+            let data = item.type == ItemType.Armour ? Data.Armour.Types : Data.Weapons.Types;
+            Util.assert(item.tag in data);
+            return data[item.tag];
+        }
+        getArmourData(id) {
+            let data = this.getItemData(id);
+            Util.assert(data != null);
+            return data;
+        }
+        getWeaponData(id) {
+            let data = this.getItemData(id);
+            Util.assert(data != null);
+            return data;
+        }
+        getUniqueFighterName(name) {
+            let find = (name) => {
+                for (let id in this.fighters)
+                    if (this.fighters[id].name == name)
+                        return true;
+                return false;
+            };
+            let tryName = '';
+            let i = 1;
+            while (true) {
+                let tryName = name + ' ' + i.toString();
+                if (!find(tryName))
+                    return tryName;
+                ++i;
+            }
+        }
+    }
+    Model.Team = Team;
+})(Model || (Model = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    class StoragePage extends View.Page {
+        constructor() {
+            super('Storage (' + Model.state.team.getItemCount() + '/' + Model.state.buildings.getCapacity('storage') + ')');
+            let tableFactory = new View.Table.Factory();
+            this.div.appendChild(tableFactory.element);
+            tableFactory.addColumnHeader('Name', 20);
+            tableFactory.addColumnHeader('Type', 20);
+            for (let id in Model.state.team.items) {
+                let item = Model.state.team.items[id];
+                let data = Model.state.team.getItemData(id);
+                let cells = [new View.Table.TextCell(data.name), new View.Table.TextCell(item.type == Model.ItemType.Armour ? 'Armour' : 'Weapon')];
+                tableFactory.addRow(cells, false, null);
+            }
+        }
+    }
+    View.StoragePage = StoragePage;
 })(View || (View = {}));
