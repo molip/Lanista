@@ -236,6 +236,22 @@ namespace Model
 			Model.saveState();
 		}
 
+		buyArmour(tag: string)
+		{
+			Util.assert(tag in Data.Armour.Types);
+			this.spendMoney(Data.Armour.Types[tag].cost);
+			this.team.addItem(ItemType.Armour, tag);
+			Model.saveState();
+		}
+
+		buyWeapon(tag: string)
+		{
+			Util.assert(tag in Data.Weapons.Types);
+			this.spendMoney(Data.Weapons.Types[tag].cost);
+			this.team.addItem(ItemType.Weapon, tag);
+			Model.saveState();
+		}
+
 		startFight(sideA: Fight.Side, sideB: Fight.Side)
 		{
 			Util.assert(this.fight == null);

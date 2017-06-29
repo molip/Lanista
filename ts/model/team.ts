@@ -18,18 +18,6 @@ namespace Model
 
 		constructor()
 		{
-			this.addItem(ItemType.Armour, 'chestplate');
-			this.addItem(ItemType.Armour, 'chestplate');
-			this.addItem(ItemType.Armour, 'helmet');
-			this.addItem(ItemType.Armour, 'helmet');
-			this.addItem(ItemType.Armour, 'leg bits');
-			this.addItem(ItemType.Armour, 'leg bits');
-			this.addItem(ItemType.Armour, 'arm bits');
-			this.addItem(ItemType.Armour, 'arm bits');
-
-			this.addItem(ItemType.Weapon, 'halberd');
-			this.addItem(ItemType.Weapon, 'sword');
-			this.addItem(ItemType.Weapon, 'sword');
 		}
 
 		onLoad()
