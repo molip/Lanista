@@ -111,7 +111,7 @@ namespace Model
 				case Phase.News:
 					this.news.length = 0;
 					this.phase = Phase.Event;
-					if (this.getEventsForToday().length == 0)
+					if (this.getEventsForDay(this.getDay()).length == 0)
 						this.advancePhase();
 					break;
 				case Phase.Event:
@@ -130,10 +130,18 @@ namespace Model
 			Model.saveState();
 		}
 
-		getEventsForToday()
+		addEvent(event: Event)
 		{
-			let today = this.getDay();
-			return this.events.filter(e => e.day == today);
+			Util.assert(this.getEventsForDay(event.day).length == 0);
+			this.events.push(event);
+			this.events.sort((a: Event, b: Event) => { return a.day - b.day; });
+
+			Model.saveState();
+		}
+
+		getEventsForDay(day: number)
+		{
+			return this.events.filter(e => e.day == day);
 		}
 
 		updateActivities(hours: number)

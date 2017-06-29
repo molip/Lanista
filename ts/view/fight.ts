@@ -127,7 +127,7 @@ namespace View
 			Util.assert(Model.state.fight != null);
 
 			let topDiv = document.createElement('div');
-			topDiv.id = 'fight_top_div';
+			topDiv.className = 'top_section';
 
 			this.button = document.createElement('button');
 			this.button.addEventListener('click', this.onStartButton);
@@ -152,7 +152,7 @@ namespace View
 			this.scroller.appendChild(this.para);
 
 			let canvas = document.createElement('canvas');
-			canvas.id = 'fight_canvas';
+			canvas.className = 'bottom_section';
 			this.canvas = new Canvas(canvas);
 
 			this.div.appendChild(topDiv);
