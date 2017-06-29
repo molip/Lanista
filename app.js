@@ -89,7 +89,7 @@ var Controller;
                 new View.NewsPage(() => { Model.state.advancePhase(); }).show();
                 break;
             case Model.Phase.Event:
-                showEventUI(Model.state.getEventsForToday());
+                showEventUI(Model.state.getEventsForDay(Model.state.getDay()));
                 break;
             case Model.Phase.Fight:
                 new View.FightPage().show();
@@ -146,7 +146,8 @@ var Controller;
     }
     Controller.onSkipDayClicked = onSkipDayClicked;
     function onHomeTriggerClicked() {
-        View.showInfo('Home', 'TODO: general stats etc. go here.');
+        let page = new View.HomePage();
+        page.show();
     }
     function onBarracksTriggerClicked() {
         let page = new View.BarracksPage();
@@ -953,6 +954,9 @@ var Model;
             }
             return changed;
         }
+        deleteEventsForToday() {
+            this.events = this.events.filter(e => e.day != this.getDay());
+        }
         isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
         cancelNight() {
             Util.assert(this.isNight());
@@ -969,13 +973,12 @@ var Model;
                 case Phase.News:
                     this.news.length = 0;
                     this.phase = Phase.Event;
-                    if (this.getEventsForToday().length == 0)
+                    if (this.getEventsForDay(this.getDay()).length == 0)
                         this.advancePhase();
                     break;
                 case Phase.Event:
                     Util.assert(this.fight == null); // Otherwise startFight sets the phase. 
-                    let today = this.getDay();
-                    this.events = this.events.filter(e => e.day != today);
+                    this.deleteEventsForToday();
                     this.phase = Phase.Day;
                     break;
                 case Phase.Day:
@@ -987,9 +990,14 @@ var Model;
             }
             Model.saveState();
         }
-        getEventsForToday() {
-            let today = this.getDay();
-            return this.events.filter(e => e.day == today);
+        addEvent(event) {
+            Util.assert(this.getEventsForDay(event.day).length == 0);
+            this.events.push(event);
+            this.events.sort((a, b) => { return a.day - b.day; });
+            Model.saveState();
+        }
+        getEventsForDay(day) {
+            return this.events.filter(e => e.day == day);
         }
         updateActivities(hours) {
             let workPower = {}; // Activity -> power.
@@ -1077,6 +1085,7 @@ var Model;
             Util.assert(this.fight == null);
             Util.assert(this.phase == Phase.Event);
             this.fight = new Model.Fight.State(sideA, sideB);
+            this.deleteEventsForToday();
             this.phase = Phase.Fight;
             Model.saveState();
         }
@@ -1766,7 +1775,7 @@ var View;
             };
             Util.assert(Model.state.fight != null);
             let topDiv = document.createElement('div');
-            topDiv.id = 'fight_top_div';
+            topDiv.className = 'top_section';
             this.button = document.createElement('button');
             this.button.addEventListener('click', this.onStartButton);
             this.button.innerText = 'Start';
@@ -1784,7 +1793,7 @@ var View;
             this.scroller.className = 'scroller';
             this.scroller.appendChild(this.para);
             let canvas = document.createElement('canvas');
-            canvas.id = 'fight_canvas';
+            canvas.className = 'bottom_section';
             this.canvas = new View.Canvas(canvas);
             this.div.appendChild(topDiv);
             this.div.appendChild(canvas);
@@ -2601,4 +2610,52 @@ var View;
         }
     }
     View.StoragePage = StoragePage;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
+    class HomePage extends View.Page {
+        constructor() {
+            super('Home');
+            this.onAddHomeFight = () => {
+                Model.state.addEvent(new Model.FightEvent(Model.state.getDay() + 1, true, 'Home Fight'));
+                this.update();
+            };
+            this.onAddAwayFight = () => {
+                Model.state.addEvent(new Model.FightEvent(Model.state.getDay() + 1, false, 'Away Fight'));
+                this.update();
+            };
+            let topDiv = document.createElement('div');
+            topDiv.className = 'top_section';
+            this.bottomDiv = document.createElement('div');
+            this.bottomDiv.className = 'bottom_section';
+            this.homeButton = document.createElement('button');
+            this.homeButton.addEventListener('click', this.onAddHomeFight);
+            this.homeButton.innerText = 'Add Home Fight';
+            this.awayButton = document.createElement('button');
+            this.awayButton.addEventListener('click', this.onAddAwayFight);
+            this.awayButton.innerText = 'Add Away Fight';
+            topDiv.appendChild(this.homeButton);
+            topDiv.appendChild(this.awayButton);
+            this.div.appendChild(topDiv);
+            this.div.appendChild(this.bottomDiv);
+            this.update();
+        }
+        update() {
+            let tableFactory = new View.Table.Factory();
+            tableFactory.addColumnHeader('Day', 10);
+            tableFactory.addColumnHeader('Event', 90);
+            for (let event of Model.state.events) {
+                let cells = [new View.Table.TextCell((event.day + 1).toString()), new View.Table.TextCell(event.getDescription())];
+                tableFactory.addRow(cells, false, null);
+            }
+            if (this.bottomDiv.firstChild)
+                this.bottomDiv.removeChild(this.bottomDiv.firstChild);
+            this.bottomDiv.appendChild(tableFactory.element);
+            let eventsForTomorrow = Model.state.getEventsForDay(Model.state.getDay() + 1);
+            this.homeButton.disabled = this.awayButton.disabled = eventsForTomorrow.length > 0;
+        }
+    }
+    View.HomePage = HomePage;
 })(View || (View = {}));

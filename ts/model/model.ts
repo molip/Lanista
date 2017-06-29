@@ -85,6 +85,11 @@ namespace Model
 			return changed;
 		}
 
+		private deleteEventsForToday()
+		{
+			this.events = this.events.filter(e => e.day != this.getDay());
+		}
+
 		isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
 
 		cancelNight()
@@ -106,13 +111,12 @@ namespace Model
 				case Phase.News:
 					this.news.length = 0;
 					this.phase = Phase.Event;
-					if (this.getEventsForToday().length == 0)
+					if (this.getEventsForDay(this.getDay()).length == 0)
 						this.advancePhase();
 					break;
 				case Phase.Event:
 					Util.assert(this.fight == null); // Otherwise startFight sets the phase. 
-					let today = this.getDay();
-					this.events = this.events.filter(e => e.day != today);
+					this.deleteEventsForToday();
 					this.phase = Phase.Day;
 					break;
 				case Phase.Day:
@@ -126,10 +130,18 @@ namespace Model
 			Model.saveState();
 		}
 
-		getEventsForToday()
+		addEvent(event: Event)
 		{
-			let today = this.getDay();
-			return this.events.filter(e => e.day == today);
+			Util.assert(this.getEventsForDay(event.day).length == 0);
+			this.events.push(event);
+			this.events.sort((a: Event, b: Event) => { return a.day - b.day; });
+
+			Model.saveState();
+		}
+
+		getEventsForDay(day: number)
+		{
+			return this.events.filter(e => e.day == day);
 		}
 
 		updateActivities(hours: number)
@@ -257,6 +269,7 @@ namespace Model
 			Util.assert(this.fight == null);
 			Util.assert(this.phase == Phase.Event);
 			this.fight = new Fight.State(sideA, sideB);
+			this.deleteEventsForToday();
 			this.phase = Phase.Fight;
 			Model.saveState();
 		}

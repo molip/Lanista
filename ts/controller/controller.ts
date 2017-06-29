@@ -58,7 +58,7 @@ namespace Controller
 				new View.NewsPage(() => { Model.state.advancePhase(); }).show();
 				break;
 			case Model.Phase.Event:
-				showEventUI(Model.state.getEventsForToday());
+				showEventUI(Model.state.getEventsForDay(Model.state.getDay()));
 				break;
 			case Model.Phase.Fight:
 				new View.FightPage().show();
@@ -127,7 +127,8 @@ namespace Controller
 
 	function onHomeTriggerClicked()
 	{
-		View.showInfo('Home', 'TODO: general stats etc. go here.');
+		let page = new View.HomePage();
+		page.show();
 	}
 
 	function onBarracksTriggerClicked()

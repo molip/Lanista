@@ -37,14 +37,14 @@ th {
 	height:100%;
 }
 
-#fight_top_div
+.top_section
 {
 	position: absolute;
 	top: 0;
 	height: 5%;
 }
 
-#fight_canvas
+.bottom_section
 {
 	position:absolute;
 	width:100%;
