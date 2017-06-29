@@ -7,7 +7,7 @@ namespace View
 	{
 		constructor()
 		{
-			super('Storage');
+			super('Storage (' + Model.state.team.getItemCount() + '/' + Model.state.buildings.getCapacity('storage') + ')');
 			let tableFactory = new Table.Factory();
 			this.div.appendChild(tableFactory.element);
 

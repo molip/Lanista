@@ -84,6 +84,15 @@ namespace Model
 			return this.items[id];
 		}
 
+		getItemCount()
+		{
+			let count = 0;
+			for (let id in this.items)
+				++count;
+
+			return count;
+		}
+
 		getItemData(id: string)
 		{
 			let item = this.getItem(id);
