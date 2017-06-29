@@ -10,7 +10,7 @@ namespace Model
 	{
 		static readonly key: string = "state.v18";
 
-		private money = 1000;
+		private money = Data.Misc.StartingMoney;
 		phase: Phase = Phase.Dawn;
 		buildings = new Buildings.State();
 		team: Team = new Team();

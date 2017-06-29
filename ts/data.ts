@@ -167,5 +167,6 @@ namespace Data
 		export let ConstructionImage: string
 		export let FightBackgroundImage: string;
 		export let ExperienceBenefit: number;
+		export let StartingMoney: number;
 	}
 }
