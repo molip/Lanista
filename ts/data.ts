@@ -116,7 +116,7 @@ namespace Data
 
 	export namespace Buildings
 	{
-		export class Level { constructor(public cost: number, public buildTime: number, public mapX: number, public mapY: number, public mapImage: string, public shopImage: string, public name: string, public description: string) { } }
+		export class Level { constructor(public cost: number, public buildTime: number, public mapX: number, public mapY: number, public capacity: number, public mapImage: string, public shopImage: string, public name: string, public description: string) { } }
 		export let Levels: { [key: string]: Level[]; }
 
 		export function getLevel(id: string, index: number): Level
@@ -167,5 +167,6 @@ namespace Data
 		export let ConstructionImage: string
 		export let FightBackgroundImage: string;
 		export let ExperienceBenefit: number;
+		export let StartingMoney: number;
 	}
 }

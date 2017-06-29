@@ -7,7 +7,7 @@ namespace View
 	{
 		constructor()
 		{
-			super('Barracks');
+			super('Barracks (' + Model.state.team.getPeople().length + '/' + Model.state.buildings.getCapacity('barracks') + ')');
 			let tableFactory = new Table.Factory();
 			this.div.appendChild(tableFactory.element);
 

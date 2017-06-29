@@ -20,7 +20,8 @@ namespace Controller
 			page.addItem('Builders\' Merchant', 'Buy building kits', 'images/builders.jpg', false, onBuildersMerchantClicked);
 			page.addItem('Animal Market', 'Buy animals', 'images/animals.jpg', false, onAnimalMarketClicked);
 			page.addItem('People Market', 'Buy people', 'images/people.png', false, onPeopleMarketClicked);
-			page.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', true, null);
+			page.addItem('Armourer', 'Buy armour', 'images/armourer.jpg', false, onArmourMarketClicked);
+			page.addItem('Weaponer', 'Buy weapons', 'images/weapons.png', false, onWeaponMarketClicked);
 			page.show();
 		}
 
@@ -50,7 +51,7 @@ namespace Controller
 		{
 			let page = new View.ListPage(getShopTitle('Animal Market'));
 
-			let hasKennels = Model.state.buildings.getCurrentLevelIndex('kennels') >= 0;
+			let disable = Model.state.team.getAnimals().length >= Model.state.buildings.getCapacity('kennels');
 			for (let id in Data.Animals.Types)
 			{
 				var handler = function ()
@@ -60,7 +61,7 @@ namespace Controller
 				};
 
 				let type = Data.Animals.Types[id];
-				addItem(page, type.name, type.description, type.shopImage, !hasKennels, type.cost, handler);
+				addItem(page, type.name, type.description, type.shopImage, disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -68,7 +69,7 @@ namespace Controller
 		{
 			let page = new View.ListPage(getShopTitle('People Market'));
 
-			let hasBarracks = Model.state.buildings.getCurrentLevelIndex('barracks') >= 0;
+			let disable = Model.state.team.getPeople().length >= Model.state.buildings.getCapacity('barracks');
 			for (let id in Data.People.Types)
 			{
 				var handler = function ()
@@ -78,7 +79,45 @@ namespace Controller
 				};
 
 				let type = Data.People.Types[id];
-				addItem(page, type.name, type.description, type.shopImage, !hasBarracks, type.cost, handler);
+				addItem(page, type.name, type.description, type.shopImage, disable, type.cost, handler);
+				page.show();
+			}
+		}
+
+		function onArmourMarketClicked()
+		{
+			let page = new View.ListPage(getShopTitle('Armourer'));
+
+			let disable = Model.state.team.getItemCount() >= Model.state.buildings.getCapacity('storage');
+			for (let id in Data.Armour.Types)
+			{
+				var handler = function ()
+				{
+					Model.state.buyArmour(id);
+					Controller.updateHUD();
+				};
+
+				let type = Data.Armour.Types[id];
+				addItem(page, type.name, type.description, null, disable, type.cost, handler);
+				page.show();
+			}
+		}
+
+		function onWeaponMarketClicked()
+		{
+			let page = new View.ListPage(getShopTitle('Weaponer'));
+
+			let disable = Model.state.team.getItemCount() >= Model.state.buildings.getCapacity('storage');
+			for (let id in Data.Weapons.Types)
+			{
+				var handler = function ()
+				{
+					Model.state.buyWeapon(id);
+					Controller.updateHUD();
+				};
+
+				let type = Data.Weapons.Types[id];
+				addItem(page, type.name, type.description, null, disable, type.cost, handler);
 				page.show();
 			}
 		}

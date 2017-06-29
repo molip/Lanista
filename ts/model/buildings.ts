@@ -32,6 +32,12 @@ namespace Model
 				return changed;
 			}
 
+			getCapacity(id: string): number
+			{
+				let level = this.getCurrentLevel(id);
+				return level ? level.capacity : 0;
+			}
+
 			getCurrentLevelIndex(id: string): number
 			{
 				Util.assert(id in this.types);
@@ -109,6 +115,11 @@ namespace Model
 				let level = this.getNextLevel(id);
 				Util.assert(level != null);
 				return progress / level.buildTime;
+			}
+
+			private getCurrentLevel(id: string): Data.Buildings.Level
+			{
+				return Data.Buildings.getLevel(id, this.getCurrentLevelIndex(id));
 			}
 
 			private getNextLevel(id: string): Data.Buildings.Level

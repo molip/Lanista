@@ -18,7 +18,11 @@ button, input {
 
 select {
 	font-size:1em;
-}	
+}
+
+th {
+    text-align: left;
+}
 
 .table_row {
 	border-style: solid;

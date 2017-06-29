@@ -144,7 +144,8 @@ namespace Controller
 
 	function onStorageTriggerClicked()
 	{
-		View.showInfo('Storage', 'TODO.');
+		let page = new View.StoragePage();
+		page.show();
 	}
 
 	function onWeaponTriggerClicked()
