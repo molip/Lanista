@@ -280,7 +280,7 @@ var Controller;
                     Controller.updateHUD();
                 };
                 let type = Data.Armour.Types[id];
-                addItem(page, type.name, type.description, null, disable, type.cost, handler);
+                addItem(page, type.name, type.description, type.image, disable, type.cost, handler);
                 page.show();
             }
         }
@@ -293,7 +293,7 @@ var Controller;
                     Controller.updateHUD();
                 };
                 let type = Data.Weapons.Types[id];
-                addItem(page, type.name, type.description, null, disable, type.cost, handler);
+                addItem(page, type.name, type.description, type.image, disable, type.cost, handler);
                 page.show();
             }
         }
@@ -2600,11 +2600,12 @@ var View;
             let tableFactory = new View.Table.Factory();
             this.div.appendChild(tableFactory.element);
             tableFactory.addColumnHeader('Name', 20);
-            tableFactory.addColumnHeader('Type', 20);
+            tableFactory.addColumnHeader('Image', 10);
+            tableFactory.addColumnHeader('Type', 70);
             for (let id in Model.state.team.items) {
                 let item = Model.state.team.items[id];
                 let data = Model.state.team.getItemData(id);
-                let cells = [new View.Table.TextCell(data.name), new View.Table.TextCell(item.type == Model.ItemType.Armour ? 'Armour' : 'Weapon')];
+                let cells = [new View.Table.TextCell('<h4>' + data.name + ' </h4>'), new View.Table.ImageCell(data.image), new View.Table.TextCell(item.type == Model.ItemType.Armour ? 'Armour' : 'Weapon')];
                 tableFactory.addRow(cells, false, null);
             }
         }

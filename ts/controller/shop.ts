@@ -98,7 +98,7 @@ namespace Controller
 				};
 
 				let type = Data.Armour.Types[id];
-				addItem(page, type.name, type.description, null, disable, type.cost, handler);
+				addItem(page, type.name, type.description, type.image, disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -117,7 +117,7 @@ namespace Controller
 				};
 
 				let type = Data.Weapons.Types[id];
-				addItem(page, type.name, type.description, null, disable, type.cost, handler);
+				addItem(page, type.name, type.description, type.image, disable, type.cost, handler);
 				page.show();
 			}
 		}

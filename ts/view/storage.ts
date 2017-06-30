@@ -12,13 +12,14 @@ namespace View
 			this.div.appendChild(tableFactory.element);
 
 			tableFactory.addColumnHeader('Name', 20);
-			tableFactory.addColumnHeader('Type', 20);
+			tableFactory.addColumnHeader('Image', 10);
+			tableFactory.addColumnHeader('Type', 70);
 
 			for (let id in Model.state.team.items)
 			{
 				let item = Model.state.team.items[id];
 				let data = Model.state.team.getItemData(id);
-				let cells = [new Table.TextCell(data.name), new Table.TextCell(item.type == Model.ItemType.Armour ? 'Armour' : 'Weapon')];
+				let cells = [new Table.TextCell('<h4>' + data.name + ' </h4>'), new Table.ImageCell(data.image), new Table.TextCell(item.type == Model.ItemType.Armour ? 'Armour' : 'Weapon')];
 
 				tableFactory.addRow(cells, false, null);
 			}
