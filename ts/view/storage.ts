@@ -19,7 +19,7 @@ namespace View
 			{
 				let item = Model.state.team.items[id];
 				let data = Model.state.team.getItemData(id);
-				let cells = [new Table.TextCell('<h4>' + data.name + ' </h4>'), new Table.ImageCell(data.image), new Table.TextCell(item.type == Model.ItemType.Armour ? 'Armour' : 'Weapon')];
+				let cells = [new Table.TextCell('<h4>' + data.name + ' </h4>'), new Table.ImageCell(Util.getImage('items', item.tag)), new Table.TextCell(item.type == Model.ItemType.Armour ? 'Armour' : 'Weapon')];
 
 				tableFactory.addRow(cells, false, null);
 			}
