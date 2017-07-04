@@ -230,10 +230,14 @@ namespace View
 			this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
 			this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
 
-			let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
-			let damageAnim = new DamageAnimation(damageString, pointB);
-			damageAnim.onStart = () => { this.updateHealths(); }
-			this.sequence.items.push(damageAnim);
+			if (result.attackDamage > 0)
+			{
+				let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
+				let damageAnim = new DamageAnimation(damageString, pointB);
+				damageAnim.onStart = () => { this.updateHealths(); }
+				this.sequence.items.push(damageAnim);
+			}
+
 			this.sequence.items.push(new Animation(1000));
 			this.sequence.start();
 		}

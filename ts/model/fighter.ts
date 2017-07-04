@@ -29,13 +29,14 @@ namespace Model
 
 	export class Attack
 	{
-		constructor(public data: Data.Attack, public sourceID: string) { }
+		constructor(public data: Data.Attack, public sourceID: string, public skill: number) { }
 	}
 
 	export class Fighter
 	{
 		bodyParts: { [id: string]: BodyPart } = {};
-		nextBodyPartID: number = 1;
+		private skills: { [tag: string]: number } = {}; // +/- percent.
+		private nextBodyPartID: number = 1;
 		health: number = 0;
 		private activity: string = '';
 		private experience: { [id: string]: number } = {};
@@ -90,7 +91,7 @@ namespace Model
 				{
 					let data = team.getWeaponData(itemPos.id);
 					for (let attack of data.attacks)
-						attacks.push(new Attack(attack, itemPos.bodyPartIDs[0])); // Just use the first body part for the source. 
+						attacks.push(new Attack(attack, itemPos.bodyPartIDs[0], this.getSkill('attack'))); // Just use the first body part for the source. 
 
 					for (let bpid of itemPos.bodyPartIDs)
 						usedBodyParts.add(bpid);
@@ -105,7 +106,7 @@ namespace Model
 				let part = this.bodyParts[id];
 				let data = speciesData.bodyParts[part.tag];
 				if (data.attack)
-					attacks.push(new Attack(data.attack, id)); // TODO: Check body part health.
+					attacks.push(new Attack(data.attack, id, this.getSkill('attack'))); // TODO: Check body part health.
 			}
 
 			return attacks;
@@ -165,6 +166,17 @@ namespace Model
 		{
 			this.activity = tag;
 			Model.saveState();
+		}
+
+		getSkill(tag: string)
+		{
+			Util.assert(tag in Data.Skills.Types);
+			return this.skills[tag] || 0;
+		}
+
+		addSkill(tag: string, value: number)
+		{
+			this.skills[tag] = this.getSkill(tag) + value;
 		}
 	}
 }

@@ -144,6 +144,7 @@ namespace Data
 
 		export let Events: Event[];
 	}
+
 	export function validate()
 	{
 		console.log('Validating data...');
@@ -160,6 +161,16 @@ namespace Data
 		console.log('Validating finished.');
 	}
 
+	export namespace Skills
+	{
+		export class Type
+		{
+			constructor(public name: string) { }
+		}
+
+		export let Types: { [key: string]: Type };
+	}
+
 	export namespace Misc
 	{
 		export let TownTrigger: { mapX: number, mapY: number};
@@ -168,5 +179,6 @@ namespace Data
 		export let FightBackgroundImage: string;
 		export let ExperienceBenefit: number;
 		export let StartingMoney: number;
+		export let BaseAttackSkill: number;
 	}
 }

@@ -101,18 +101,33 @@ namespace Model
 				let target = defender.bodyParts[targetID];
 				let targetData = target.getData(defenderSpeciesData);
 
-				let armourData = defenderSide.loadout.getBodyPartArmourData(target.id, defenderSide.getTeam());
-
-				let defense = armourData ? armourData.getDefense(attack.data.type) : 0;
-				let damage = attack.data.damage * (100 - defense) / 100;
-
-				let oldHealth = defender.health;
-				defender.health = Math.max(0, oldHealth - damage);
+				let baseDamage = 0;
+				let defense = 0;
+				let attackSkill = Math.floor(attack.skill);
+				let evadeSkill = Math.floor(defender.getSkill('evade'));
 
 				let msg = attacker.name + ' uses ' + attack.data.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
-				msg += 'Damage = ' + attack.data.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
-				msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + defender.health.toFixed(1) + '. ';
-				return new AttackResult(attack.data.name, msg, attack.data.damage, defense, attack.sourceID, targetID); 
+				msg += 'Skill = ' + Data.Misc.BaseAttackSkill + ' + ' + attackSkill + ' - ' + evadeSkill + '. ';
+
+				if (Util.getRandomInt(100) < Data.Misc.BaseAttackSkill + attackSkill - evadeSkill)
+				{
+					let armourData = defenderSide.loadout.getBodyPartArmourData(target.id, defenderSide.getTeam());
+
+					defense = armourData ? armourData.getDefense(attack.data.type) : 0;
+					baseDamage = attack.data.damage;
+					let damage = baseDamage * (100 - defense) / 100;
+
+					let oldHealth = defender.health;
+					defender.health = Math.max(0, oldHealth - damage);
+
+					msg += 'Damage = ' + baseDamage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
+				}
+				else
+				{
+					msg += 'Missed!';
+				}
+
+				return new AttackResult(attack.data.name, msg, baseDamage, defense, attack.sourceID, targetID); 
 			}
 		}
 	}
