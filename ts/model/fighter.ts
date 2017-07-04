@@ -81,6 +81,18 @@ namespace Model
 			return type;
 		}
 		
+		getSkills()
+		{
+			let rows: string[][] = [];
+			for (let tag in this.skills)
+				rows.push([Data.Skills.Types[tag].name, this.getSkill(tag).toFixed(1)]);
+
+			if (rows.length == 0)
+				rows.push(['', '']);
+
+			return rows;
+		}
+
 		getAttacks(loadout: Loadout, team: Team)
 		{
 			let attacks: Attack[] = [];

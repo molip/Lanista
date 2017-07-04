@@ -174,7 +174,14 @@ namespace Model
 				}
 				else
 				{
-					// TODO: Practising, convalescing, recreation
+					let parts = activity.split(':');
+					if (parts.length == 2 && parts[0] == 'train')
+					{
+						let skill = parts[1];
+						fighter.addSkill(skill, hours * Data.Misc.TrainingRate);
+					}
+
+					// TODO: convalescing, recreation
 				}
 			}
 
