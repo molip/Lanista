@@ -72,7 +72,7 @@ namespace Data
 
 	export class BodyPart
 	{
-		constructor(public readonly health: number, public readonly attack: Attack, public readonly weaponSite: WeaponSite, public readonly instances: BodyPartInstance[]) { }
+		constructor(public readonly attack: Attack, public readonly instances: BodyPartInstance[], public readonly weaponSite: WeaponSite = null) { }
 	}
 
 	export namespace Species
@@ -80,7 +80,7 @@ namespace Data
 		export class Type
 		{
 			bodyParts: { [key: string]: BodyPart };
-			constructor(public readonly name: string) { }
+			constructor(public readonly name: string, public readonly health: number) { }
 		}
 		export let Types: { [key: string]: Type };
 	}

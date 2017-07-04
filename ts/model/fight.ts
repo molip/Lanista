@@ -106,12 +106,12 @@ namespace Model
 				let defense = armourData ? armourData.getDefense(attack.data.type) : 0;
 				let damage = attack.data.damage * (100 - defense) / 100;
 
-				let oldHealth = target.health;
-				target.health = Math.max(0, oldHealth - damage);
+				let oldHealth = defender.health;
+				defender.health = Math.max(0, oldHealth - damage);
 
 				let msg = attacker.name + ' uses ' + attack.data.name + ' on ' + defender.name + ' ' + targetData.instances[target.index].name + '. ';
 				msg += 'Damage = ' + attack.data.damage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
-				msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + target.health.toFixed(1) + '. ';
+				msg += 'Health ' + oldHealth.toFixed(1) + ' -> ' + defender.health.toFixed(1) + '. ';
 				return new AttackResult(attack.data.name, msg, attack.data.damage, defense, attack.sourceID, targetID); 
 			}
 		}

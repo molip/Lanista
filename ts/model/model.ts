@@ -8,7 +8,7 @@ namespace Model
 
 	export class State
 	{
-		static readonly key: string = "state.v18";
+		static readonly key: string = "state.v19";
 
 		private money = Data.Misc.StartingMoney;
 		phase: Phase = Phase.Dawn;

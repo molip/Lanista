@@ -4,7 +4,7 @@ namespace Model
 {
 	export class BodyPart
 	{
-		constructor(public id: string, public tag: string, public index: number, public health: number) { }
+		constructor(public id: string, public tag: string, public index: number) { }
 
 		getData(speciesData: Data.Species.Type)
 		{
@@ -36,18 +36,20 @@ namespace Model
 	{
 		bodyParts: { [id: string]: BodyPart } = {};
 		nextBodyPartID: number = 1;
+		health: number = 0;
 		private activity: string = '';
 		private experience: { [id: string]: number } = {};
 
 		constructor(public id: number, public species: string, public name: string, public image: string)
 		{
 			let data = this.getSpeciesData();
+			this.health = data.health;
 			for (let tag in data.bodyParts)
 			{
 				let part = data.bodyParts[tag];
 				for (let i = 0; i < part.instances.length; ++i)
 				{
-					this.bodyParts[this.nextBodyPartID] = new BodyPart(this.nextBodyPartID.toString(), tag, i, part.health);
+					this.bodyParts[this.nextBodyPartID] = new BodyPart(this.nextBodyPartID.toString(), tag, i);
 					++this.nextBodyPartID;
 				}
 			}
@@ -78,23 +80,6 @@ namespace Model
 			return type;
 		}
 		
-		getStatus()
-		{
-			let speciesData = this.getSpeciesData()
-			let rows: string[][] = [];
-			let status = '';
-			for (let id in this.bodyParts)
-			{
-				let part = this.bodyParts[id];
-				let data = speciesData.bodyParts[part.tag];
-				let row: string[] = [];
-				rows.push(row);
-				row.push(part.getInstanceData(speciesData).name);
-				row.push(part.health.toString() + '/' + data.health);
-			}
-			return rows;
-		}
-
 		getAttacks(loadout: Loadout, team: Team)
 		{
 			let attacks: Attack[] = [];
@@ -151,17 +136,12 @@ namespace Model
 
 		isDead()
 		{
-			for (let id in this.bodyParts)
-				if (this.bodyParts[id].health == 0)
-					return true;
-
-			return false;
+			return this.health <= 0;
 		}
 
 		resetHealth()
 		{
-			for (let part of this.getBodyParts())
-				part.health = part.getData(this.getSpeciesData()).health;
+			this.health = this.getSpeciesData().health;
 			Model.saveState();
 		}
 

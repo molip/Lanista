@@ -14,15 +14,14 @@ namespace View
 			tableFactory.addColumnHeader('Name', 20);
 			tableFactory.addColumnHeader('Image', 30);
 
-			tableFactory.addColumnHeader('Part', 10);
 			tableFactory.addColumnHeader('Health', 10);
 
 			for (let animal of Model.state.team.getAnimals())
 			{
-				let cells = [new Table.TextCell('<h4>' + animal.name + '</h4>'), new Table.ImageCell(animal.image)];
-
-				for (let c of Util.formatRows(animal.getStatus()))
-					cells.push(new Table.TextCell('<small>' + c + '</small>'));
+				let cells: Table.Cell[] = [];
+				cells.push(new Table.TextCell('<h4>' + animal.name + '</h4>'));
+				cells.push(new Table.ImageCell(animal.image));
+				cells.push(new Table.TextCell(animal.health.toString() + '/' + animal.getSpeciesData().health));
 
 				tableFactory.addRow(cells, false, null);
 			}
