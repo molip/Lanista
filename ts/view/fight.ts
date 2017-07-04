@@ -118,7 +118,7 @@ namespace View
 		sequence: Sequence = null;
 		timer: number = 0;
 		fighters: Model.Fighter[];
-		healths: number[][] = [];
+		healths: number[] = [];
 
 		constructor()
 		{
@@ -230,10 +230,14 @@ namespace View
 			this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
 			this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
 
-			let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
-			let damageAnim = new DamageAnimation(damageString, pointB);
-			damageAnim.onStart = () => { this.updateHealths(); }
-			this.sequence.items.push(damageAnim);
+			if (result.attackDamage > 0)
+			{
+				let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
+				let damageAnim = new DamageAnimation(damageString, pointB);
+				damageAnim.onStart = () => { this.updateHealths(); }
+				this.sequence.items.push(damageAnim);
+			}
+
 			this.sequence.items.push(new Animation(1000));
 			this.sequence.start();
 		}
@@ -286,13 +290,10 @@ namespace View
 
 		updateHealths()
 		{
-			this.healths.length = 0;
 			for (let i = 0; i < 2; ++i)
 			{
-				this.healths.push([]);
 				if (this.fighters[i])
-					for (let part of this.fighters[i].getBodyParts())
-						this.healths[this.healths.length - 1].push(part.health);
+					this.healths[i] = this.fighters[i].health;
 			}
 		}
 
@@ -314,17 +315,17 @@ namespace View
 			return new Point(fighterIndex ? rect.right - data.x : rect.left + data.x, rect.top + data.y);
 		}
 
-		drawHealthBar(ctx: CanvasRenderingContext2D, centre: Point, current: number, max: number)
+		drawHealthBar(ctx: CanvasRenderingContext2D, base: Point, current: number, max: number)
 		{
-			let scale = 5, height = 8;
+			let scale = 5, width = 8;
 			ctx.lineWidth = 2;
 			ctx.strokeStyle = '#802020';
 			ctx.fillStyle = '#f08080';
 
-			let innerRect = new Rect(centre.x - scale * max / 2, centre.y - height / 2, centre.x + scale * max / 2, centre.y + height / 2);
+			let innerRect = new Rect(base.x - width / 2, base.y - scale * max, base.x + width / 2, base.y);
 			let outerRect = innerRect.clone();
 			outerRect.expand(1, 1, 1, 1);
-			innerRect.right = innerRect.left + innerRect.width() * current / max;
+			innerRect.top = innerRect.bottom - innerRect.height() * current / max;
 			innerRect.fill(ctx);
 			outerRect.stroke(ctx);
 		}
@@ -332,14 +333,9 @@ namespace View
 		drawHealthBars(ctx: CanvasRenderingContext2D, sceneXform: Xform, fighterIndex: number)
 		{
 			let fighter = this.fighters[fighterIndex];
-			let parts = fighter.getBodyParts();
-			for (let i = 0; i < parts.length; ++i)
-			{
-				let part = parts[i];
-				let data = part.getData(fighter.getSpeciesData());
-				let point = this.getBodyPartPoint(fighterIndex, part);
-				this.drawHealthBar(ctx, sceneXform.transformPoint(point), this.healths[fighterIndex][i], data.health);
-			}
+			let fighterRect = this.getImageRect(fighterIndex);
+			let point = new Point(fighterIndex ? fighterRect.right + 50 : fighterRect.left - 50, fighterRect.bottom - 10);
+			this.drawHealthBar(ctx, sceneXform.transformPoint(point), this.healths[fighterIndex], fighter.getSpeciesData().health);
 		}
 
 		draw()

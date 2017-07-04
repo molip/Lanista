@@ -9,7 +9,7 @@ namespace Model
 		constructor(id: number, tag: string, name: string)
 		{
 			let type = Data.Animals.Types[tag];
-			super(id, type.species, name, type.shopImage);
+			super(id, type.species, name, Util.getImage('animals', tag));
 		}
 	}
 }

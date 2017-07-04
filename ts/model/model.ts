@@ -8,7 +8,7 @@ namespace Model
 
 	export class State
 	{
-		static readonly key: string = "state.v18";
+		static readonly key: string = "state.v19";
 
 		private money = Data.Misc.StartingMoney;
 		phase: Phase = Phase.Dawn;
@@ -174,7 +174,14 @@ namespace Model
 				}
 				else
 				{
-					// TODO: Practising, convalescing, recreation
+					let parts = activity.split(':');
+					if (parts.length == 2 && parts[0] == 'train')
+					{
+						let skill = parts[1];
+						fighter.addSkill(skill, hours * Data.Misc.TrainingRate);
+					}
+
+					// TODO: convalescing, recreation
 				}
 			}
 

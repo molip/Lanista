@@ -29,9 +29,10 @@ namespace Controller
 		{
 			let page = new View.ListPage(getShopTitle('Builders\' Merchant'));
 
-			for (let id of ['home', 'arena', 'barracks', 'kennels', 'storage', 'weapon', 'armour', 'training', 'surgery', 'lab', 'merch'])
+			for (let id in Data.Buildings.Levels)
 			{
-				var level = Data.Buildings.getLevel(id, Model.state.buildings.getNextUpgradeIndex(id));
+				let index = Model.state.buildings.getNextUpgradeIndex(id);
+				let level = Data.Buildings.getLevel(id, index);
 				if (level)
 				{
 					var handler = function ()
@@ -41,7 +42,7 @@ namespace Controller
 						View.ludus.updateObjects();
 					};
 
-					addItem(page, level.name, level.description, level.shopImage, !Model.state.buildings.canUpgrade(id), level.cost, handler);
+					addItem(page, level.name, level.description, Util.getImage('buildings', id + index), !Model.state.buildings.canUpgrade(id), level.cost, handler);
 					page.show();
 				}
 			}
@@ -61,7 +62,7 @@ namespace Controller
 				};
 
 				let type = Data.Animals.Types[id];
-				addItem(page, type.name, type.description, type.shopImage, disable, type.cost, handler);
+				addItem(page, type.name, type.description, Util.getImage('animals', id), disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -79,7 +80,7 @@ namespace Controller
 				};
 
 				let type = Data.People.Types[id];
-				addItem(page, type.name, type.description, type.shopImage, disable, type.cost, handler);
+				addItem(page, type.name, type.description, Util.getImage('people', id), disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -98,7 +99,7 @@ namespace Controller
 				};
 
 				let type = Data.Armour.Types[id];
-				addItem(page, type.name, type.description, type.image, disable, type.cost, handler);
+				addItem(page, type.name, type.description, Util.getImage('items', id), disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -117,7 +118,7 @@ namespace Controller
 				};
 
 				let type = Data.Weapons.Types[id];
-				addItem(page, type.name, type.description, type.image, disable, type.cost, handler);
+				addItem(page, type.name, type.description, Util.getImage('items', id), disable, type.cost, handler);
 				page.show();
 			}
 		}

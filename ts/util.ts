@@ -62,4 +62,9 @@ namespace Util
 	{
 		obj.__proto__ = type.prototype;
 	}
+
+	export function getImage(dir: string, name: string)
+	{
+		return 'images/' + dir + '/' + name + '.png';
+	}
 }

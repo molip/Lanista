@@ -14,7 +14,7 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public readonly name: string, public readonly cost: number, public readonly image: string, public readonly description: string, public readonly sites: Site[], public readonly defence: { [key: string]: number }) { }
+			constructor(public readonly name: string, public readonly cost: number, public readonly description: string, public readonly sites: Site[], public readonly defence: { [key: string]: number }) { }
 			validate()
 			{
 				for (let site of this.sites)
@@ -38,7 +38,7 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public readonly name: string, public readonly block: number, public readonly cost: number, public readonly image: string, public readonly description: string, public readonly sites: Site[], public readonly attacks: Attack[]) { }
+			constructor(public readonly name: string, public readonly block: number, public readonly cost: number, public readonly description: string, public readonly sites: Site[], public readonly attacks: Attack[]) { }
 			validate()
 			{
 				for (let site of this.sites)
@@ -72,7 +72,7 @@ namespace Data
 
 	export class BodyPart
 	{
-		constructor(public readonly health: number, public readonly attack: Attack, public readonly weaponSite: WeaponSite, public readonly instances: BodyPartInstance[]) { }
+		constructor(public readonly attack: Attack, public readonly instances: BodyPartInstance[], public readonly weaponSite: WeaponSite = null) { }
 	}
 
 	export namespace Species
@@ -80,7 +80,7 @@ namespace Data
 		export class Type
 		{
 			bodyParts: { [key: string]: BodyPart };
-			constructor(public readonly name: string) { }
+			constructor(public readonly name: string, public readonly health: number) { }
 		}
 		export let Types: { [key: string]: Type };
 	}
@@ -89,7 +89,7 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public readonly cost: number, public readonly shopImage: string, public readonly species: string, public readonly name: string, public readonly description: string) { }
+			constructor(public readonly cost: number, public readonly species: string, public readonly name: string, public readonly description: string) { }
 			validate()
 			{
 				if (!Species.Types[this.species])
@@ -106,7 +106,7 @@ namespace Data
 	{
 		export class Type
 		{
-			constructor(public cost: number, public shopImage: string, public name: string, public description: string) { }
+			constructor(public cost: number, public name: string, public description: string) { }
 			validate()
 			{
 			}
@@ -116,7 +116,7 @@ namespace Data
 
 	export namespace Buildings
 	{
-		export class Level { constructor(public cost: number, public buildTime: number, public mapX: number, public mapY: number, public capacity: number, public mapImage: string, public shopImage: string, public name: string, public description: string) { } }
+		export class Level { constructor(public cost: number, public buildTime: number, public mapX: number, public mapY: number, public capacity: number, public name: string, public description: string) { } }
 		export let Levels: { [key: string]: Level[]; }
 
 		export function getLevel(id: string, index: number): Level
@@ -144,6 +144,7 @@ namespace Data
 
 		export let Events: Event[];
 	}
+
 	export function validate()
 	{
 		console.log('Validating data...');
@@ -160,13 +161,25 @@ namespace Data
 		console.log('Validating finished.');
 	}
 
+	export namespace Skills
+	{
+		export class Type
+		{
+			constructor(public name: string) { }
+		}
+
+		export let Types: { [key: string]: Type };
+	}
+
 	export namespace Misc
 	{
-		export let TownTrigger: { mapX: number, mapY: number, mapImage: string };
+		export let TownTrigger: { mapX: number, mapY: number};
 		export let LudusBackgroundImage: string;
 		export let ConstructionImage: string
 		export let FightBackgroundImage: string;
 		export let ExperienceBenefit: number;
+		export let TrainingRate: number;
 		export let StartingMoney: number;
+		export let BaseAttackSkill: number;
 	}
 }

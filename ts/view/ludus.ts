@@ -48,7 +48,7 @@ namespace View
 			{
 				this.levelIndex = index;
 				var level = Data.Buildings.getLevel(this.id, index);
-				this.loadImage(level.mapImage, () => { this.onload() });
+				this.loadImage(Util.getImage('buildings', this.id + index), () => { this.onload() });
 				this.pos = new Point(level.mapX, level.mapY);
 				changed = true;
 			}
@@ -149,7 +149,7 @@ namespace View
 
 			let town = Data.Misc.TownTrigger;
 			let trigger = new View.Trigger('town', Controller.onTownTriggerClicked);
-			trigger.loadImage(town.mapImage, () => { this.draw() });
+			trigger.loadImage(Util.getImage('buildings', 'town'), () => { this.draw() });
 			trigger.pos = new Point(town.mapX, town.mapY);
 			this.Objects.push(trigger);
 
