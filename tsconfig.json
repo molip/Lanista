@@ -7,7 +7,8 @@
 		"emitBOM": true,
 		"noImplicitAny": true,
 		"noImplicitThis": true,
-		"noImplicitReturns": true
+		"noImplicitReturns": true,
+		"alwaysStrict": true
 	},
 	"include": [ "ts/**/*" ]
 }

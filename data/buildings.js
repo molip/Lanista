@@ -1,5 +1,13 @@
-﻿Data.Buildings.Levels = {		//	cost	build	map x	map y	capacity	name					description
-	'home': [					//			time	
+﻿// Buildings which appear in the Buildings shop.
+
+// cost:		Zero means you get it for free when the game starts.
+// build time:	Number of man-hours to build.
+// capacity:	Depends on type.
+
+Data.Buildings.Levels = {
+//	tag								cost	build	map x	map y	capacity	name					description
+//											time
+	'home': [
 		new Data.Buildings.Level(	0,		0,		32,		96,		0,			'Shack',				'Crappy shack'				),
 		new Data.Buildings.Level(	50,		5,		32,		96,		0,			'House',				'Nice House'					),
 	],
@@ -44,4 +52,4 @@
 		new Data.Buildings.Level(	0,		0,		157,	552,	0,			'Arena 1',				'To fight stuff'				),
 		new Data.Buildings.Level(	200,	5,		156,	549,	0,			'Arena 2',				'To fight more stuff'		 ),
 	],
-}
+};

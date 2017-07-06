@@ -1,5 +1,3 @@
-"use strict";
-
 namespace Model
 {
 	export class BodyPart
@@ -39,7 +37,7 @@ namespace Model
 		private nextBodyPartID: number = 1;
 		health: number = 0;
 		private activity: string = '';
-		private experience: { [id: string]: number } = {};
+		private experience: { [tag: string]: number } = {};
 
 		constructor(public id: number, public species: string, public name: string, public image: string)
 		{
@@ -155,7 +153,7 @@ namespace Model
 		resetHealth()
 		{
 			this.health = this.getSpeciesData().health;
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		getExperience(tag: string)
@@ -167,6 +165,7 @@ namespace Model
 		{
 			this.experience[tag] = this.experience[tag] || 0;
 			this.experience[tag] += hours;
+			Model.invalidate();
 		}
 
 		getActivity()
@@ -177,7 +176,7 @@ namespace Model
 		setActivity(tag: string)
 		{
 			this.activity = tag;
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		getSkill(tag: string)
@@ -189,6 +188,7 @@ namespace Model
 		addSkill(tag: string, value: number)
 		{
 			this.skills[tag] = this.getSkill(tag) + value;
+			Model.invalidate();
 		}
 	}
 }

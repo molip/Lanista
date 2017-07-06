@@ -1,5 +1,3 @@
-"use strict";
-
 namespace Model
 {
 	export class ItemPosition
@@ -88,6 +86,7 @@ namespace Model
 			if (bodyPartIDs)
 			{
 				this.itemPositions.push(new ItemPosition(itemID, bodyPartIDs));
+				Model.invalidate();
 				return;
 			}
 			Util.assert(false);
@@ -99,6 +98,7 @@ namespace Model
 				if (itemPos.id == itemID)
 				{
 					this.itemPositions.splice(i, 1);
+					Model.invalidate();
 					return;
 				}
 

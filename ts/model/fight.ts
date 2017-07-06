@@ -1,5 +1,3 @@
-"use strict";
-
 namespace Model
 {
 	export namespace Fight
@@ -83,7 +81,7 @@ namespace Model
 				this.text += result.description + '<br>';
 				this.finished = defenderSide.getFighter().isDead();
 
-				Model.saveState();
+				Model.invalidate();
 
 				return result;
 			}
@@ -126,6 +124,8 @@ namespace Model
 				{
 					msg += 'Missed!';
 				}
+
+				Model.invalidate();
 
 				return new AttackResult(attack.data.name, msg, baseDamage, defense, attack.sourceID, targetID); 
 			}

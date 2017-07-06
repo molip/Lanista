@@ -1,7 +1,5 @@
 /// <reference path="fighter.ts" />
 
-"use strict";
-
 namespace Model
 {
 	export class Person extends Fighter

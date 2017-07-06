@@ -1,5 +1,4 @@
 /// <reference path="page.ts" />
-"use strict";
 
 namespace View 
 {

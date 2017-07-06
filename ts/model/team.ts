@@ -1,5 +1,3 @@
-"use strict";
-
 namespace Model
 {
 	export enum ItemType { Weapon, Armour };
@@ -35,6 +33,7 @@ namespace Model
 			Util.assert(tag in Data.Animals.Types);
 			this.fighters[this.nextFighterID] = new Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
 			++this.nextFighterID;
+			Model.invalidate();
 		}
 
 		addPerson(tag: string)
@@ -42,6 +41,7 @@ namespace Model
 			Util.assert(tag in Data.People.Types);
 			this.fighters[this.nextFighterID] = new Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
 			++this.nextFighterID;
+			Model.invalidate();
 		}
 
 		addItem(type: ItemType, tag: string)
@@ -50,6 +50,7 @@ namespace Model
 			Util.assert(tag in data);
 			this.items[this.nextItemID] = new Item(type, tag);
 			++this.nextItemID;
+			Model.invalidate();
 		}
 
 		getPeople()

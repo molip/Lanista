@@ -108,7 +108,7 @@ var Controller;
     function startTransition(dusk) {
         View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
     }
-    function onBuildingTriggerClicked(id) {
+    function onBuildingTriggerClicked(tag) {
         var handlers = {
             'home': onHomeTriggerClicked,
             'barracks': onBarracksTriggerClicked,
@@ -122,8 +122,8 @@ var Controller;
             'merch': onMerchTriggerClicked,
             'arena': onArenaTriggerClicked,
         };
-        Util.assert(handlers[id]);
-        handlers[id]();
+        Util.assert(handlers[tag]);
+        handlers[tag]();
     }
     Controller.onBuildingTriggerClicked = onBuildingTriggerClicked;
     function onResetClicked() {
@@ -232,16 +232,16 @@ var Controller;
         Shop.showShopsPage = showShopsPage;
         function onBuildersMerchantClicked() {
             let page = new View.ListPage(getShopTitle('Builders\' Merchant'));
-            for (let id in Data.Buildings.Levels) {
-                let index = Model.state.buildings.getNextUpgradeIndex(id);
-                let level = Data.Buildings.getLevel(id, index);
+            for (let tag in Data.Buildings.Levels) {
+                let index = Model.state.buildings.getNextUpgradeIndex(tag);
+                let level = Data.Buildings.getLevel(tag, index);
                 if (level) {
                     var handler = function () {
-                        Model.state.buildings.buyUpgrade(id);
+                        Model.state.buildings.buyUpgrade(tag);
                         Controller.updateHUD();
                         View.ludus.updateObjects();
                     };
-                    addItem(page, level.name, level.description, Util.getImage('buildings', id + index), !Model.state.buildings.canUpgrade(id), level.cost, handler);
+                    addItem(page, level.name, level.description, Util.getImage('buildings', tag + index), !Model.state.buildings.canUpgrade(tag), level.cost, handler);
                     page.show();
                 }
             }
@@ -249,52 +249,52 @@ var Controller;
         function onAnimalMarketClicked() {
             let page = new View.ListPage(getShopTitle('Animal Market'));
             let disable = Model.state.team.getAnimals().length >= Model.state.buildings.getCapacity('kennels');
-            for (let id in Data.Animals.Types) {
+            for (let tag in Data.Animals.Types) {
                 var handler = function () {
-                    Model.state.buyAnimal(id);
+                    Model.state.buyAnimal(tag);
                     Controller.updateHUD();
                 };
-                let type = Data.Animals.Types[id];
-                addItem(page, type.name, type.description, Util.getImage('animals', id), disable, type.cost, handler);
+                let type = Data.Animals.Types[tag];
+                addItem(page, type.name, type.description, Util.getImage('animals', tag), disable, type.cost, handler);
                 page.show();
             }
         }
         function onPeopleMarketClicked() {
             let page = new View.ListPage(getShopTitle('People Market'));
             let disable = Model.state.team.getPeople().length >= Model.state.buildings.getCapacity('barracks');
-            for (let id in Data.People.Types) {
+            for (let tag in Data.People.Types) {
                 var handler = function () {
-                    Model.state.buyPerson(id);
+                    Model.state.buyPerson(tag);
                     Controller.updateHUD();
                 };
-                let type = Data.People.Types[id];
-                addItem(page, type.name, type.description, Util.getImage('people', id), disable, type.cost, handler);
+                let type = Data.People.Types[tag];
+                addItem(page, type.name, type.description, Util.getImage('people', tag), disable, type.cost, handler);
                 page.show();
             }
         }
         function onArmourMarketClicked() {
             let page = new View.ListPage(getShopTitle('Armourer'));
             let disable = Model.state.team.getItemCount() >= Model.state.buildings.getCapacity('storage');
-            for (let id in Data.Armour.Types) {
+            for (let tag in Data.Armour.Types) {
                 var handler = function () {
-                    Model.state.buyArmour(id);
+                    Model.state.buyArmour(tag);
                     Controller.updateHUD();
                 };
-                let type = Data.Armour.Types[id];
-                addItem(page, type.name, type.description, Util.getImage('items', id), disable, type.cost, handler);
+                let type = Data.Armour.Types[tag];
+                addItem(page, type.name, type.description, Util.getImage('items', tag), disable, type.cost, handler);
                 page.show();
             }
         }
         function onWeaponMarketClicked() {
             let page = new View.ListPage(getShopTitle('Weaponer'));
             let disable = Model.state.team.getItemCount() >= Model.state.buildings.getCapacity('storage');
-            for (let id in Data.Weapons.Types) {
+            for (let tag in Data.Weapons.Types) {
                 var handler = function () {
-                    Model.state.buyWeapon(id);
+                    Model.state.buyWeapon(tag);
                     Controller.updateHUD();
                 };
-                let type = Data.Weapons.Types[id];
-                addItem(page, type.name, type.description, Util.getImage('items', id), disable, type.cost, handler);
+                let type = Data.Weapons.Types[tag];
+                addItem(page, type.name, type.description, Util.getImage('items', tag), disable, type.cost, handler);
                 page.show();
             }
         }
@@ -452,9 +452,9 @@ var Data;
             }
         }
         Buildings.Level = Level;
-        function getLevel(id, index) {
-            Util.assert(id in Buildings.Levels);
-            return index >= 0 && index < Buildings.Levels[id].length ? Buildings.Levels[id][index] : null;
+        function getLevel(tag, index) {
+            Util.assert(tag in Buildings.Levels);
+            return index >= 0 && index < Buildings.Levels[tag].length ? Buildings.Levels[tag][index] : null;
         }
         Buildings.getLevel = getLevel;
     })(Buildings = Data.Buildings || (Data.Buildings = {}));
@@ -484,14 +484,14 @@ var Data;
     })(Events = Data.Events || (Data.Events = {}));
     function validate() {
         console.log('Validating data...');
-        for (let id in Armour.Types)
-            Armour.Types[id].validate();
-        for (let id in Weapons.Types)
-            Weapons.Types[id].validate();
-        for (let id in Animals.Types)
-            Animals.Types[id].validate();
-        for (let id in People.Types)
-            People.Types[id].validate();
+        for (let tag in Armour.Types)
+            Armour.Types[tag].validate();
+        for (let tag in Weapons.Types)
+            Weapons.Types[tag].validate();
+        for (let tag in Animals.Types)
+            Animals.Types[tag].validate();
+        for (let tag in People.Types)
+            People.Types[tag].validate();
         console.log('Validating finished.');
     }
     Data.validate = validate;
@@ -631,7 +631,7 @@ var Model;
         }
         resetHealth() {
             this.health = this.getSpeciesData().health;
-            Model.saveState();
+            Model.invalidate();
         }
         getExperience(tag) {
             return this.experience[tag] || 0;
@@ -639,13 +639,14 @@ var Model;
         addExperience(tag, hours) {
             this.experience[tag] = this.experience[tag] || 0;
             this.experience[tag] += hours;
+            Model.invalidate();
         }
         getActivity() {
             return this.activity;
         }
         setActivity(tag) {
             this.activity = tag;
-            Model.saveState();
+            Model.invalidate();
         }
         getSkill(tag) {
             Util.assert(tag in Data.Skills.Types);
@@ -653,6 +654,7 @@ var Model;
         }
         addSkill(tag, value) {
             this.skills[tag] = this.getSkill(tag) + value;
+            Model.invalidate();
         }
     }
     Model.Fighter = Fighter;
@@ -677,91 +679,92 @@ var Model;
         class State {
             constructor() {
                 this.types = {};
-                for (var type in Data.Buildings.Levels) {
-                    var free = Data.Buildings.getLevel(type, 0).cost == 0;
-                    this.types[type] = { levelIndex: free ? 0 : -1, progress: -1 };
+                for (var tag in Data.Buildings.Levels) {
+                    var free = Data.Buildings.getLevel(tag, 0).cost == 0;
+                    this.types[tag] = { levelIndex: free ? 0 : -1, progress: -1 };
                 }
             }
             update(hours) {
                 let changed = false;
                 let buildingCount = 0;
-                for (let id in this.types)
-                    if (this.isConstructing(id))
+                for (let tag in this.types)
+                    if (this.isConstructing(tag))
                         ++buildingCount;
-                for (let id in this.types)
-                    if (this.continueConstruction(id, hours / buildingCount))
+                for (let tag in this.types)
+                    if (this.continueConstruction(tag, hours / buildingCount))
                         changed = true;
                 return changed;
             }
-            getCapacity(id) {
-                let level = this.getCurrentLevel(id);
+            getCapacity(tag) {
+                let level = this.getCurrentLevel(tag);
                 return level ? level.capacity : 0;
             }
-            getCurrentLevelIndex(id) {
-                Util.assert(id in this.types);
-                return this.types[id].levelIndex;
+            getCurrentLevelIndex(tag) {
+                Util.assert(tag in this.types);
+                return this.types[tag].levelIndex;
             }
-            getNextLevelIndex(id) {
-                var nextIndex = this.getCurrentLevelIndex(id) + 1;
-                return nextIndex < this.getLevelCount(id) ? nextIndex : -1;
+            getNextLevelIndex(tag) {
+                var nextIndex = this.getCurrentLevelIndex(tag) + 1;
+                return nextIndex < this.getLevelCount(tag) ? nextIndex : -1;
             }
-            getNextUpgradeIndex(id) {
-                var index = this.getCurrentLevelIndex(id) + 1;
-                if (this.isConstructing(id))
+            getNextUpgradeIndex(tag) {
+                var index = this.getCurrentLevelIndex(tag) + 1;
+                if (this.isConstructing(tag))
                     ++index;
-                return index < this.getLevelCount(id) ? index : -1;
+                return index < this.getLevelCount(tag) ? index : -1;
             }
-            setLevelIndex(id, index) {
-                Util.assert(id in this.types);
-                Util.assert(index < this.getLevelCount(id));
-                this.types[id].levelIndex = index;
-                Model.saveState();
+            setLevelIndex(tag, index) {
+                Util.assert(tag in this.types);
+                Util.assert(index < this.getLevelCount(tag));
+                this.types[tag].levelIndex = index;
+                Model.invalidate();
             }
-            canUpgrade(id) {
-                Util.assert(id in this.types);
-                var level = this.getNextLevel(id);
-                return level && Model.state.getMoney() >= level.cost && !this.isConstructing(id);
+            canUpgrade(tag) {
+                Util.assert(tag in this.types);
+                var level = this.getNextLevel(tag);
+                return level && Model.state.getMoney() >= level.cost && !this.isConstructing(tag);
             }
-            buyUpgrade(id) {
-                Util.assert(this.canUpgrade(id));
-                Model.state.spendMoney(this.getNextLevel(id).cost);
-                this.types[id].progress = 0;
-                Model.saveState();
+            buyUpgrade(tag) {
+                Util.assert(this.canUpgrade(tag));
+                Model.state.spendMoney(this.getNextLevel(tag).cost);
+                this.types[tag].progress = 0;
+                Model.invalidate();
             }
-            isConstructing(id) {
-                return this.types[id].progress >= 0;
+            isConstructing(tag) {
+                return this.types[tag].progress >= 0;
             }
-            continueConstruction(id, manHours) {
-                Util.assert(id in this.types);
-                if (!this.isConstructing(id))
+            continueConstruction(tag, manHours) {
+                Util.assert(tag in this.types);
+                if (!this.isConstructing(tag))
                     return false;
-                let level = this.getNextLevel(id);
+                let level = this.getNextLevel(tag);
                 Util.assert(level != null);
-                if (this.types[id].progress + manHours >= level.buildTime) {
-                    this.types[id].progress = -1;
-                    ++this.types[id].levelIndex;
+                if (this.types[tag].progress + manHours >= level.buildTime) {
+                    this.types[tag].progress = -1;
+                    ++this.types[tag].levelIndex;
                 }
                 else
-                    this.types[id].progress += manHours;
+                    this.types[tag].progress += manHours;
+                Model.invalidate();
                 return true;
             }
-            getConstructionProgress(id) {
-                Util.assert(id in this.types);
-                let progress = this.types[id].progress;
+            getConstructionProgress(tag) {
+                Util.assert(tag in this.types);
+                let progress = this.types[tag].progress;
                 if (progress < 0)
                     return 0;
-                let level = this.getNextLevel(id);
+                let level = this.getNextLevel(tag);
                 Util.assert(level != null);
                 return progress / level.buildTime;
             }
-            getCurrentLevel(id) {
-                return Data.Buildings.getLevel(id, this.getCurrentLevelIndex(id));
+            getCurrentLevel(tag) {
+                return Data.Buildings.getLevel(tag, this.getCurrentLevelIndex(tag));
             }
-            getNextLevel(id) {
-                return Data.Buildings.getLevel(id, this.getNextLevelIndex(id));
+            getNextLevel(tag) {
+                return Data.Buildings.getLevel(tag, this.getNextLevelIndex(tag));
             }
-            getLevelCount(id) {
-                return Data.Buildings.Levels[id].length;
+            getLevelCount(tag) {
+                return Data.Buildings.Levels[tag].length;
             }
         }
         Buildings.State = State;
@@ -865,7 +868,7 @@ var Model;
                 let result = this.attack(attackerSide, defenderSide);
                 this.text += result.description + '<br>';
                 this.finished = defenderSide.getFighter().isDead();
-                Model.saveState();
+                Model.invalidate();
                 return result;
             }
             attack(attackerSide, defenderSide) {
@@ -895,6 +898,7 @@ var Model;
                 else {
                     msg += 'Missed!';
                 }
+                Model.invalidate();
                 return new AttackResult(attack.data.name, msg, baseDamage, defense, attack.sourceID, targetID);
             }
         }
@@ -966,6 +970,7 @@ var Model;
             let bodyPartIDs = this.findBodyPartsForItem(itemID, team);
             if (bodyPartIDs) {
                 this.itemPositions.push(new ItemPosition(itemID, bodyPartIDs));
+                Model.invalidate();
                 return;
             }
             Util.assert(false);
@@ -974,6 +979,7 @@ var Model;
             for (let i = 0, itemPos; itemPos = this.itemPositions[i]; ++i)
                 if (itemPos.id == itemID) {
                     this.itemPositions.splice(i, 1);
+                    Model.invalidate();
                     return;
                 }
             Util.assert(false);
@@ -1050,7 +1056,7 @@ var Model;
             let newTime = (this.getDay() + 1) * minutesPerDay;
             let changed = this.addMinutes(newTime - this.time, doWork);
             this.phase = Phase.Dusk;
-            Model.saveState();
+            Model.invalidate();
             return changed;
         }
         addMinutes(minutes, doWork) {
@@ -1061,16 +1067,19 @@ var Model;
             if (this.getDay() > oldDay) {
                 this.phase = Phase.Dusk;
             }
+            Model.invalidate();
             return changed;
         }
         deleteEventsForToday() {
             this.events = this.events.filter(e => e.day != this.getDay());
+            Model.invalidate();
         }
         isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
         cancelNight() {
             Util.assert(this.isNight());
             this.phase = Phase.Dawn;
             this.advancePhase();
+            Model.invalidate();
         }
         advancePhase() {
             switch (this.phase) {
@@ -1097,13 +1106,13 @@ var Model;
                     this.phase = Phase.Dawn;
                     break;
             }
-            Model.saveState();
+            Model.invalidate();
         }
         addEvent(event) {
             Util.assert(this.getEventsForDay(event.day).length == 0);
             this.events.push(event);
             this.events.sort((a, b) => { return a.day - b.day; });
-            Model.saveState();
+            Model.invalidate();
         }
         getEventsForDay(day) {
             return this.events.filter(e => e.day == day);
@@ -1111,9 +1120,9 @@ var Model;
         updateActivities(hours) {
             let workPower = {}; // Activity -> power.
             let workers = {}; // Activity -> workers.
-            for (let id in Data.Activities.Types) {
-                workPower[id] = Data.Activities.Types[id].freeWork;
-                workers[id] = [];
+            for (let tag in Data.Activities.Types) {
+                workPower[tag] = Data.Activities.Types[tag].freeWork;
+                workers[tag] = [];
             }
             let UpdateExperience = function (activity) {
                 if (activity in workers)
@@ -1149,6 +1158,7 @@ var Model;
                 this.time = Math.floor(this.time / speed) * speed;
             }
             this.speed = speed;
+            Model.invalidate();
         }
         getDay() {
             return Math.floor(this.time / minutesPerDay);
@@ -1164,36 +1174,36 @@ var Model;
         spendMoney(amount) {
             Util.assert(amount >= 0 && Model.state.money >= amount);
             Model.state.money -= amount;
-            Model.saveState();
+            Model.invalidate();
         }
         addMoney(amount) {
             Util.assert(amount >= 0);
             Model.state.money += amount;
-            Model.saveState();
+            Model.invalidate();
         }
         buyAnimal(tag) {
             Util.assert(tag in Data.Animals.Types);
             this.spendMoney(Data.Animals.Types[tag].cost);
             this.team.addAnimal(tag);
-            Model.saveState();
+            Model.invalidate();
         }
         buyPerson(tag) {
             Util.assert(tag in Data.People.Types);
             this.spendMoney(Data.People.Types[tag].cost);
             this.team.addPerson(tag);
-            Model.saveState();
+            Model.invalidate();
         }
         buyArmour(tag) {
             Util.assert(tag in Data.Armour.Types);
             this.spendMoney(Data.Armour.Types[tag].cost);
             this.team.addItem(Model.ItemType.Armour, tag);
-            Model.saveState();
+            Model.invalidate();
         }
         buyWeapon(tag) {
             Util.assert(tag in Data.Weapons.Types);
             this.spendMoney(Data.Weapons.Types[tag].cost);
             this.team.addItem(Model.ItemType.Weapon, tag);
-            Model.saveState();
+            Model.invalidate();
         }
         startFight(sideA, sideB) {
             Util.assert(this.fight == null);
@@ -1201,17 +1211,19 @@ var Model;
             this.fight = new Model.Fight.State(sideA, sideB);
             this.deleteEventsForToday();
             this.phase = Phase.Fight;
-            Model.saveState();
+            Model.invalidate();
         }
         endFight() {
             Util.assert(!!this.fight);
             Util.assert(this.time % minutesPerDay == 0); // Fight must happen at dawn.
             this.fight = null;
             this.skipToNextDay(false);
+            Model.invalidate();
         }
     }
     State.key = "state.v19";
     Model.State = State;
+    let dirty = false;
     function init() {
         let str = localStorage.getItem(State.key);
         if (str) {
@@ -1223,13 +1235,21 @@ var Model;
             resetState();
     }
     Model.init = init;
+    function invalidate() {
+        dirty = true;
+    }
+    Model.invalidate = invalidate;
     function saveState() {
-        localStorage.setItem(State.key, JSON.stringify(Model.state));
+        if (dirty) {
+            localStorage.setItem(State.key, JSON.stringify(Model.state));
+            dirty = false;
+        }
     }
     Model.saveState = saveState;
     function resetState() {
         Model.state = new State();
         localStorage.removeItem(State.key);
+        invalidate();
     }
     Model.resetState = resetState;
 })(Model || (Model = {}));
@@ -1298,17 +1318,20 @@ var Model;
             Util.assert(tag in Data.Animals.Types);
             this.fighters[this.nextFighterID] = new Model.Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
             ++this.nextFighterID;
+            Model.invalidate();
         }
         addPerson(tag) {
             Util.assert(tag in Data.People.Types);
             this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
             ++this.nextFighterID;
+            Model.invalidate();
         }
         addItem(type, tag) {
             let data = type == ItemType.Armour ? Data.Armour.Types : Data.Weapons.Types;
             Util.assert(tag in data);
             this.items[this.nextItemID] = new Item(type, tag);
             ++this.nextItemID;
+            Model.invalidate();
         }
         getPeople() {
             let people = [];
@@ -2260,46 +2283,46 @@ var View;
 var View;
 (function (View) {
     class Trigger extends View.CanvasImage {
-        constructor(id, handler) {
+        constructor(tag, handler) {
             super();
-            this.id = id;
+            this.tag = tag;
             this.handler = handler;
         }
         onClick() {
             if (this.isEnabled())
-                this.handler(this.id);
+                this.handler(this.tag);
         }
     }
     View.Trigger = Trigger;
     class Building extends Trigger {
-        constructor(id, handler) {
-            super(id, handler);
+        constructor(tag, handler) {
+            super(tag, handler);
             this.handler = handler;
             this.levelIndex = -1;
             this.progress = -1;
         }
         isEnabled() {
-            return Model.state.buildings.getCurrentLevelIndex(this.id) >= 0;
+            return Model.state.buildings.getCurrentLevelIndex(this.tag) >= 0;
         }
         update() {
             let changed = false;
-            var index = Model.state.buildings.getCurrentLevelIndex(this.id);
+            var index = Model.state.buildings.getCurrentLevelIndex(this.tag);
             if (index < 0 && !this.image) {
-                let level = Data.Buildings.getLevel(this.id, 0);
+                let level = Data.Buildings.getLevel(this.tag, 0);
                 this.loadImage(Data.Misc.ConstructionImage, () => { this.onload(); });
                 this.pos = new Point(level.mapX, level.mapY);
                 changed = true;
             }
             else if (this.levelIndex != index) {
                 this.levelIndex = index;
-                var level = Data.Buildings.getLevel(this.id, index);
-                this.loadImage(Util.getImage('buildings', this.id + index), () => { this.onload(); });
+                var level = Data.Buildings.getLevel(this.tag, index);
+                this.loadImage(Util.getImage('buildings', this.tag + index), () => { this.onload(); });
                 this.pos = new Point(level.mapX, level.mapY);
                 changed = true;
             }
             let oldProgress = this.progress;
-            if (Model.state.buildings.isConstructing(this.id))
-                this.progress = Model.state.buildings.getConstructionProgress(this.id);
+            if (Model.state.buildings.isConstructing(this.tag))
+                this.progress = Model.state.buildings.getConstructionProgress(this.tag);
             else
                 this.progress = -1;
             if (this.progress != oldProgress)
@@ -2376,12 +2399,12 @@ var View;
         }
         updateObjects() {
             let redraw = false;
-            for (var id in Data.Buildings.Levels) {
-                if (Model.state.buildings.getCurrentLevelIndex(id) >= 0 || Model.state.buildings.isConstructing(id)) {
-                    let building = this.Buildings[id];
-                    if (!(id in this.Buildings)) {
-                        building = new Building(id, Controller.onBuildingTriggerClicked);
-                        this.Buildings[id] = building;
+            for (var tag in Data.Buildings.Levels) {
+                if (Model.state.buildings.getCurrentLevelIndex(tag) >= 0 || Model.state.buildings.isConstructing(tag)) {
+                    let building = this.Buildings[tag];
+                    if (!(tag in this.Buildings)) {
+                        building = new Building(tag, Controller.onBuildingTriggerClicked);
+                        this.Buildings[tag] = building;
                         this.Objects.push(building);
                     }
                     if (building.update())
