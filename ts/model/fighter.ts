@@ -39,7 +39,7 @@ namespace Model
 		private nextBodyPartID: number = 1;
 		health: number = 0;
 		private activity: string = '';
-		private experience: { [id: string]: number } = {};
+		private experience: { [tag: string]: number } = {};
 
 		constructor(public id: number, public species: string, public name: string, public image: string)
 		{

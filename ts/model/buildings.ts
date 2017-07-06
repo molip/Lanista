@@ -9,10 +9,10 @@ namespace Model
 			types: { [key: string]: any; } = {};
 			constructor()
 			{
-				for (var type in Data.Buildings.Levels)
+				for (var tag in Data.Buildings.Levels)
 				{
-					var free = Data.Buildings.getLevel(type, 0).cost == 0;
-					this.types[type] = { levelIndex: free ? 0 : -1, progress: -1 }
+					var free = Data.Buildings.getLevel(tag, 0).cost == 0;
+					this.types[tag] = { levelIndex: free ? 0 : -1, progress: -1 }
 				}
 			}
 
@@ -21,115 +21,115 @@ namespace Model
 				let changed = false;
 
 				let buildingCount = 0;
-				for (let id in this.types)
-					if (this.isConstructing(id))
+				for (let tag in this.types)
+					if (this.isConstructing(tag))
 						++buildingCount;
 
-				for (let id in this.types)
-					if (this.continueConstruction(id, hours / buildingCount))
+				for (let tag in this.types)
+					if (this.continueConstruction(tag, hours / buildingCount))
 						changed = true;
 
 				return changed;
 			}
 
-			getCapacity(id: string): number
+			getCapacity(tag: string): number
 			{
-				let level = this.getCurrentLevel(id);
+				let level = this.getCurrentLevel(tag);
 				return level ? level.capacity : 0;
 			}
 
-			getCurrentLevelIndex(id: string): number
+			getCurrentLevelIndex(tag: string): number
 			{
-				Util.assert(id in this.types);
-				return this.types[id].levelIndex;
+				Util.assert(tag in this.types);
+				return this.types[tag].levelIndex;
 			}
 
-			getNextLevelIndex(id: string): number
+			getNextLevelIndex(tag: string): number
 			{
-				var nextIndex = this.getCurrentLevelIndex(id) + 1;
-				return nextIndex < this.getLevelCount(id) ? nextIndex : -1;
+				var nextIndex = this.getCurrentLevelIndex(tag) + 1;
+				return nextIndex < this.getLevelCount(tag) ? nextIndex : -1;
 			}
 
-			getNextUpgradeIndex(id: string): number
+			getNextUpgradeIndex(tag: string): number
 			{
-				var index = this.getCurrentLevelIndex(id) + 1;
-				if (this.isConstructing(id))
+				var index = this.getCurrentLevelIndex(tag) + 1;
+				if (this.isConstructing(tag))
 					++index;
-				return index < this.getLevelCount(id) ? index : -1;
+				return index < this.getLevelCount(tag) ? index : -1;
 			}
 
-			setLevelIndex(id: string, index: number)
+			setLevelIndex(tag: string, index: number)
 			{
-				Util.assert(id in this.types);
-				Util.assert(index < this.getLevelCount(id));
-				this.types[id].levelIndex = index;
+				Util.assert(tag in this.types);
+				Util.assert(index < this.getLevelCount(tag));
+				this.types[tag].levelIndex = index;
 				Model.saveState();
 			}
 
-			canUpgrade(id: string): boolean
+			canUpgrade(tag: string): boolean
 			{
-				Util.assert(id in this.types);
-				var level = this.getNextLevel(id);
-				return level && Model.state.getMoney() >= level.cost && !this.isConstructing(id);
+				Util.assert(tag in this.types);
+				var level = this.getNextLevel(tag);
+				return level && Model.state.getMoney() >= level.cost && !this.isConstructing(tag);
 			}
 
-			buyUpgrade(id: string) 
+			buyUpgrade(tag: string) 
 			{
-				Util.assert(this.canUpgrade(id));
-				Model.state.spendMoney(this.getNextLevel(id).cost);
-				this.types[id].progress = 0;
+				Util.assert(this.canUpgrade(tag));
+				Model.state.spendMoney(this.getNextLevel(tag).cost);
+				this.types[tag].progress = 0;
 				Model.saveState();
 			}
 
-			isConstructing(id: string)
+			isConstructing(tag: string)
 			{
-				return this.types[id].progress >= 0;
+				return this.types[tag].progress >= 0;
 			}
 
-			continueConstruction(id: string, manHours: number) 
+			continueConstruction(tag: string, manHours: number) 
 			{
-				Util.assert(id in this.types);
-				if (!this.isConstructing(id))
+				Util.assert(tag in this.types);
+				if (!this.isConstructing(tag))
 					return false;
 
-				let level = this.getNextLevel(id);
+				let level = this.getNextLevel(tag);
 				Util.assert(level != null);
 
-				if (this.types[id].progress + manHours >= level.buildTime)
+				if (this.types[tag].progress + manHours >= level.buildTime)
 				{
-					this.types[id].progress = -1;
-					++this.types[id].levelIndex;
+					this.types[tag].progress = -1;
+					++this.types[tag].levelIndex;
 				}
 				else
-					this.types[id].progress += manHours;
+					this.types[tag].progress += manHours;
 
 				return true;
 			}
 
-			getConstructionProgress(id: string): number // Normalised. 
+			getConstructionProgress(tag: string): number // Normalised. 
 			{
-				Util.assert(id in this.types);
-				let progress = this.types[id].progress;
+				Util.assert(tag in this.types);
+				let progress = this.types[tag].progress;
 				if (progress < 0)
 					return 0;
-				let level = this.getNextLevel(id);
+				let level = this.getNextLevel(tag);
 				Util.assert(level != null);
 				return progress / level.buildTime;
 			}
 
-			private getCurrentLevel(id: string): Data.Buildings.Level
+			private getCurrentLevel(tag: string): Data.Buildings.Level
 			{
-				return Data.Buildings.getLevel(id, this.getCurrentLevelIndex(id));
+				return Data.Buildings.getLevel(tag, this.getCurrentLevelIndex(tag));
 			}
 
-			private getNextLevel(id: string): Data.Buildings.Level
+			private getNextLevel(tag: string): Data.Buildings.Level
 			{
-				return Data.Buildings.getLevel(id, this.getNextLevelIndex(id));
+				return Data.Buildings.getLevel(tag, this.getNextLevelIndex(tag));
 			}
 
-			private getLevelCount(id: string): number
+			private getLevelCount(tag: string): number
 			{
-				return Data.Buildings.Levels[id].length;
+				return Data.Buildings.Levels[tag].length;
 			}
 		}
 	}

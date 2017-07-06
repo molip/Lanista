@@ -29,20 +29,20 @@ namespace Controller
 		{
 			let page = new View.ListPage(getShopTitle('Builders\' Merchant'));
 
-			for (let id in Data.Buildings.Levels)
+			for (let tag in Data.Buildings.Levels)
 			{
-				let index = Model.state.buildings.getNextUpgradeIndex(id);
-				let level = Data.Buildings.getLevel(id, index);
+				let index = Model.state.buildings.getNextUpgradeIndex(tag);
+				let level = Data.Buildings.getLevel(tag, index);
 				if (level)
 				{
 					var handler = function ()
 					{
-						Model.state.buildings.buyUpgrade(id);
+						Model.state.buildings.buyUpgrade(tag);
 						Controller.updateHUD();
 						View.ludus.updateObjects();
 					};
 
-					addItem(page, level.name, level.description, Util.getImage('buildings', id + index), !Model.state.buildings.canUpgrade(id), level.cost, handler);
+					addItem(page, level.name, level.description, Util.getImage('buildings', tag + index), !Model.state.buildings.canUpgrade(tag), level.cost, handler);
 					page.show();
 				}
 			}
@@ -53,16 +53,16 @@ namespace Controller
 			let page = new View.ListPage(getShopTitle('Animal Market'));
 
 			let disable = Model.state.team.getAnimals().length >= Model.state.buildings.getCapacity('kennels');
-			for (let id in Data.Animals.Types)
+			for (let tag in Data.Animals.Types)
 			{
 				var handler = function ()
 				{
-					Model.state.buyAnimal(id);
+					Model.state.buyAnimal(tag);
 					Controller.updateHUD();
 				};
 
-				let type = Data.Animals.Types[id];
-				addItem(page, type.name, type.description, Util.getImage('animals', id), disable, type.cost, handler);
+				let type = Data.Animals.Types[tag];
+				addItem(page, type.name, type.description, Util.getImage('animals', tag), disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -71,16 +71,16 @@ namespace Controller
 			let page = new View.ListPage(getShopTitle('People Market'));
 
 			let disable = Model.state.team.getPeople().length >= Model.state.buildings.getCapacity('barracks');
-			for (let id in Data.People.Types)
+			for (let tag in Data.People.Types)
 			{
 				var handler = function ()
 				{
-					Model.state.buyPerson(id);
+					Model.state.buyPerson(tag);
 					Controller.updateHUD();
 				};
 
-				let type = Data.People.Types[id];
-				addItem(page, type.name, type.description, Util.getImage('people', id), disable, type.cost, handler);
+				let type = Data.People.Types[tag];
+				addItem(page, type.name, type.description, Util.getImage('people', tag), disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -90,16 +90,16 @@ namespace Controller
 			let page = new View.ListPage(getShopTitle('Armourer'));
 
 			let disable = Model.state.team.getItemCount() >= Model.state.buildings.getCapacity('storage');
-			for (let id in Data.Armour.Types)
+			for (let tag in Data.Armour.Types)
 			{
 				var handler = function ()
 				{
-					Model.state.buyArmour(id);
+					Model.state.buyArmour(tag);
 					Controller.updateHUD();
 				};
 
-				let type = Data.Armour.Types[id];
-				addItem(page, type.name, type.description, Util.getImage('items', id), disable, type.cost, handler);
+				let type = Data.Armour.Types[tag];
+				addItem(page, type.name, type.description, Util.getImage('items', tag), disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -109,16 +109,16 @@ namespace Controller
 			let page = new View.ListPage(getShopTitle('Weaponer'));
 
 			let disable = Model.state.team.getItemCount() >= Model.state.buildings.getCapacity('storage');
-			for (let id in Data.Weapons.Types)
+			for (let tag in Data.Weapons.Types)
 			{
 				var handler = function ()
 				{
-					Model.state.buyWeapon(id);
+					Model.state.buyWeapon(tag);
 					Controller.updateHUD();
 				};
 
-				let type = Data.Weapons.Types[id];
-				addItem(page, type.name, type.description, Util.getImage('items', id), disable, type.cost, handler);
+				let type = Data.Weapons.Types[tag];
+				addItem(page, type.name, type.description, Util.getImage('items', tag), disable, type.cost, handler);
 				page.show();
 			}
 		}

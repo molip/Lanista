@@ -119,10 +119,10 @@ namespace Data
 		export class Level { constructor(public cost: number, public buildTime: number, public mapX: number, public mapY: number, public capacity: number, public name: string, public description: string) { } }
 		export let Levels: { [key: string]: Level[]; }
 
-		export function getLevel(id: string, index: number): Level
+		export function getLevel(tag: string, index: number): Level
 		{
-			Util.assert(id in Levels);
-			return index >= 0 && index < Levels[id].length ? Levels[id][index] : null;
+			Util.assert(tag in Levels);
+			return index >= 0 && index < Levels[tag].length ? Levels[tag][index] : null;
 		}
 	}
 
@@ -149,14 +149,14 @@ namespace Data
 	{
 		console.log('Validating data...');
 
-		for (let id in Armour.Types)
-			Armour.Types[id].validate();
-		for (let id in Weapons.Types)
-			Weapons.Types[id].validate();
-		for (let id in Animals.Types)
-			Animals.Types[id].validate();
-		for (let id in People.Types)
-			People.Types[id].validate();
+		for (let tag in Armour.Types)
+			Armour.Types[tag].validate();
+		for (let tag in Weapons.Types)
+			Weapons.Types[tag].validate();
+		for (let tag in Animals.Types)
+			Animals.Types[tag].validate();
+		for (let tag in People.Types)
+			People.Types[tag].validate();
 
 		console.log('Validating finished.');
 	}

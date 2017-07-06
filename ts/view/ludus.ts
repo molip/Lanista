@@ -4,7 +4,7 @@ namespace View
 {
 	export class Trigger extends CanvasImage
 	{
-		constructor(public id: string, public handler: (id: string) => void)
+		constructor(public tag: string, public handler: (id: string) => void)
 		{
 			super();
 		}
@@ -12,7 +12,7 @@ namespace View
 		onClick()
 		{
 			if (this.isEnabled())
-				this.handler(this.id);
+				this.handler(this.tag);
 		}
 	}
 
@@ -20,26 +20,26 @@ namespace View
 	{
 		levelIndex: number;
 		progress: number;
-		constructor(id: string, public handler: (id: string) => void)
+		constructor(tag: string, public handler: (id: string) => void)
 		{
-			super(id, handler);
+			super(tag, handler);
 			this.levelIndex = -1;
 			this.progress = -1;
 		}
 
 		isEnabled()
 		{
-			return Model.state.buildings.getCurrentLevelIndex(this.id) >= 0;
+			return Model.state.buildings.getCurrentLevelIndex(this.tag) >= 0;
 		}
 
 		update()
 		{
 			let changed = false;
-			var index = Model.state.buildings.getCurrentLevelIndex(this.id);
+			var index = Model.state.buildings.getCurrentLevelIndex(this.tag);
 
 			if (index < 0 && !this.image)
 			{
-				let level = Data.Buildings.getLevel(this.id, 0);
+				let level = Data.Buildings.getLevel(this.tag, 0);
 				this.loadImage(Data.Misc.ConstructionImage, () => { this.onload() });
 				this.pos = new Point(level.mapX, level.mapY);
 				changed = true;
@@ -47,15 +47,15 @@ namespace View
 			else if (this.levelIndex != index)
 			{
 				this.levelIndex = index;
-				var level = Data.Buildings.getLevel(this.id, index);
-				this.loadImage(Util.getImage('buildings', this.id + index), () => { this.onload() });
+				var level = Data.Buildings.getLevel(this.tag, index);
+				this.loadImage(Util.getImage('buildings', this.tag + index), () => { this.onload() });
 				this.pos = new Point(level.mapX, level.mapY);
 				changed = true;
 			}
 
 			let oldProgress = this.progress;
-			if (Model.state.buildings.isConstructing(this.id))
-				this.progress = Model.state.buildings.getConstructionProgress(this.id);
+			if (Model.state.buildings.isConstructing(this.tag))
+				this.progress = Model.state.buildings.getConstructionProgress(this.tag);
 			else
 				this.progress = -1;
 
@@ -160,15 +160,15 @@ namespace View
 		updateObjects()
 		{
 			let redraw = false;
-			for (var id in Data.Buildings.Levels)
+			for (var tag in Data.Buildings.Levels)
 			{
-				if (Model.state.buildings.getCurrentLevelIndex(id) >= 0 || Model.state.buildings.isConstructing(id))
+				if (Model.state.buildings.getCurrentLevelIndex(tag) >= 0 || Model.state.buildings.isConstructing(tag))
 				{
-					let building = this.Buildings[id];
-					if (!(id in this.Buildings))
+					let building = this.Buildings[tag];
+					if (!(tag in this.Buildings))
 					{
-						building = new Building(id, Controller.onBuildingTriggerClicked);
-						this.Buildings[id] = building;
+						building = new Building(tag, Controller.onBuildingTriggerClicked);
+						this.Buildings[tag] = building;
 						this.Objects.push(building);
 					}
 

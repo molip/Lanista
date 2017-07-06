@@ -83,7 +83,7 @@ namespace Controller
 		View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
 	}
 
-	export function onBuildingTriggerClicked(id: string)
+	export function onBuildingTriggerClicked(tag: string)
 	{
 		var handlers: { [key: string]: any; } = {
 			'home': onHomeTriggerClicked,
@@ -98,8 +98,8 @@ namespace Controller
 			'merch': onMerchTriggerClicked,
 			'arena': onArenaTriggerClicked,
 		};
-		Util.assert(handlers[id]);
-		handlers[id]();
+		Util.assert(handlers[tag]);
+		handlers[tag]();
 	}
 
 	export function onResetClicked()

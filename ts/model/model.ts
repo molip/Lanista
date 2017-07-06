@@ -146,13 +146,13 @@ namespace Model
 
 		updateActivities(hours: number)
 		{
-			let workPower: { [id: string]: number } = {}; // Activity -> power.
-			let workers: { [id: string]: Fighter[] } = {}; // Activity -> workers.
+			let workPower: { [tag: string]: number } = {}; // Activity -> power.
+			let workers: { [tag: string]: Fighter[] } = {}; // Activity -> workers.
 
-			for (let id in Data.Activities.Types)
+			for (let tag in Data.Activities.Types)
 			{
-				workPower[id] = Data.Activities.Types[id].freeWork;
-				workers[id] = [];
+				workPower[tag] = Data.Activities.Types[tag].freeWork;
+				workers[tag] = [];
 			}
 
 			let UpdateExperience = function (activity: string)
