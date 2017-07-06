@@ -65,7 +65,7 @@ namespace Model
 			let newTime = (this.getDay() + 1) * minutesPerDay;
 			let changed = this.addMinutes(newTime - this.time, doWork);
 			this.phase = Phase.Dusk;
-			Model.saveState();
+			Model.invalidate();
 			return changed;
 		}
 
@@ -82,12 +82,15 @@ namespace Model
 				this.phase = Phase.Dusk;
 			}
 
+			Model.invalidate();
+
 			return changed;
 		}
 
 		private deleteEventsForToday()
 		{
 			this.events = this.events.filter(e => e.day != this.getDay());
+			Model.invalidate();
 		}
 
 		isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
@@ -97,6 +100,7 @@ namespace Model
 			Util.assert(this.isNight());
 			this.phase = Phase.Dawn;
 			this.advancePhase();
+			Model.invalidate();
 		}
 
 		advancePhase()
@@ -127,7 +131,7 @@ namespace Model
 					break;
 			}
 
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		addEvent(event: Event)
@@ -136,7 +140,7 @@ namespace Model
 			this.events.push(event);
 			this.events.sort((a: Event, b: Event) => { return a.day - b.day; });
 
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		getEventsForDay(day: number)
@@ -205,6 +209,7 @@ namespace Model
 				this.time = Math.floor(this.time / speed) * speed;
 			}
 			this.speed = speed;
+			Model.invalidate();
 		}
 
 		getDay()
@@ -229,14 +234,14 @@ namespace Model
 		{
 			Util.assert(amount >= 0 && state.money >= amount);
 			state.money -= amount;
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		addMoney(amount: number)
 		{
 			Util.assert(amount >= 0);
 			state.money += amount;
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		buyAnimal(tag: string)
@@ -244,7 +249,7 @@ namespace Model
 			Util.assert(tag in Data.Animals.Types);
 			this.spendMoney(Data.Animals.Types[tag].cost);
 			this.team.addAnimal(tag);
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		buyPerson(tag: string)
@@ -252,7 +257,7 @@ namespace Model
 			Util.assert(tag in Data.People.Types);
 			this.spendMoney(Data.People.Types[tag].cost);
 			this.team.addPerson(tag);
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		buyArmour(tag: string)
@@ -260,7 +265,7 @@ namespace Model
 			Util.assert(tag in Data.Armour.Types);
 			this.spendMoney(Data.Armour.Types[tag].cost);
 			this.team.addItem(ItemType.Armour, tag);
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		buyWeapon(tag: string)
@@ -268,7 +273,7 @@ namespace Model
 			Util.assert(tag in Data.Weapons.Types);
 			this.spendMoney(Data.Weapons.Types[tag].cost);
 			this.team.addItem(ItemType.Weapon, tag);
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		startFight(sideA: Fight.Side, sideB: Fight.Side)
@@ -278,7 +283,7 @@ namespace Model
 			this.fight = new Fight.State(sideA, sideB);
 			this.deleteEventsForToday();
 			this.phase = Phase.Fight;
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		endFight()
@@ -288,10 +293,12 @@ namespace Model
 
 			this.fight = null;
 			this.skipToNextDay(false);
+			Model.invalidate();
 		}
 	}
 
 	export let state: State;
+	let dirty: boolean = false;
 
 	export function init()
 	{
@@ -306,14 +313,24 @@ namespace Model
 			resetState();
 	}
 
+	export function invalidate()
+	{
+		dirty = true;
+	}
+
 	export function saveState()
 	{
-		localStorage.setItem(State.key, JSON.stringify(state));
+		if (dirty)
+		{
+			localStorage.setItem(State.key, JSON.stringify(state));
+			dirty = false;
+		}
 	}
 
 	export function resetState()
 	{
 		state = new State();
 		localStorage.removeItem(State.key);
+		invalidate();
 	}
 }

@@ -63,7 +63,7 @@ namespace Model
 				Util.assert(tag in this.types);
 				Util.assert(index < this.getLevelCount(tag));
 				this.types[tag].levelIndex = index;
-				Model.saveState();
+				Model.invalidate();
 			}
 
 			canUpgrade(tag: string): boolean
@@ -78,7 +78,7 @@ namespace Model
 				Util.assert(this.canUpgrade(tag));
 				Model.state.spendMoney(this.getNextLevel(tag).cost);
 				this.types[tag].progress = 0;
-				Model.saveState();
+				Model.invalidate();
 			}
 
 			isConstructing(tag: string)
@@ -102,6 +102,8 @@ namespace Model
 				}
 				else
 					this.types[tag].progress += manHours;
+
+				Model.invalidate();
 
 				return true;
 			}

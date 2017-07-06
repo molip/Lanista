@@ -155,7 +155,7 @@ namespace Model
 		resetHealth()
 		{
 			this.health = this.getSpeciesData().health;
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		getExperience(tag: string)
@@ -167,6 +167,7 @@ namespace Model
 		{
 			this.experience[tag] = this.experience[tag] || 0;
 			this.experience[tag] += hours;
+			Model.invalidate();
 		}
 
 		getActivity()
@@ -177,7 +178,7 @@ namespace Model
 		setActivity(tag: string)
 		{
 			this.activity = tag;
-			Model.saveState();
+			Model.invalidate();
 		}
 
 		getSkill(tag: string)
@@ -189,6 +190,7 @@ namespace Model
 		addSkill(tag: string, value: number)
 		{
 			this.skills[tag] = this.getSkill(tag) + value;
+			Model.invalidate();
 		}
 	}
 }
