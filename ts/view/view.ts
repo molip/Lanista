@@ -1,5 +1,3 @@
-"use strict";
-
 namespace View 
 {
 	export let Width = 1280;

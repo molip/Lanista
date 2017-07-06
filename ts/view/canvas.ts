@@ -1,5 +1,3 @@
-"use strict";
-
 namespace View 
 {
 	export class CanvasObject

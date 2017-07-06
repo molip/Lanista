@@ -1,5 +1,3 @@
-"use strict";
-
 namespace Model
 {
 	const minutesPerDay = 60 * 12;

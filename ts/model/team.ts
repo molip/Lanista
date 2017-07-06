@@ -1,5 +1,3 @@
-"use strict";
-
 namespace Model
 {
 	export enum ItemType { Weapon, Armour };

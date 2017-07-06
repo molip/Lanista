@@ -1,6 +1,4 @@
-﻿"use strict";
-
-namespace Util
+﻿namespace Util
 {
 	export function formatMoney(amount: number): string
 	{

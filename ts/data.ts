@@ -1,6 +1,4 @@
-﻿"use strict";
-
-namespace Data
+﻿namespace Data
 {
 	export class Attack { constructor(public readonly name: string, public readonly type: string, public readonly damage: number) { } }
 	export class WeaponSite { constructor(public readonly name: string, public readonly type: string, public readonly replacesAttack: boolean) { } }
