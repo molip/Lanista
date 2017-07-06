@@ -44,4 +44,4 @@
 		new Data.Buildings.Level(	0,		0,		157,	552,	0,			'Arena 1',				'To fight stuff'				),
 		new Data.Buildings.Level(	200,	5,		156,	549,	0,			'Arena 2',				'To fight more stuff'		 ),
 	],
-}
+};
