@@ -1,29 +1,39 @@
-﻿Data.Species.Types = 
-{	//										name			HP
+﻿// Species.
+
+Data.Species.Types = {
+//	tag										name			HP
 	'human':		new Data.Species.Type(	'Human', 		40	),
 	'rabbit':		new Data.Species.Type(	'Rabbit', 		40	),
 	'rhino':		new Data.Species.Type(	'Rhino',		40	),
-	'dog':	    	new Data.Species.Type(	'Dog', 			40	),
-	'lynx':	    	new Data.Species.Type(	'Lynx', 		40	),
-	'wolf':	    	new Data.Species.Type(	'Wolf', 		40	),
-	'snake':	   	new Data.Species.Type(	'Snake', 		40	),
-	'boar':	    	new Data.Species.Type(	'Boar', 		40	),
-	'goat':	    	new Data.Species.Type(	'Goat', 		40	),
-	'bear':	    	new Data.Species.Type(	'Bear', 		40	),
-	'bull':	    	new Data.Species.Type(	'Bull', 		40	),
-	'lion':	    	new Data.Species.Type(	'Lion', 		40	),
-	'stag':	    	new Data.Species.Type(	'Stag', 		40	),
-	'baboon':	   	new Data.Species.Type(	'Baboon', 		40	),
-	'hippo':	   	new Data.Species.Type(	'Hippo', 		40	),
-	'scorpion':	   	new Data.Species.Type(	'Scorpion', 	40	),
-	'giant crab':  	new Data.Species.Type(	'Giant crab', 	40	),
-	'giant rat':  	new Data.Species.Type(	'Giant rat', 	40	),
+	'dog':			new Data.Species.Type(	'Dog', 			40	),
+	'lynx':			new Data.Species.Type(	'Lynx', 		40	),
+	'wolf':			new Data.Species.Type(	'Wolf', 		40	),
+	'snake':		new Data.Species.Type(	'Snake', 		40	),
+	'boar':			new Data.Species.Type(	'Boar', 		40	),
+	'goat':			new Data.Species.Type(	'Goat', 		40	),
+	'bear':			new Data.Species.Type(	'Bear', 		40	),
+	'bull':			new Data.Species.Type(	'Bull', 		40	),
+	'lion':			new Data.Species.Type(	'Lion', 		40	),
+	'stag':			new Data.Species.Type(	'Stag', 		40	),
+	'baboon':	 	new Data.Species.Type(	'Baboon', 		40	),
+	'hippo':	 	new Data.Species.Type(	'Hippo', 		40	),
+	'scorpion':	 	new Data.Species.Type(	'Scorpion', 	40	),
+	'giant crab':	new Data.Species.Type(	'Giant crab', 	40	),
+	'giant rat':	new Data.Species.Type(	'Giant rat', 	40	),
 	'crocodile':	new Data.Species.Type(	'Crocodile',	40	),
 	'elephant':		new Data.Species.Type(	'Elephant', 	40	),
 };
 
-Data.Species.Types['human'].bodyParts = 
-{	//							attack (name, type, damage)					instances (name, x, y)																					weapon site (name, id, replacesAttack)
+// Body parts for each species.
+
+// attack:				Same as in weapons.js.
+// instances:			Name and centre position of each instance of this body part.
+// weapon site:
+//		tag:			Referred to in weapons.js.
+//		replacesAttack:	If true, the body part attack is disabled when this site is occupied.
+
+Data.Species.Types['human'].bodyParts = {
+//	tag							attack (name, type, damage)					instances (name, x, y)																					weapon site (name, tag, replacesAttack)
 	'head':	new Data.BodyPart(	null,										[new Data.BodyPartInstance('Head', 140, 50)]),
 	'body':	new Data.BodyPart(	null,										[new Data.BodyPartInstance('Body', 110, 275)]),
 	'arm':	new Data.BodyPart(	new Data.Attack('Punch','impact', 3),		[new Data.BodyPartInstance('Left arm', 255, 430), new Data.BodyPartInstance('Right arm', 5, 470)],		new Data.WeaponSite('Hand', 'hand',	true)),	
