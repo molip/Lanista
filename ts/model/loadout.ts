@@ -2,7 +2,7 @@ namespace Model
 {
 	export class ItemPosition
 	{
-		constructor(public id: string, public bodyPartIDs: string[])
+		constructor(public itemID: string, public bodyPartIDs: string[])
 		{
 		}
 	}
@@ -29,7 +29,7 @@ namespace Model
 		{
 			let bodyPartIDs: string[] = [];
 			for (let itemPos of this.itemPositions)
-				if (team.getItem(itemPos.id).type == itemType)
+				if (team.getItem(itemPos.itemID).type == itemType)
 					bodyPartIDs = bodyPartIDs.concat(itemPos.bodyPartIDs);
 			return bodyPartIDs;
 		}
@@ -95,7 +95,7 @@ namespace Model
 		removeItem(itemID: string)
 		{
 			for (let i = 0, itemPos: ItemPosition; itemPos = this.itemPositions[i]; ++i)
-				if (itemPos.id == itemID)
+				if (itemPos.itemID == itemID)
 				{
 					this.itemPositions.splice(i, 1);
 					Model.invalidate();
@@ -108,7 +108,7 @@ namespace Model
 		hasItemID(id: string)
 		{
 			for (let itemPos of this.itemPositions)
-				if (itemPos.id == id)
+				if (itemPos.itemID == id)
 					return true;
 
 			return false;
@@ -118,10 +118,10 @@ namespace Model
 		{
 			for (let itemPos of this.itemPositions)
 			{
-				if (team.getItem(itemPos.id).type == ItemType.Armour)
+				if (team.getItem(itemPos.itemID).type == ItemType.Armour)
 					for (let id of itemPos.bodyPartIDs)
 						if (id == bodyPartID)
-							return team.getArmourData(itemPos.id);
+							return team.getArmourData(itemPos.itemID);
 			}
 			return null;
 		}

@@ -97,9 +97,9 @@ namespace Model
 			let usedBodyParts = new Set<string>();
 
 			for (let itemPos of loadout.itemPositions)
-				if (team.getItem(itemPos.id).type == ItemType.Weapon)
+				if (team.getItem(itemPos.itemID).type == ItemType.Weapon)
 				{
-					let data = team.getWeaponData(itemPos.id);
+					let data = team.getWeaponData(itemPos.itemID);
 					for (let attack of data.attacks)
 						attacks.push(new Attack(attack, itemPos.bodyPartIDs[0], this.getSkill('attack'))); // Just use the first body part for the source. 
 
