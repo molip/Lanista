@@ -4,7 +4,7 @@ namespace Model
 	{
 		export class AttackResult
 		{
-			constructor(public name: string, public description: string, public attackDamage: number, public defense: number, public sourceID: string, public targetID: string) { }
+			constructor(public attack:Attack, public description: string, public attackDamage: number, public defense: number, public targetID: string) { }
 		}
 
 		export class Side
@@ -70,6 +70,56 @@ namespace Model
 				return this.sides[index].getFighter();
 			}
 
+			getImages(fighterIndex: number, attack: Attack)
+			{
+				let fighter = this.getFighter(fighterIndex);
+				if (!fighter.isHuman())
+					return [fighter.image];
+
+				let basePath = 'images/people/man/';
+
+				let images: string[] = [];
+
+				// Add body image.
+				let bodyImage = 'idle';
+				if (attack)
+				{
+					let part = fighter.bodyParts[attack.sourceID];
+
+					Util.assert(part.tag in fighter.getSpeciesData().bodyParts);
+					Util.assert(fighter.getSpeciesData().bodyParts[part.tag].instances.length == 2); // Arms or legs.
+
+					bodyImage = (part.index == 1 ? 'right ' : 'left ') + part.tag + ' up';
+
+					if (attack.weaponTag && Data.Weapons.Types[attack.weaponTag].sites[0].count == 2) // TODO: What about other sites? 
+						bodyImage = 'both arms up';
+				}
+
+				images.push(basePath + bodyImage + '.png');
+
+				// Add weapon images.
+				let side = this.sides[fighterIndex];
+				for (let itemPos of side.loadout.itemPositions)
+				{
+					let item = side.getTeam().getItem(itemPos.itemID);
+					if (item.type == ItemType.Weapon)
+					{
+						let weaponPath = '';
+						if (itemPos.bodyPartIDs.length == 1) // Single-handed.
+							weaponPath = fighter.bodyParts[itemPos.bodyPartIDs[0]].index == 1 ? 'right ' : 'left ';
+
+						weaponPath += item.tag;
+
+						if (attack && itemPos.bodyPartIDs.indexOf(attack.sourceID) >= 0)
+							weaponPath += ' up';
+
+						images.push(basePath + weaponPath + '.png');
+					}
+				}
+
+				return images;
+			}
+
 			step()
 			{
 				let attackerSide = this.sides[this.nextSideIndex];
@@ -127,7 +177,7 @@ namespace Model
 
 				Model.invalidate();
 
-				return new AttackResult(attack.data.name, msg, baseDamage, defense, attack.sourceID, targetID); 
+				return new AttackResult(attack, msg, baseDamage, defense, targetID);
 			}
 		}
 	}
