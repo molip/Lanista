@@ -27,7 +27,7 @@ namespace Model
 
 	export class Attack
 	{
-		constructor(public data: Data.Attack, public sourceID: string, public skill: number) { }
+		constructor(public data: Data.Attack, public weaponTag: string, public sourceID: string, public skill: number) { }
 	}
 
 	export class Fighter
@@ -97,15 +97,18 @@ namespace Model
 			let usedBodyParts = new Set<string>();
 
 			for (let itemPos of loadout.itemPositions)
-				if (team.getItem(itemPos.id).type == ItemType.Weapon)
+			{
+				let item = team.getItem(itemPos.itemID);
+				if (item.type == ItemType.Weapon)
 				{
-					let data = team.getWeaponData(itemPos.id);
+					let data = team.getWeaponData(itemPos.itemID);
 					for (let attack of data.attacks)
-						attacks.push(new Attack(attack, itemPos.bodyPartIDs[0], this.getSkill('attack'))); // Just use the first body part for the source. 
+						attacks.push(new Attack(attack, item.tag, itemPos.bodyPartIDs[0], this.getSkill('attack'))); // Just use the first body part for the source.
 
 					for (let bpid of itemPos.bodyPartIDs)
 						usedBodyParts.add(bpid);
 				}
+			}
 
 			let speciesData = this.getSpeciesData()
 			for (let id in this.bodyParts)
@@ -116,7 +119,7 @@ namespace Model
 				let part = this.bodyParts[id];
 				let data = speciesData.bodyParts[part.tag];
 				if (data.attack)
-					attacks.push(new Attack(data.attack, id, this.getSkill('attack'))); // TODO: Check body part health.
+					attacks.push(new Attack(data.attack, null, id, this.getSkill('attack'))); // TODO: Check body part health.
 			}
 
 			return attacks;

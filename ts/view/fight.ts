@@ -29,6 +29,25 @@ namespace View
 		}
 	}
 
+	class HitAnimation extends Animation
+	{
+		image = new CanvasImage();
+
+		constructor(private point: Point)
+		{
+			super(1000);
+			this.image.loadImage('images/hit.png', null);
+		}
+
+		draw(ctx: CanvasRenderingContext2D, xform: Xform)
+		{
+			let point = xform.transformPoint(this.point);
+			ctx.translate(point.x, point.y);
+			ctx.scale(0.3, 0.3);
+			this.image.drawCentred(ctx);
+		}
+	}
+
 	//class ExplodeAnimation extends Animation
 	//{
 	//	constructor(private name: string, private point: Point)
@@ -112,8 +131,10 @@ namespace View
 		speedCheckbox: HTMLInputElement;
 		canvas: Canvas;
 		backgroundImage: CanvasImage = new CanvasImage();
-		imageA: CanvasImage = new CanvasImage();
-		imageB: CanvasImage = new CanvasImage();
+		images: CanvasImage[][] = [[], []];
+		idleImagePaths: string[][] = [[], []];
+		currentAttack: Model.Attack = null;
+		currentAttackerIndex: number = 0;
 		sequence: Sequence = null;
 		timer: number = 0;
 		fighters: Model.Fighter[];
@@ -214,31 +235,77 @@ namespace View
 			let result = Model.state.fight.step();
 			let defenderIndex = Model.state.fight.nextSideIndex;
 
+			let attacker = this.fighters[attackerIndex];
+			let defender = this.fighters[defenderIndex];
+
+			if (this.fighters[attackerIndex].isHuman())
+			{
+				this.currentAttack = result.attack;
+				this.currentAttackerIndex = attackerIndex;
+				this.updateImages();
+				this.sequence = this.makeHumanSequence(result, attackerIndex, defenderIndex);
+			}
+			else
+				this.sequence = this.makeAnimalSequence(result, attackerIndex, defenderIndex);
+
+			this.sequence.items.push(new Animation(1000));
+			this.sequence.start();
+
 			this.update();
 			if (Model.state.fight.finished)
 				this.stopFight();
+		}
 
-			let sourcePart = this.fighters[attackerIndex].bodyParts[result.sourceID];
+		makeHumanSequence(result: Model.Fight.AttackResult, attackerIndex: number, defenderIndex: number)
+		{
+			let sourcePart = this.fighters[attackerIndex].bodyParts[result.attack.sourceID];
 			let targetPart = this.fighters[defenderIndex].bodyParts[result.targetID];
 
-			this.sequence = new Sequence(this.speedCheckbox.checked ? 5 : 1);
-			let pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
+			let sequence = new Sequence(this.speedCheckbox.checked ? 5 : 1);
 			let pointB = this.getBodyPartPoint(defenderIndex, targetPart);
 
-			this.sequence.items.push(new GrowAnimation(result.name, pointA));
-			this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
-			this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
+			if (result.attackDamage > 0)
+				sequence.items.push(new HitAnimation(pointB));
+			else
+				sequence.items.push(new Animation(1000));
+
+			let endAnim = new Animation(0);
+			endAnim.onStart = () => { this.currentAttack = null; this.updateImages(); }
+			sequence.items.push(endAnim);
 
 			if (result.attackDamage > 0)
 			{
 				let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
 				let damageAnim = new DamageAnimation(damageString, pointB);
 				damageAnim.onStart = () => { this.updateHealths(); }
-				this.sequence.items.push(damageAnim);
+				sequence.items.push(damageAnim);
 			}
 
-			this.sequence.items.push(new Animation(1000));
-			this.sequence.start();
+			return sequence;
+		}
+
+		makeAnimalSequence(result: Model.Fight.AttackResult, attackerIndex: number, defenderIndex: number)
+		{
+			let sourcePart = this.fighters[attackerIndex].bodyParts[result.attack.sourceID];
+			let targetPart = this.fighters[defenderIndex].bodyParts[result.targetID];
+
+			let sequence = new Sequence(this.speedCheckbox.checked ? 5 : 1);
+			let pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
+			let pointB = this.getBodyPartPoint(defenderIndex, targetPart);
+
+			sequence.items.push(new GrowAnimation(result.attack.data.name, pointA));
+			sequence.items.push(new PauseAnimation(result.attack.data.name, pointA, 500));
+			sequence.items.push(new MoveAnimation(result.attack.data.name, pointA, pointB));
+
+			if (result.attackDamage > 0)
+			{
+				let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
+				let damageAnim = new DamageAnimation(damageString, pointB);
+				damageAnim.onStart = () => { this.updateHealths(); }
+				sequence.items.push(damageAnim);
+			}
+
+			return sequence;
 		}
 
 		onTick = () =>
@@ -278,11 +345,22 @@ namespace View
 
 		updateImages()
 		{
-			if (this.fighters.indexOf(null) >= 0)
-				return;
+			for (let i = 0; i < 2; ++i)
+			{
+				this.images[i].length = 0;
 
-			this.imageA.loadImage(this.fighters[0].image, () => { this.draw() });
-			this.imageB.loadImage(this.fighters[1].image, () => { this.draw() });
+				let paths = Model.state.fight ? Model.state.fight.getImages(i, i == this.currentAttackerIndex ? this.currentAttack : null) : this.idleImagePaths[i];
+
+				if (this.idleImagePaths[i].length == 0)
+					this.idleImagePaths[i] = paths.slice();
+
+				for (let path of paths)
+				{
+					let image = new CanvasImage();
+					image.loadImage(path, () => { this.draw() });
+					this.images[i].push(image);
+				}
+			}
 
 			this.draw();
 		}
@@ -298,7 +376,7 @@ namespace View
 
 		getImageRect(index: number)
 		{
-			let image = index ? this.imageB : this.imageA;
+			let image = this.images[index][0];
 			let rect = new Rect(0, 0, image.image.width, image.image.height);
 			let x = this.canvas.element.width / 2 + (index ? 50 : - 50 - rect.width());
 			let y = this.canvas.element.height - rect.height();
@@ -348,7 +426,7 @@ namespace View
 			ctx.setTransform(1, 0, 0, 1, 0, 0)
 			ctx.clearRect(0, 0, width, height);
 
-			let gotImages = this.imageA.isComplete() && this.imageB.isComplete();
+			let gotImages = this.images[0][0].isComplete() && this.images[1][0].isComplete();
 			let rectA: Rect, rectB: Rect;
 			let sceneXform = new Xform();
 
@@ -388,14 +466,16 @@ namespace View
 			ctx.save();
 			sceneXform.apply(ctx);
 			ctx.translate(rectA.left, rectA.top);
-			this.imageA.draw(ctx);
+			for (let image of this.images[0])
+				image.draw(ctx);
 			ctx.restore();
 
 			ctx.save();
 			sceneXform.apply(ctx);
 			ctx.translate(rectB.right, rectB.top);
 			ctx.scale(-1, 1);
-			this.imageB.draw(ctx);
+			for (let image of this.images[1])
+				image.draw(ctx);
 			ctx.restore();
 
 			this.drawHealthBars(ctx, sceneXform, 0);

@@ -20,7 +20,7 @@ namespace View
 		update()
 		{
 			let now = new Date().getTime();
-			this.progress = (now - this.startTime) / this.duration;
+			this.progress = this.duration ? (now - this.startTime) / this.duration : 1;
 			if (this.progress >= 1)
 			{
 				this.progress = 1;
@@ -70,6 +70,7 @@ namespace View
 			{
 				ctx.save();
 				this.items[0].draw(ctx, xform ? xform : new Xform());
+				ctx.restore();
 			}
 		}
 	}

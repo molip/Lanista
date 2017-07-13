@@ -533,8 +533,9 @@ var Model;
     }
     Model.BodyPart = BodyPart;
     class Attack {
-        constructor(data, sourceID, skill) {
+        constructor(data, weaponTag, sourceID, skill) {
             this.data = data;
+            this.weaponTag = weaponTag;
             this.sourceID = sourceID;
             this.skill = skill;
         }
@@ -590,14 +591,16 @@ var Model;
         getAttacks(loadout, team) {
             let attacks = [];
             let usedBodyParts = new Set();
-            for (let itemPos of loadout.itemPositions)
-                if (team.getItem(itemPos.id).type == Model.ItemType.Weapon) {
-                    let data = team.getWeaponData(itemPos.id);
+            for (let itemPos of loadout.itemPositions) {
+                let item = team.getItem(itemPos.itemID);
+                if (item.type == Model.ItemType.Weapon) {
+                    let data = team.getWeaponData(itemPos.itemID);
                     for (let attack of data.attacks)
-                        attacks.push(new Attack(attack, itemPos.bodyPartIDs[0], this.getSkill('attack'))); // Just use the first body part for the source. 
+                        attacks.push(new Attack(attack, item.tag, itemPos.bodyPartIDs[0], this.getSkill('attack'))); // Just use the first body part for the source.
                     for (let bpid of itemPos.bodyPartIDs)
                         usedBodyParts.add(bpid);
                 }
+            }
             let speciesData = this.getSpeciesData();
             for (let id in this.bodyParts) {
                 if (usedBodyParts.has(id))
@@ -605,7 +608,7 @@ var Model;
                 let part = this.bodyParts[id];
                 let data = speciesData.bodyParts[part.tag];
                 if (data.attack)
-                    attacks.push(new Attack(data.attack, id, this.getSkill('attack'))); // TODO: Check body part health.
+                    attacks.push(new Attack(data.attack, null, id, this.getSkill('attack'))); // TODO: Check body part health.
             }
             return attacks;
         }
@@ -810,12 +813,11 @@ var Model;
     var Fight;
     (function (Fight) {
         class AttackResult {
-            constructor(name, description, attackDamage, defense, sourceID, targetID) {
-                this.name = name;
+            constructor(attack, description, attackDamage, defense, targetID) {
+                this.attack = attack;
                 this.description = description;
                 this.attackDamage = attackDamage;
                 this.defense = defense;
-                this.sourceID = sourceID;
                 this.targetID = targetID;
             }
         }
@@ -861,6 +863,39 @@ var Model;
             getFighter(index) {
                 return this.sides[index].getFighter();
             }
+            getImages(fighterIndex, attack) {
+                let fighter = this.getFighter(fighterIndex);
+                if (!fighter.isHuman())
+                    return [fighter.image];
+                let basePath = 'images/people/man/';
+                let images = [];
+                // Add body image.
+                let bodyImage = 'idle';
+                if (attack) {
+                    let part = fighter.bodyParts[attack.sourceID];
+                    Util.assert(part.tag in fighter.getSpeciesData().bodyParts);
+                    Util.assert(fighter.getSpeciesData().bodyParts[part.tag].instances.length == 2); // Arms or legs.
+                    bodyImage = (part.index == 1 ? 'right ' : 'left ') + part.tag + ' up';
+                    if (attack.weaponTag && Data.Weapons.Types[attack.weaponTag].sites[0].count == 2)
+                        bodyImage = 'both arms up';
+                }
+                images.push(basePath + bodyImage + '.png');
+                // Add weapon images.
+                let side = this.sides[fighterIndex];
+                for (let itemPos of side.loadout.itemPositions) {
+                    let item = side.getTeam().getItem(itemPos.itemID);
+                    if (item.type == Model.ItemType.Weapon) {
+                        let weaponPath = '';
+                        if (itemPos.bodyPartIDs.length == 1)
+                            weaponPath = fighter.bodyParts[itemPos.bodyPartIDs[0]].index == 1 ? 'right ' : 'left ';
+                        weaponPath += item.tag;
+                        if (attack && itemPos.bodyPartIDs.indexOf(attack.sourceID) >= 0)
+                            weaponPath += ' up';
+                        images.push(basePath + weaponPath + '.png');
+                    }
+                }
+                return images;
+            }
             step() {
                 let attackerSide = this.sides[this.nextSideIndex];
                 this.nextSideIndex = (this.nextSideIndex + 1) % this.sides.length;
@@ -899,7 +934,7 @@ var Model;
                     msg += 'Missed!';
                 }
                 Model.invalidate();
-                return new AttackResult(attack.data.name, msg, baseDamage, defense, attack.sourceID, targetID);
+                return new AttackResult(attack, msg, baseDamage, defense, targetID);
             }
         }
         Fight.State = State;
@@ -909,8 +944,8 @@ var Model;
 var Model;
 (function (Model) {
     class ItemPosition {
-        constructor(id, bodyPartIDs) {
-            this.id = id;
+        constructor(itemID, bodyPartIDs) {
+            this.itemID = itemID;
             this.bodyPartIDs = bodyPartIDs;
         }
     }
@@ -929,7 +964,7 @@ var Model;
         getOccupiedSites(itemType, team) {
             let bodyPartIDs = [];
             for (let itemPos of this.itemPositions)
-                if (team.getItem(itemPos.id).type == itemType)
+                if (team.getItem(itemPos.itemID).type == itemType)
                     bodyPartIDs = bodyPartIDs.concat(itemPos.bodyPartIDs);
             return bodyPartIDs;
         }
@@ -977,7 +1012,7 @@ var Model;
         }
         removeItem(itemID) {
             for (let i = 0, itemPos; itemPos = this.itemPositions[i]; ++i)
-                if (itemPos.id == itemID) {
+                if (itemPos.itemID == itemID) {
                     this.itemPositions.splice(i, 1);
                     Model.invalidate();
                     return;
@@ -986,16 +1021,16 @@ var Model;
         }
         hasItemID(id) {
             for (let itemPos of this.itemPositions)
-                if (itemPos.id == id)
+                if (itemPos.itemID == id)
                     return true;
             return false;
         }
         getBodyPartArmourData(bodyPartID, team) {
             for (let itemPos of this.itemPositions) {
-                if (team.getItem(itemPos.id).type == Model.ItemType.Armour)
+                if (team.getItem(itemPos.itemID).type == Model.ItemType.Armour)
                     for (let id of itemPos.bodyPartIDs)
                         if (id == bodyPartID)
-                            return team.getArmourData(itemPos.id);
+                            return team.getArmourData(itemPos.itemID);
             }
             return null;
         }
@@ -1532,7 +1567,7 @@ var View;
         }
         update() {
             let now = new Date().getTime();
-            this.progress = (now - this.startTime) / this.duration;
+            this.progress = this.duration ? (now - this.startTime) / this.duration : 1;
             if (this.progress >= 1) {
                 this.progress = 1;
                 return false;
@@ -1566,6 +1601,7 @@ var View;
             if (this.items.length) {
                 ctx.save();
                 this.items[0].draw(ctx, xform ? xform : new Xform());
+                ctx.restore();
             }
         }
     }
@@ -1827,11 +1863,15 @@ var View;
         }
         loadImage(path, onLoad) {
             this.image = new Image();
-            this.image.onload = () => { onLoad(); };
+            if (onLoad)
+                this.image.onload = () => { onLoad(); };
             this.image.src = path;
         }
         draw(ctx) {
             ctx.drawImage(this.image, this.pos.x, this.pos.y);
+        }
+        drawCentred(ctx) {
+            ctx.drawImage(this.image, this.pos.x - this.image.width / 2, this.pos.y - this.image.height / 2);
         }
         getRect() {
             return new Rect(this.pos.x, this.pos.y, this.pos.x + this.image.width, this.pos.y + this.image.height);
@@ -1932,6 +1972,20 @@ var View;
             drawAttack(this.name, ctx);
         }
     }
+    class HitAnimation extends View.Animation {
+        constructor(point) {
+            super(1000);
+            this.point = point;
+            this.image = new View.CanvasImage();
+            this.image.loadImage('images/hit.png', null);
+        }
+        draw(ctx, xform) {
+            let point = xform.transformPoint(this.point);
+            ctx.translate(point.x, point.y);
+            ctx.scale(0.3, 0.3);
+            this.image.drawCentred(ctx);
+        }
+    }
     //class ExplodeAnimation extends Animation
     //{
     //	constructor(private name: string, private point: Point)
@@ -1996,8 +2050,10 @@ var View;
         constructor() {
             super('Fight');
             this.backgroundImage = new View.CanvasImage();
-            this.imageA = new View.CanvasImage();
-            this.imageB = new View.CanvasImage();
+            this.images = [[], []];
+            this.idleImagePaths = [[], []];
+            this.currentAttack = null;
+            this.currentAttackerIndex = 0;
             this.sequence = null;
             this.timer = 0;
             this.healths = [];
@@ -2079,25 +2135,58 @@ var View;
             let attackerIndex = Model.state.fight.nextSideIndex;
             let result = Model.state.fight.step();
             let defenderIndex = Model.state.fight.nextSideIndex;
+            let attacker = this.fighters[attackerIndex];
+            let defender = this.fighters[defenderIndex];
+            if (this.fighters[attackerIndex].isHuman()) {
+                this.currentAttack = result.attack;
+                this.currentAttackerIndex = attackerIndex;
+                this.updateImages();
+                this.sequence = this.makeHumanSequence(result, attackerIndex, defenderIndex);
+            }
+            else
+                this.sequence = this.makeAnimalSequence(result, attackerIndex, defenderIndex);
+            this.sequence.items.push(new View.Animation(1000));
+            this.sequence.start();
             this.update();
             if (Model.state.fight.finished)
                 this.stopFight();
-            let sourcePart = this.fighters[attackerIndex].bodyParts[result.sourceID];
+        }
+        makeHumanSequence(result, attackerIndex, defenderIndex) {
+            let sourcePart = this.fighters[attackerIndex].bodyParts[result.attack.sourceID];
             let targetPart = this.fighters[defenderIndex].bodyParts[result.targetID];
-            this.sequence = new View.Sequence(this.speedCheckbox.checked ? 5 : 1);
-            let pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
+            let sequence = new View.Sequence(this.speedCheckbox.checked ? 5 : 1);
             let pointB = this.getBodyPartPoint(defenderIndex, targetPart);
-            this.sequence.items.push(new GrowAnimation(result.name, pointA));
-            this.sequence.items.push(new PauseAnimation(result.name, pointA, 500));
-            this.sequence.items.push(new MoveAnimation(result.name, pointA, pointB));
+            if (result.attackDamage > 0)
+                sequence.items.push(new HitAnimation(pointB));
+            else
+                sequence.items.push(new View.Animation(1000));
+            let endAnim = new View.Animation(0);
+            endAnim.onStart = () => { this.currentAttack = null; this.updateImages(); };
+            sequence.items.push(endAnim);
             if (result.attackDamage > 0) {
                 let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
                 let damageAnim = new DamageAnimation(damageString, pointB);
                 damageAnim.onStart = () => { this.updateHealths(); };
-                this.sequence.items.push(damageAnim);
+                sequence.items.push(damageAnim);
             }
-            this.sequence.items.push(new View.Animation(1000));
-            this.sequence.start();
+            return sequence;
+        }
+        makeAnimalSequence(result, attackerIndex, defenderIndex) {
+            let sourcePart = this.fighters[attackerIndex].bodyParts[result.attack.sourceID];
+            let targetPart = this.fighters[defenderIndex].bodyParts[result.targetID];
+            let sequence = new View.Sequence(this.speedCheckbox.checked ? 5 : 1);
+            let pointA = this.getBodyPartPoint(attackerIndex, sourcePart);
+            let pointB = this.getBodyPartPoint(defenderIndex, targetPart);
+            sequence.items.push(new GrowAnimation(result.attack.data.name, pointA));
+            sequence.items.push(new PauseAnimation(result.attack.data.name, pointA, 500));
+            sequence.items.push(new MoveAnimation(result.attack.data.name, pointA, pointB));
+            if (result.attackDamage > 0) {
+                let damageString = result.attackDamage.toString() + ' x ' + (100 - result.defense).toString() + '%';
+                let damageAnim = new DamageAnimation(damageString, pointB);
+                damageAnim.onStart = () => { this.updateHealths(); };
+                sequence.items.push(damageAnim);
+            }
+            return sequence;
         }
         update() {
             if (!Model.state.fight)
@@ -2108,10 +2197,17 @@ var View;
                 this.scroller.scrollTop = this.scroller.scrollHeight;
         }
         updateImages() {
-            if (this.fighters.indexOf(null) >= 0)
-                return;
-            this.imageA.loadImage(this.fighters[0].image, () => { this.draw(); });
-            this.imageB.loadImage(this.fighters[1].image, () => { this.draw(); });
+            for (let i = 0; i < 2; ++i) {
+                this.images[i].length = 0;
+                let paths = Model.state.fight ? Model.state.fight.getImages(i, i == this.currentAttackerIndex ? this.currentAttack : null) : this.idleImagePaths[i];
+                if (this.idleImagePaths[i].length == 0)
+                    this.idleImagePaths[i] = paths.slice();
+                for (let path of paths) {
+                    let image = new View.CanvasImage();
+                    image.loadImage(path, () => { this.draw(); });
+                    this.images[i].push(image);
+                }
+            }
             this.draw();
         }
         updateHealths() {
@@ -2121,7 +2217,7 @@ var View;
             }
         }
         getImageRect(index) {
-            let image = index ? this.imageB : this.imageA;
+            let image = this.images[index][0];
             let rect = new Rect(0, 0, image.image.width, image.image.height);
             let x = this.canvas.element.width / 2 + (index ? 50 : -50 - rect.width());
             let y = this.canvas.element.height - rect.height();
@@ -2160,7 +2256,7 @@ var View;
             let height = this.canvas.element.height;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, width, height);
-            let gotImages = this.imageA.isComplete() && this.imageB.isComplete();
+            let gotImages = this.images[0][0].isComplete() && this.images[1][0].isComplete();
             let rectA, rectB;
             let sceneXform = new Xform();
             if (gotImages) {
@@ -2191,13 +2287,15 @@ var View;
             ctx.save();
             sceneXform.apply(ctx);
             ctx.translate(rectA.left, rectA.top);
-            this.imageA.draw(ctx);
+            for (let image of this.images[0])
+                image.draw(ctx);
             ctx.restore();
             ctx.save();
             sceneXform.apply(ctx);
             ctx.translate(rectB.right, rectB.top);
             ctx.scale(-1, 1);
-            this.imageB.draw(ctx);
+            for (let image of this.images[1])
+                image.draw(ctx);
             ctx.restore();
             this.drawHealthBars(ctx, sceneXform, 0);
             this.drawHealthBars(ctx, sceneXform, 1);

@@ -17,13 +17,19 @@ namespace View
 		loadImage(path: string, onLoad: () => void)
 		{
 			this.image = new Image();
-			this.image.onload = () => { onLoad(); };
+			if (onLoad)
+				this.image.onload = () => { onLoad(); };
 			this.image.src = path;
 		}
 
 		draw(ctx: CanvasRenderingContext2D)
 		{
 			ctx.drawImage(this.image, this.pos.x, this.pos.y);
+		}
+
+		drawCentred(ctx: CanvasRenderingContext2D)
+		{
+			ctx.drawImage(this.image, this.pos.x - this.image.width / 2, this.pos.y - this.image.height / 2);
 		}
 
 		getRect()
