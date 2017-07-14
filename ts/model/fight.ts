@@ -27,6 +27,11 @@ namespace Model
 				return this.npcTeam ? this.npcTeam : Model.state.team;
 			}
 
+			getAttacks()
+			{
+				return this.getFighter().getAttacks(this.loadout, this.getTeam());
+			}
+
 			onLoad()
 			{
 				if (this.npcTeam)
@@ -120,6 +125,25 @@ namespace Model
 				return images;
 			}
 
+			private addAllImagesForFighter(index: number, set: Set<string>)
+			{
+				for (let image of this.getImages(index, null))
+					set.add(image);
+
+				for (let attack of this.sides[index].getAttacks())
+					for (let image of this.getImages(index, attack))
+						set.add(image);
+			}
+
+			getAllImages()
+			{
+				let set: Set<string> = new Set();
+				for (let i = 0; i < 2; ++i)
+					this.addAllImagesForFighter(i, set);
+
+				return Array.from(set);
+			}
+
 			step()
 			{
 				let attackerSide = this.sides[this.nextSideIndex];
@@ -141,7 +165,7 @@ namespace Model
 				let attacker = attackerSide.getFighter();
 				let defender = defenderSide.getFighter();
 
-				let attacks = attacker.getAttacks(attackerSide.loadout, attackerSide.getTeam());
+				let attacks = attackerSide.getAttacks();
 				let attack = attacks[Util.getRandomInt(attacks.length)];
 
 				let defenderSpeciesData = defender.getSpeciesData();
