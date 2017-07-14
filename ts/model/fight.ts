@@ -70,18 +70,48 @@ namespace Model
 				return this.sides[index].getFighter();
 			}
 
+			private getHumanImage(bodyPartTag: string, right: boolean, twoHanded: boolean, attack: boolean)
+			{
+				let path = 'images/people/man/';
+
+				if (attack)
+				{
+					path += twoHanded ? 'both arms' : (right ? 'right ' : 'left ') + bodyPartTag;
+					path += ' up';
+				}
+				else
+					path += 'idle';
+
+				return path + '.png';
+			}
+
+			private getWeaponImage(weaponTag: string, right: boolean, twoHanded: boolean, attack: boolean)
+			{
+				let path = 'images/people/man/';
+				if (!twoHanded)
+					path += right ? 'right ' : 'left ';
+
+				path += weaponTag;
+
+				if (attack)
+					path += ' up';
+
+				return path + '.png';
+			}
+
 			getImages(fighterIndex: number, attack: Attack)
 			{
 				let fighter = this.getFighter(fighterIndex);
 				if (!fighter.isHuman())
 					return [fighter.image];
 
-				let basePath = 'images/people/man/';
-
 				let images: string[] = [];
 
 				// Add body image.
-				let bodyImage = 'idle';
+				let right: boolean = false;
+				let twoHanded: boolean = false;
+				let bodyPartTag: string = '';
+
 				if (attack)
 				{
 					let part = fighter.bodyParts[attack.sourceID];
@@ -89,13 +119,12 @@ namespace Model
 					Util.assert(part.tag in fighter.getSpeciesData().bodyParts);
 					Util.assert(fighter.getSpeciesData().bodyParts[part.tag].instances.length == 2); // Arms or legs.
 
-					bodyImage = (part.index == 1 ? 'right ' : 'left ') + part.tag + ' up';
-
-					if (attack.weaponTag && Data.Weapons.Types[attack.weaponTag].sites[0].count == 2) // TODO: What about other sites? 
-						bodyImage = 'both arms up';
+					right = part.index == 1;
+					twoHanded = attack.weaponTag && Data.Weapons.Types[attack.weaponTag].sites[0].count == 2 // TODO: What about other sites?
+					bodyPartTag = part.tag;
 				}
 
-				images.push(basePath + bodyImage + '.png');
+				images.push(this.getHumanImage(bodyPartTag, right, twoHanded, !!attack));
 
 				// Add weapon images.
 				let side = this.sides[fighterIndex];
@@ -104,16 +133,12 @@ namespace Model
 					let item = side.getTeam().getItem(itemPos.itemID);
 					if (item.type == ItemType.Weapon)
 					{
-						let weaponPath = '';
-						if (itemPos.bodyPartIDs.length == 1) // Single-handed.
-							weaponPath = fighter.bodyParts[itemPos.bodyPartIDs[0]].index == 1 ? 'right ' : 'left ';
+						let right = fighter.bodyParts[itemPos.bodyPartIDs[0]].index == 1;
+						let twoHanded = itemPos.bodyPartIDs.length == 2;
+						let bodyPartTag: string = '';
+						let attacking = attack && itemPos.bodyPartIDs.indexOf(attack.sourceID) >= 0;
 
-						weaponPath += item.tag;
-
-						if (attack && itemPos.bodyPartIDs.indexOf(attack.sourceID) >= 0)
-							weaponPath += ' up';
-
-						images.push(basePath + weaponPath + '.png');
+						images.push(this.getWeaponImage(item.tag, right, twoHanded, attacking));
 					}
 				}
 
