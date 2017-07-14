@@ -836,6 +836,9 @@ var Model;
             getTeam() {
                 return this.npcTeam ? this.npcTeam : Model.state.team;
             }
+            getAttacks() {
+                return this.getFighter().getAttacks(this.loadout, this.getTeam());
+            }
             onLoad() {
                 if (this.npcTeam) {
                     Util.setPrototype(this.npcTeam, Model.Team);
@@ -896,6 +899,19 @@ var Model;
                 }
                 return images;
             }
+            addAllImagesForFighter(index, set) {
+                for (let image of this.getImages(index, null))
+                    set.add(image);
+                for (let attack of this.sides[index].getAttacks())
+                    for (let image of this.getImages(index, attack))
+                        set.add(image);
+            }
+            getAllImages() {
+                let set = new Set();
+                for (let i = 0; i < 2; ++i)
+                    this.addAllImagesForFighter(i, set);
+                return Array.from(set);
+            }
             step() {
                 let attackerSide = this.sides[this.nextSideIndex];
                 this.nextSideIndex = (this.nextSideIndex + 1) % this.sides.length;
@@ -909,7 +925,7 @@ var Model;
             attack(attackerSide, defenderSide) {
                 let attacker = attackerSide.getFighter();
                 let defender = defenderSide.getFighter();
-                let attacks = attacker.getAttacks(attackerSide.loadout, attackerSide.getTeam());
+                let attacks = attackerSide.getAttacks();
                 let attack = attacks[Util.getRandomInt(attacks.length)];
                 let defenderSpeciesData = defender.getSpeciesData();
                 let targetID = defender.chooseRandomBodyPart();
@@ -2109,7 +2125,11 @@ var View;
             this.div.appendChild(topDiv);
             this.div.appendChild(canvas);
             this.div.appendChild(this.scroller);
-            this.backgroundImage.loadImage(Data.Misc.FightBackgroundImage, () => { this.draw(); });
+            this.backgroundImage.loadImage(Data.Misc.FightBackgroundImage, null);
+            this.preloader = new View.Preloader(() => { this.draw(); });
+            this.preloader.paths = Model.state.fight.getAllImages();
+            this.preloader.paths.push(this.backgroundImage.image.src);
+            this.preloader.go();
             this.fighters = [Model.state.fight.getFighter(0), Model.state.fight.getFighter(1)];
             this.update();
             this.updateHealths();
@@ -2249,27 +2269,23 @@ var View;
             this.drawHealthBar(ctx, sceneXform.transformPoint(point), this.healths[fighterIndex], fighter.getSpeciesData().health);
         }
         draw() {
-            if (!this.backgroundImage.image.complete)
+            if (!this.preloader.isFinished())
                 return;
             let ctx = this.canvas.element.getContext("2d");
             let width = this.canvas.element.width;
             let height = this.canvas.element.height;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, width, height);
-            let gotImages = this.images[0][0].isComplete() && this.images[1][0].isComplete();
-            let rectA, rectB;
             let sceneXform = new Xform();
-            if (gotImages) {
-                rectA = this.getImageRect(0);
-                rectB = this.getImageRect(1);
-                // Scale to fit.
-                let scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
-                let scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
-                let scale = Math.max(Math.max(scaleX, scaleY), 0.4);
-                sceneXform.matrix = sceneXform.matrix.translate(640, height);
-                sceneXform.matrix = sceneXform.matrix.scale(1 / scale);
-                sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
-            }
+            let rectA = this.getImageRect(0);
+            let rectB = this.getImageRect(1);
+            // Scale to fit.
+            let scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
+            let scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
+            let scale = Math.max(Math.max(scaleX, scaleY), 0.4);
+            sceneXform.matrix = sceneXform.matrix.translate(640, height);
+            sceneXform.matrix = sceneXform.matrix.scale(1 / scale);
+            sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
             ctx.save();
             sceneXform.apply(ctx);
             ctx.scale(1280 / 800, 1280 / 800);
@@ -2277,8 +2293,6 @@ var View;
             ctx.translate(-12, -200);
             this.backgroundImage.draw(ctx);
             ctx.restore();
-            if (!gotImages)
-                return;
             // Scale because all the animals are too big. 
             sceneXform.matrix = sceneXform.matrix.translate(640, height);
             sceneXform.matrix = sceneXform.matrix.scale(0.4);
@@ -2801,4 +2815,34 @@ var View;
         document.getElementById('skip_day_btn').disabled = !enable;
     }
     View.enable = enable;
+})(View || (View = {}));
+"use strict";
+var View;
+(function (View) {
+    class Preloader {
+        constructor(onFinished = null) {
+            this.onFinished = onFinished;
+            this.paths = [];
+            this.images = [];
+            this.finished = 0;
+        }
+        go() {
+            for (let path of this.paths) {
+                let image = new Image();
+                if (this.onFinished)
+                    image.onload = () => { this.onLoad(); };
+                image.src = path;
+                this.images.push(image);
+            }
+        }
+        isFinished() {
+            return this.finished == this.paths.length;
+        }
+        onLoad() {
+            ++this.finished;
+            if (this.isFinished())
+                this.onFinished();
+        }
+    }
+    View.Preloader = Preloader;
 })(View || (View = {}));

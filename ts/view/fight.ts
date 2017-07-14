@@ -139,6 +139,7 @@ namespace View
 		timer: number = 0;
 		fighters: Model.Fighter[];
 		healths: number[] = [];
+		preloader: Preloader;
 
 		constructor()
 		{
@@ -179,7 +180,12 @@ namespace View
 			this.div.appendChild(canvas);
 			this.div.appendChild(this.scroller);
 
-			this.backgroundImage.loadImage(Data.Misc.FightBackgroundImage, () => { this.draw() });
+			this.backgroundImage.loadImage(Data.Misc.FightBackgroundImage, null);
+
+			this.preloader = new Preloader(() => { this.draw() });
+			this.preloader.paths = Model.state.fight.getAllImages();
+			this.preloader.paths.push(this.backgroundImage.image.src);
+			this.preloader.go();
 
 			this.fighters = [Model.state.fight.getFighter(0), Model.state.fight.getFighter(1)];
 
@@ -417,7 +423,7 @@ namespace View
 
 		draw()
 		{
-			if (!this.backgroundImage.image.complete)
+			if (!this.preloader.isFinished())
 				return;
 
 			let ctx = this.canvas.element.getContext("2d");
@@ -426,24 +432,19 @@ namespace View
 			ctx.setTransform(1, 0, 0, 1, 0, 0)
 			ctx.clearRect(0, 0, width, height);
 
-			let gotImages = this.images[0][0].isComplete() && this.images[1][0].isComplete();
-			let rectA: Rect, rectB: Rect;
 			let sceneXform = new Xform();
 
-			if (gotImages)
-			{
-				rectA = this.getImageRect(0);
-				rectB = this.getImageRect(1);
+			let rectA = this.getImageRect(0);
+			let rectB = this.getImageRect(1);
 
-				// Scale to fit.
-				let scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
-				let scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
-				let scale = Math.max(Math.max(scaleX, scaleY), 0.4);
+			// Scale to fit.
+			let scaleX = Math.max(rectA.width(), rectB.width()) / 1485; // Giant crab.
+			let scaleY = Math.max(rectA.height(), rectB.height()) / 848; // Giant crab.
+			let scale = Math.max(Math.max(scaleX, scaleY), 0.4);
 
-				sceneXform.matrix = sceneXform.matrix.translate(640, height);
-				sceneXform.matrix = sceneXform.matrix.scale(1 / scale);
-				sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
-			}
+			sceneXform.matrix = sceneXform.matrix.translate(640, height);
+			sceneXform.matrix = sceneXform.matrix.scale(1 / scale);
+			sceneXform.matrix = sceneXform.matrix.translate(-640, -height);
 
 			ctx.save();
 			sceneXform.apply(ctx);
@@ -452,9 +453,6 @@ namespace View
 			ctx.translate(-12, -200);
 			this.backgroundImage.draw(ctx);
 			ctx.restore();
-
-			if (!gotImages)
-				return;
 
 			// Scale because all the animals are too big. 
 			sceneXform.matrix = sceneXform.matrix.translate(640, height);
