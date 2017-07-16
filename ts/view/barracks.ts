@@ -14,6 +14,7 @@ namespace View
 			tableFactory.addColumnHeader('Image', 30);
 
 			tableFactory.addColumnHeader('Health', 10);
+			tableFactory.addColumnHeader('Fame', 10);
 			tableFactory.addColumnHeader('Skills', 10);
 			tableFactory.addColumnHeader('Activity', 10);
 
@@ -27,6 +28,7 @@ namespace View
 				cells.push(new Table.TextCell('<h4>' + person.name + '</h4>'));
 				cells.push(new Table.ImageCell(person.image));
 				cells.push(new Table.TextCell(person.health.toString() + '/' + person.getSpeciesData().health));
+				cells.push(new Table.TextCell(person.fame.toString()));
 
 				for (let c of Util.formatRows(person.getSkills()))
 					cells.push(new Table.TextCell('<small>' + c + '</small>'));

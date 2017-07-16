@@ -31,7 +31,8 @@ namespace Model
 		addAnimal(tag: string)
 		{
 			Util.assert(tag in Data.Animals.Types);
-			this.fighters[this.nextFighterID] = new Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
+			let data = Data.Animals.Types[tag];
+			this.fighters[this.nextFighterID] = new Animal(this.nextFighterID, tag, this.getUniqueFighterName(data.name), data.fame);
 			++this.nextFighterID;
 			Model.invalidate();
 		}
@@ -39,7 +40,8 @@ namespace Model
 		addPerson(tag: string)
 		{
 			Util.assert(tag in Data.People.Types);
-			this.fighters[this.nextFighterID] = new Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
+			let data = Data.People.Types[tag];
+			this.fighters[this.nextFighterID] = new Person(this.nextFighterID, tag, this.getUniqueFighterName(data.name), data.fame);
 			++this.nextFighterID;
 			Model.invalidate();
 		}

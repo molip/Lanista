@@ -39,7 +39,7 @@ namespace Model
 		private activity: string = '';
 		private experience: { [tag: string]: number } = {};
 
-		constructor(public id: number, public species: string, public name: string, public image: string)
+		constructor(public id: number, public species: string, public name: string, public image: string, public fame: number)
 		{
 			let data = this.getSpeciesData();
 			this.health = data.health;

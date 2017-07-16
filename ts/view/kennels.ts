@@ -14,6 +14,7 @@ namespace View
 			tableFactory.addColumnHeader('Image', 30);
 
 			tableFactory.addColumnHeader('Health', 10);
+			tableFactory.addColumnHeader('Fame', 10);
 
 			for (let animal of Model.state.team.getAnimals())
 			{
@@ -21,6 +22,7 @@ namespace View
 				cells.push(new Table.TextCell('<h4>' + animal.name + '</h4>'));
 				cells.push(new Table.ImageCell(animal.image));
 				cells.push(new Table.TextCell(animal.health.toString() + '/' + animal.getSpeciesData().health));
+				cells.push(new Table.TextCell(animal.fame.toString()));
 
 				tableFactory.addRow(cells, false, null);
 			}
