@@ -53,7 +53,7 @@ namespace View
 				this.checkboxCells.push(checkboxCell);
 			}
 
-			this.div.appendChild(tableFactory.element);
+			this.div.appendChild(tableFactory.makeScroller());
 		}
 
 		private getOtherLoadout()

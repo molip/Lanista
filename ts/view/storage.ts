@@ -8,7 +8,7 @@ namespace View
 		{
 			super('Storage (' + Model.state.team.getItemCount() + '/' + Model.state.buildings.getCapacity('storage') + ')');
 			let tableFactory = new Table.Factory();
-			this.div.appendChild(tableFactory.element);
+			this.div.appendChild(tableFactory.makeScroller());
 
 			tableFactory.addColumnHeader('Name', 20);
 			tableFactory.addColumnHeader('Image', 10);

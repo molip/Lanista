@@ -8,7 +8,7 @@ namespace View
 		{
 			super('Kennels (' + Model.state.team.getAnimals().length + '/' + Model.state.buildings.getCapacity('kennels') + ')');
 			let tableFactory = new Table.Factory();
-			this.div.appendChild(tableFactory.element);
+			this.div.appendChild(tableFactory.makeScroller());
 
 			tableFactory.addColumnHeader('Name', 20);
 			tableFactory.addColumnHeader('Image', 30);

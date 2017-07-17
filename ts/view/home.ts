@@ -63,7 +63,7 @@ namespace View
 			if (this.bottomDiv.firstChild)
 				this.bottomDiv.removeChild(this.bottomDiv.firstChild);
 
-			this.bottomDiv.appendChild(tableFactory.element);
+			this.bottomDiv.appendChild(tableFactory.makeScroller());
 
 			let eventsForTomorrow = Model.state.getEventsForDay(Model.state.getDay() + 1);
 			this.homeButton.disabled = this.awayButton.disabled = eventsForTomorrow.length > 0;

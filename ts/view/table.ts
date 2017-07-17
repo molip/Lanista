@@ -105,15 +105,11 @@ namespace View
 
 		export class Factory
 		{
-			element: HTMLDivElement;
-			private table: HTMLTableElement;
+			table: HTMLTableElement;
 			private headerRow: HTMLTableRowElement;
 			constructor() 
 			{
-				this.element = document.createElement('div');
 				this.table = document.createElement('table');
-				this.element.appendChild(this.table);
-				this.element.className = 'scroller';
 			}
 
 			addColumnHeader(name: string, width?: number)
@@ -144,6 +140,14 @@ namespace View
 
 				if (!locked && handler)
 					row.className += ' highlight';
+			}
+
+			makeScroller()
+			{
+				let div = document.createElement('div');
+				div.appendChild(this.table);
+				div.className = 'scroller';
+				return div;
 			}
 		}
 	}
