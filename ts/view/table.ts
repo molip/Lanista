@@ -107,9 +107,10 @@ namespace View
 		{
 			table: HTMLTableElement;
 			private headerRow: HTMLTableRowElement;
-			constructor() 
+			constructor(table: HTMLTableElement = null)
 			{
-				this.table = document.createElement('table');
+				this.table = table ? table : document.createElement('table');
+				this.table.innerHTML = '';
 			}
 
 			addColumnHeader(name: string, width?: number)
@@ -140,6 +141,8 @@ namespace View
 
 				if (!locked && handler)
 					row.className += ' highlight';
+
+				return row;
 			}
 
 			makeScroller()

@@ -155,9 +155,9 @@
 
 	export namespace Events
 	{
-		export class Event
+		export class AwayFightEvent
 		{
-			constructor(public day: number, public home: boolean, public name?: string) { }
+			constructor(public day: number, public fameRequired: number, public name: string) { }
 		}
 
 		export let Events: Event[];

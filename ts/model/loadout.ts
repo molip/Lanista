@@ -125,5 +125,15 @@ namespace Model
 			}
 			return null;
 		}
+
+		getEquipmentFame(team: Team)
+		{
+			let fame = 0;
+
+			for (let itemPos of this.itemPositions)
+				fame += team.getItemData(itemPos.itemID).fame;
+
+			return fame;
+		}
 	}
 }

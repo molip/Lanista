@@ -37,13 +37,13 @@ namespace View
 
 		private onAddHomeFight = () =>
 		{
-			Model.state.addEvent(new Model.FightEvent(Model.state.getDay() + 1, true, 'Home Fight'));
+			Model.state.addEvent(new Model.HomeFightEvent(Model.state.getDay() + 1));
 			this.update();
 		}
 
 		private onAddAwayFight = () =>
 		{
-			Model.state.addEvent(new Model.FightEvent(Model.state.getDay() + 1, false, 'Away Fight'));
+			Model.state.addEvent(new Model.AwayFightEvent(Model.state.getDay() + 1, 0, 'Away Fight'));
 			this.update();
 		}
 

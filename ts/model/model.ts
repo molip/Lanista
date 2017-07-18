@@ -22,9 +22,13 @@ namespace Model
 		{
 			for (let data of Data.Events.Events)
 			{
-				const event = new FightEvent(data.day, data.home, data.name);
-				this.news.push(new EventNews(event));
-				this.events.push(event);
+				let awayData = Util.dynamicCast(data, Data.Events.AwayFightEvent)
+				if (awayData)
+				{
+					const event = new AwayFightEvent(awayData.day, awayData.fameRequired, awayData.name);
+					this.news.push(new EventNews(event));
+					this.events.push(event);
+				}
 			}
 		}
 

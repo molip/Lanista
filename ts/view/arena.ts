@@ -1,3 +1,4 @@
+
 /// <reference path="page.ts" />
 
 namespace View 
@@ -11,7 +12,7 @@ namespace View
 		checkboxCells: Table.CheckboxCell[] = [];
 		other: FighterUI = null;
 
-		constructor(index: number, arenaPage: ArenaPage)
+		constructor(public index: number, arenaPage: ArenaPage)
 		{
 			this.div = document.createElement('div');
 			this.div.id = 'fighter_ui_div';
@@ -87,6 +88,8 @@ namespace View
 				this.loadout = otherLoadout;
 			else
 				this.loadout = new Model.Loadout(fighterID);
+
+			this.updateItems();
 		}
 
 		equipItem(itemID: string, value: boolean)
@@ -115,27 +118,40 @@ namespace View
 	{
 		button: HTMLButtonElement;
 		fighterUIs: FighterUI[] = [];
+		statsTable: HTMLTableElement;
 
 		event: Model.FightEvent;
+		fameOK = true;
 
 		constructor(event: Model.Event)
 		{
 			super('Choose Fighters');
 
-			this.event = event as Model.FightEvent;
-			Util.assert(!!this.event);
+			this.event = Util.assertCast(event, Model.FightEvent);
 
 			this.addFighterUI();
 
-			if (this.event.home)
+			if (this.getHomeFightEvent())
 				this.addFighterUI();
+
+			let statsDiv = document.createElement('div');
+			statsDiv.id = 'arena_stats_div';
+			this.div.appendChild(statsDiv);
+
+			let statsTitle = document.createElement('span');
+			statsTitle.innerHTML = '<strong>Fame:</strong>';
+			statsDiv.appendChild(statsTitle);
+
+			this.statsTable = document.createElement('table');
+			this.statsTable.id = 'arena_stats_table';
+			statsDiv.appendChild(this.statsTable);
 
 			this.button = document.createElement('button');
 			this.button.addEventListener('click', this.onStartButton);
 			this.div.appendChild(this.button);
 
-			this.updateStartButton();
-		}
+			this.updateStats();
+			this.updateStartButton();		}
 
 		addFighterUI()
 		{
@@ -154,7 +170,6 @@ namespace View
 			}
 
 			fighterUI.updateFighter();
-			fighterUI.updateItems();
 		}
 
 		onShow()
@@ -171,8 +186,10 @@ namespace View
 
 		onStartButton = () =>
 		{
+			let awayFightEvent = this.getAwayFightEvent();
+
 			let sideA = new Model.Fight.Side(this.fighterUIs[0].loadout, null);
-			let sideB = this.event.home ? new Model.Fight.Side(this.fighterUIs[1].loadout, null) : this.event.createNPCSide();
+			let sideB = awayFightEvent ? awayFightEvent.createNPCSide() : new Model.Fight.Side(this.fighterUIs[1].loadout, null);
 
 			Model.state.startFight(sideA, sideB);
 
@@ -182,20 +199,53 @@ namespace View
 		onFighterSelected = (fighterIndex: number) =>
 		{
 			this.fighterUIs[fighterIndex].updateFighter();
+			this.updateStats();
 			this.updateStartButton();
-			this.updateItems();
 		}
 
 		onItemChecked = (fighterIndex: number, itemID: string, value: boolean) =>
 		{
 			this.fighterUIs[fighterIndex].equipItem(itemID, value);
 			this.updateItems();
+			this.updateStats();
+			this.updateStartButton();
 		}
 
 		updateItems()
 		{
 			for (let ui of this.fighterUIs)
 				ui.updateItems();
+		}
+
+		updateStats()
+		{
+			let total = 0;
+			let tableFactory = new Table.Factory(this.statsTable);
+
+			let addRow = (label: string, fame: number) =>
+			{
+				tableFactory.addRow([new Table.TextCell(label), new Table.TextCell(fame.toString())], false, null);
+				total += fame;
+			};
+
+			for (let ui of this.fighterUIs)
+			{
+				let label = 'Fighter ' + (ui.index + 1);
+				addRow(label, ui.getFighter().fame);
+				addRow(label + ' equipment', ui.loadout.getEquipmentFame(Model.state.team));
+			}
+
+			let row = tableFactory.addRow([new Table.TextCell('Total'), new Table.TextCell(total.toString())], false, null);
+			row.style.fontWeight = 'bold';
+
+			let away = this.getAwayFightEvent();
+			if (away)
+			{
+				this.fameOK = total >= away.fameRequired;
+				let row = tableFactory.addRow([new Table.TextCell('Required'), new Table.TextCell(away.fameRequired.toString())], false, null);
+				row.style.fontWeight = 'bold';
+				row.style.color = this.fameOK ? 'green' : 'red';
+			}
 		}
 
 		updateStartButton()
@@ -212,11 +262,24 @@ namespace View
 
 			this.button.disabled = !fighterA || fighterA.isDead();
 
-			if (!this.button.disabled && this.event.home)
+			if (!this.button.disabled)
+				this.button.disabled = !this.fameOK;
+
+			if (!this.button.disabled && this.getHomeFightEvent())
 			{
 				let fighterB = this.fighterUIs[1].getFighter();
 				this.button.disabled = !fighterB || fighterB.isDead() || fighterA === fighterB;
 			}
+		}
+
+		private getHomeFightEvent()
+		{
+			return Util.dynamicCast(this.event, Model.HomeFightEvent);
+		}
+
+		private getAwayFightEvent()
+		{
+			return Util.dynamicCast(this.event, Model.AwayFightEvent);
 		}
 	}
 }

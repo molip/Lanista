@@ -1,4 +1,5 @@
-﻿Data.Events.Events = [
-//							day		home		name
-	new Data.Events.Event(	3,		false,		'Minor Regional Showdown'),
+﻿Data.Events.Events =
+[
+//									day		fame required	name
+	new Data.Events.AwayFightEvent(	3,		12,				'Minor Regional Showdown'),
 ];

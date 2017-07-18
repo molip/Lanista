@@ -6,8 +6,10 @@ namespace Model
 
 		static initPrototype(event: Event)
 		{
-			if (event.type == 'fight')
-				Util.setPrototype(event, FightEvent);
+			if (event.type == 'home_fight')
+				Util.setPrototype(event, HomeFightEvent);
+			else if (event.type == 'away_fight')
+				Util.setPrototype(event, AwayFightEvent);
 		}
 
 		getDescription() { Util.assert(false); return ''; }
@@ -15,19 +17,35 @@ namespace Model
 
 	export class FightEvent extends Event
 	{
-		constructor(day: number, public home: boolean, public name?: string)
+	}
+
+	export class HomeFightEvent extends FightEvent
+	{
+		constructor(day: number)
 		{
-			super('fight', day);
+			super('home_fight', day);
 		}
 
 		getDescription()
 		{
-			return this.home ? "Home Fight" : this.name; // TODO: Specialise classes.
+			return "Home Fight";
+		}
+	}
+
+	export class AwayFightEvent extends FightEvent
+	{
+		constructor(day: number, public fameRequired: number, public name: string)
+		{
+			super('away_fight', day);
+		}
+
+		getDescription()
+		{
+			return this.name + ' (fame required: ' + this.fameRequired + ')';
 		}
 
 		createNPCSide()
 		{
-			Util.assert(!this.home);
 			let team = new Model.Team();
 			team.fighters[1] = new Model.Person(0, 'man', "Slapper Nuremberg", 0);
 			let loadout = new Model.Loadout('1');
