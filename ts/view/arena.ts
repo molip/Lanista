@@ -250,13 +250,6 @@ namespace View
 
 		updateStartButton()
 		{
-			if (Model.state.fight)
-			{
-				this.button.innerText = 'Stop';
-				this.button.disabled = false;
-				return;
-			}
-
 			this.button.innerText = 'Start';
 			let fighterA = this.fighterUIs[0].getFighter();
 
