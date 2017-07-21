@@ -73,6 +73,11 @@ namespace View
 			return id ? Model.state.team.fighters[id] : null;
 		}
 
+		makeSide()
+		{
+			return this.getFighter() ? new Model.Fight.Side(this.loadout, null) : null;
+		}
+
 		updateFighter()
 		{
 			if (this.select.selectedIndex < 0)
@@ -122,6 +127,7 @@ namespace View
 
 		event: Model.FightEvent;
 		fameOK = true;
+		fight: Model.Fight.State = null;
 
 		constructor(event: Model.Event)
 		{
@@ -148,10 +154,11 @@ namespace View
 
 			this.button = document.createElement('button');
 			this.button.addEventListener('click', this.onStartButton);
+			this.button.innerText = 'Start';
 			this.div.appendChild(this.button);
 
-			this.updateStats();
-			this.updateStartButton();		}
+			this.updateFight();
+		}
 
 		addFighterUI()
 		{
@@ -186,35 +193,39 @@ namespace View
 
 		onStartButton = () =>
 		{
-			let awayFightEvent = this.getAwayFightEvent();
-
-			let sideA = new Model.Fight.Side(this.fighterUIs[0].loadout, null);
-			let sideB = awayFightEvent ? awayFightEvent.createNPCSide() : new Model.Fight.Side(this.fighterUIs[1].loadout, null);
-
-			Model.state.startFight(sideA, sideB);
-
+			Model.state.startFight(this.fight);
 			Page.hideCurrent();
 		}
 		
 		onFighterSelected = (fighterIndex: number) =>
 		{
 			this.fighterUIs[fighterIndex].updateFighter();
-			this.updateStats();
-			this.updateStartButton();
+			this.updateFight();
 		}
 
 		onItemChecked = (fighterIndex: number, itemID: string, value: boolean) =>
 		{
 			this.fighterUIs[fighterIndex].equipItem(itemID, value);
 			this.updateItems();
-			this.updateStats();
-			this.updateStartButton();
+			this.updateFight();
 		}
 
 		updateItems()
 		{
 			for (let ui of this.fighterUIs)
 				ui.updateItems();
+		}
+
+		updateFight()
+		{
+			let awayFightEvent = this.getAwayFightEvent();
+
+			let sideA = this.fighterUIs[0].makeSide();
+			let sideB = awayFightEvent ? awayFightEvent.createNPCSide() : this.fighterUIs[1].makeSide();
+			this.fight = new Model.Fight.State(sideA, sideB);
+
+			this.updateStats();
+			this.button.disabled = !this.fight || !this.fight.canStart() || !this.fameOK;
 		}
 
 		updateStats()
@@ -245,23 +256,6 @@ namespace View
 				let row = tableFactory.addRow([new Table.TextCell('Required'), new Table.TextCell(away.fameRequired.toString())], false, null);
 				row.style.fontWeight = 'bold';
 				row.style.color = this.fameOK ? 'green' : 'red';
-			}
-		}
-
-		updateStartButton()
-		{
-			this.button.innerText = 'Start';
-			let fighterA = this.fighterUIs[0].getFighter();
-
-			this.button.disabled = !fighterA || fighterA.isDead();
-
-			if (!this.button.disabled)
-				this.button.disabled = !this.fameOK;
-
-			if (!this.button.disabled && this.getHomeFightEvent())
-			{
-				let fighterB = this.fighterUIs[1].getFighter();
-				this.button.disabled = !fighterB || fighterB.isDead() || fighterA === fighterB;
 			}
 		}
 

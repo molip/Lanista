@@ -278,11 +278,12 @@ namespace Model
 			Model.invalidate();
 		}
 
-		startFight(sideA: Fight.Side, sideB: Fight.Side)
+		startFight(fight: Fight.State)
 		{
 			Util.assert(this.fight == null);
 			Util.assert(this.phase == Phase.Event);
-			this.fight = new Fight.State(sideA, sideB);
+			Util.assert(fight && fight.canStart());
+			this.fight = fight;
 			this.deleteEventsForToday();
 			this.phase = Phase.Fight;
 			Model.invalidate();

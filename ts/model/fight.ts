@@ -203,6 +203,13 @@ namespace Model
 
 				return new AttackResult(attack, msg, baseDamage, defense, targetID);
 			}
+
+			canStart()
+			{
+				let fighterA = this.getFighter(0);
+				let fighterB = this.getFighter(1);
+				return fighterA !== fighterB && !fighterA.isDead() && !fighterB.isDead();
+			}
 		}
 	}
 }
