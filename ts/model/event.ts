@@ -17,13 +17,17 @@ namespace Model
 
 	export class FightEvent extends Event
 	{
+		constructor(type: string, day: number, public readonly injuryThreshold: number)
+		{
+			super(type, day);
+		}
 	}
 
 	export class HomeFightEvent extends FightEvent
 	{
-		constructor(day: number)
+		constructor(day: number, injuryThreshold: number)
 		{
-			super('home_fight', day);
+			super('home_fight', day, injuryThreshold);
 		}
 
 		getDescription()
@@ -34,14 +38,14 @@ namespace Model
 
 	export class AwayFightEvent extends FightEvent
 	{
-		constructor(day: number, public fameRequired: number, public name: string)
+		constructor(day: number, injuryThreshold: number, public readonly fameRequired: number, public readonly name: string)
 		{
-			super('away_fight', day);
+			super('away_fight', day, injuryThreshold);
 		}
 
 		getDescription()
 		{
-			return this.name + ' (fame required: ' + this.fameRequired + ')';
+			return this.name;
 		}
 
 		createNPCSide()

@@ -31,7 +31,7 @@ namespace View
 
 		private onAddHomeFight = () =>
 		{
-			Model.state.addEvent(new Model.HomeFightEvent(Model.state.getDay() + 1));
+			Model.state.addEvent(new Model.HomeFightEvent(Model.state.getDay() + 1, Data.Misc.HomeFightInjuryThreshold));
 			this.update();
 		}
 

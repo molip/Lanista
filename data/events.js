@@ -1,5 +1,5 @@
 ﻿Data.Events.Events =
-[
-//									day		fame required	name
-	new Data.Events.AwayFightEvent(	3,		12,				'Minor Regional Showdown'),
+[//									fight	injury		fame		name
+ //									day		threshold	required
+	new Data.Events.AwayFightEvent(	3,		50,			12,			'Minor Regional Showdown'),
 ];

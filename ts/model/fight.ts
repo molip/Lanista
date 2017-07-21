@@ -51,14 +51,13 @@ namespace Model
 			text: string;
 			nextSideIndex: number;
 			steps: number;
-			finished: boolean;
-			constructor(sideA: Side, sideB: Side)
+			winnerIndex = -1;
+			constructor(sideA: Side, sideB: Side, private event: FightEvent)
 			{
 				this.sides = [sideA, sideB];
 				this.text = '';
 				this.nextSideIndex = 0;
 				this.steps = 0;
-				this.finished = false;
 			}
 
 			onLoad()
@@ -146,14 +145,22 @@ namespace Model
 
 			step()
 			{
-				let attackerSide = this.sides[this.nextSideIndex];
-				this.nextSideIndex = (this.nextSideIndex + 1) % this.sides.length;
-				let defenderSide = this.sides[this.nextSideIndex];
+				let attackerIndex = this.nextSideIndex;
+				let defenderIndex = (this.nextSideIndex + 1) % this.sides.length;
+
+				let attackerSide = this.sides[attackerIndex];
+				let defenderSide = this.sides[defenderIndex];
 
 				let result = this.attack(attackerSide, defenderSide);
 
 				this.text += result.description + '<br>';
-				this.finished = defenderSide.getFighter().isDead();
+				if (!this.isFighterOK(defenderSide.getFighter()))
+				{
+					this.winnerIndex = attackerIndex;
+					this.text += attackerSide.getFighter().name + ' has won the fight!<br>';
+				}
+				else
+					this.nextSideIndex = defenderIndex;
 
 				Model.invalidate();
 
@@ -204,11 +211,16 @@ namespace Model
 				return new AttackResult(attack, msg, baseDamage, defense, targetID);
 			}
 
+			isFighterOK(fighter: Fighter)
+			{
+				return fighter.canFight(this.event.injuryThreshold);
+			}
+
 			canStart()
 			{
 				let fighterA = this.getFighter(0);
 				let fighterB = this.getFighter(1);
-				return fighterA !== fighterB && !fighterA.isDead() && !fighterB.isDead();
+				return fighterA !== fighterB && this.isFighterOK(fighterA) && this.isFighterOK(fighterB);
 			}
 		}
 	}

@@ -25,7 +25,7 @@ namespace Model
 				let awayData = Util.dynamicCast(data, Data.Events.AwayFightEvent)
 				if (awayData)
 				{
-					const event = new AwayFightEvent(awayData.day, awayData.fameRequired, awayData.name);
+					const event = new AwayFightEvent(awayData.day, awayData.injuryThreshold, awayData.fameRequired, awayData.name);
 					this.news.push(new EventNews(event));
 					this.events.push(event);
 				}

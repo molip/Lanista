@@ -153,6 +153,11 @@ namespace Model
 			return this.health <= 0;
 		}
 
+		canFight(healthThresholdPercent: number)
+		{
+			return this.health / this.getSpeciesData().health > healthThresholdPercent / 100;
+		}
+
 		resetHealth()
 		{
 			this.health = this.getSpeciesData().health;

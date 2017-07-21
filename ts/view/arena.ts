@@ -23,7 +23,7 @@ namespace View
 			{
 				let option = document.createElement('option');
 				option.text = Model.state.team.fighters[id].name;
-				if (Model.state.team.fighters[id].isDead())
+				if (!Model.state.team.fighters[id].canFight(arenaPage.event.injuryThreshold))
 					option.text += ' (x_x)';
 				return option;
 			};
@@ -222,7 +222,7 @@ namespace View
 
 			let sideA = this.fighterUIs[0].makeSide();
 			let sideB = awayFightEvent ? awayFightEvent.createNPCSide() : this.fighterUIs[1].makeSide();
-			this.fight = new Model.Fight.State(sideA, sideB);
+			this.fight = new Model.Fight.State(sideA, sideB, this.event);
 
 			this.updateStats();
 			this.button.disabled = !this.fight || !this.fight.canStart() || !this.fameOK;

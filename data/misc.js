@@ -6,3 +6,4 @@ Data.Misc.ExperienceBenefit = 0.01; // Each hour of experience adds this amount 
 Data.Misc.TrainingRate = 0.1; // Percent per hour.
 Data.Misc.StartingMoney = 500;
 Data.Misc.BaseAttackSkill = 50;
+Data.Misc.HomeFightInjuryThreshold = 50; // Percent health.
