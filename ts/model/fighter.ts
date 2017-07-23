@@ -164,6 +164,12 @@ namespace Model
 			Model.invalidate();
 		}
 
+		addFame(fame: number)
+		{
+			this.fame += fame;
+			Model.invalidate();
+		}
+
 		getExperience(tag: string)
 		{
 			return this.experience[tag] || 0;

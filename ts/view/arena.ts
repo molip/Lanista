@@ -155,6 +155,7 @@ namespace View
 		button: HTMLButtonElement;
 		fighterUIs: FighterUI[] = [];
 		statsTable: HTMLTableElement;
+		rewardsTable: HTMLTableElement;
 
 		event: Model.FightEvent;
 		fameOK = true;
@@ -175,13 +176,22 @@ namespace View
 			statsDiv.id = 'arena_stats_div';
 			this.div.appendChild(statsDiv);
 
-			let statsTitle = document.createElement('span');
-			statsTitle.innerHTML = '<strong>Fame:</strong>';
-			statsDiv.appendChild(statsTitle);
+			const home = this.getHomeFightEvent() != null;
 
 			this.statsTable = document.createElement('table');
 			this.statsTable.id = 'arena_stats_table';
 			statsDiv.appendChild(this.statsTable);
+
+			let hr = document.createElement('hr');
+			statsDiv.appendChild(hr);
+
+			let rewardsTitle = document.createElement('span');
+			rewardsTitle.innerHTML = '<strong>Rewards:</strong>';
+			statsDiv.appendChild(rewardsTitle);
+
+			this.rewardsTable = document.createElement('table');
+			this.rewardsTable.id = 'arena_stats_table';
+			statsDiv.appendChild(this.rewardsTable);
 
 			this.button = document.createElement('button');
 			this.button.addEventListener('click', this.onStartButton);
@@ -261,33 +271,51 @@ namespace View
 
 		updateStats()
 		{
-			let total = 0;
 			let tableFactory = new Table.Factory(this.statsTable);
 
-			let addRow = (label: string, fame: number) =>
+			let addRow = (a: string, b: string) =>
 			{
-				tableFactory.addRow([new Table.TextCell(label), new Table.TextCell(fame.toString())], false, null);
-				total += fame;
+				return tableFactory.addRow([new Table.TextCell(a), new Table.TextCell(b)], false, null);
 			};
-
-			for (let ui of this.fighterUIs)
-			{
-				let label = 'Fighter ' + (ui.index + 1);
-				addRow(label, ui.getFighter().fame);
-				addRow(label + ' equipment', ui.loadout.getEquipmentFame(Model.state.team));
-			}
-
-			let row = tableFactory.addRow([new Table.TextCell('Total'), new Table.TextCell(total.toString())], false, null);
-			row.style.fontWeight = 'bold';
 
 			let away = this.getAwayFightEvent();
 			if (away)
 			{
-				this.fameOK = total >= away.fameRequired;
-				let row = tableFactory.addRow([new Table.TextCell('Required'), new Table.TextCell(away.fameRequired.toString())], false, null);
+				this.fameOK = this.fighterUIs[0].totalFame >= away.fameRequired;
+				let row = addRow('Fame required', away.fameRequired.toString());
 				row.style.fontWeight = 'bold';
 				row.style.color = this.fameOK ? 'green' : 'red';
 			}
+			else
+			{
+				let total = 0;
+
+				for (let ui of this.fighterUIs)
+				{
+					let label = 'Fighter ' + (ui.index + 1) + " fame";
+					addRow(label, ui.totalFame.toString());
+					total += ui.totalFame;
+				}
+
+				addRow('Arena fame', 'n/a');
+				addRow('Total fame', total.toString());
+
+				let attendance = this.getHomeFightEvent().getAttendance(total);
+				let row = addRow('Attendance', attendance.toString());
+				row.style.fontWeight = 'bold';
+			}
+
+			tableFactory = new Table.Factory(this.rewardsTable);
+			addRow('Winning fame', this.event.getFameReward(this.fight, true).toString());
+			addRow('Losing fame', this.event.getFameReward(this.fight, false).toString());
+
+			if (away)
+			{
+				addRow('Winning money', this.event.getMoneyReward(this.fight, true).toString());
+				addRow('Losing money', this.event.getMoneyReward(this.fight, false).toString());
+			}
+			else
+				addRow('Money', this.event.getMoneyReward(this.fight, false).toString());
 		}
 
 		private getHomeFightEvent()

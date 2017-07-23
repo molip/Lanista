@@ -157,7 +157,7 @@
 	{
 		export class AwayFightEvent
 		{
-			constructor(public readonly day: number, public readonly injuryThreshold: number, public readonly fameRequired: number, public name: string) { }
+			constructor(public readonly day: number, public readonly injuryThreshold: number, public readonly fameRequired: number, public readonly losingFameReward: number, public readonly winningFameReward: number, public readonly losingMoneyReward: number, public readonly winningMoneyReward: number, public name: string) { }
 		}
 
 		export let Events: Event[];
@@ -200,5 +200,9 @@
 		export let StartingMoney: number;
 		export let BaseAttackSkill: number;
 		export let HomeFightInjuryThreshold: number;
+		export let HomeFightPopularity: number;
+		export let HomeFightMoney: number;
+		export let HomeFightLosingFame: number;
+		export let HomeFightWinningFame: number;
 	}
 }

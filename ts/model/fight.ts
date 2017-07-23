@@ -163,6 +163,11 @@ namespace Model
 				{
 					this.winnerIndex = attackerIndex;
 					this.text += attackerSide.getFighter().name + ' has won the fight!<br>';
+
+					let rewards = this.event.applyRewards(this);
+					this.text += this.sides[0].getFighter().name + ' has gained ' + rewards.fameA + ' fame.<br>';
+					this.text += this.sides[1].getFighter().name + ' has gained ' + rewards.fameB + ' fame.<br>';
+					this.text += 'You have gained ' + rewards.money + ' money.<br>';
 				}
 				else
 					this.nextSideIndex = defenderIndex;
