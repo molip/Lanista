@@ -39,7 +39,7 @@ namespace Model
 		private activity: string = '';
 		private experience: { [tag: string]: number } = {};
 
-		constructor(public id: number, public species: string, public name: string, public image: string)
+		constructor(public id: number, public species: string, public name: string, public image: string, public fame: number)
 		{
 			let data = this.getSpeciesData();
 			this.health = data.health;
@@ -153,9 +153,20 @@ namespace Model
 			return this.health <= 0;
 		}
 
+		canFight(healthThresholdPercent: number)
+		{
+			return this.health / this.getSpeciesData().health > healthThresholdPercent / 100;
+		}
+
 		resetHealth()
 		{
 			this.health = this.getSpeciesData().health;
+			Model.invalidate();
+		}
+
+		addFame(fame: number)
+		{
+			this.fame += fame;
 			Model.invalidate();
 		}
 

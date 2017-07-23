@@ -100,7 +100,7 @@ var Controller;
     Controller.onTick = onTick;
     function showEventUI(events) {
         Util.assert(events.length == 1);
-        if (events[0].type == 'fight')
+        if (events[0] instanceof Model.FightEvent)
             new View.ArenaPage(events[0]).show();
         else
             Util.assert(false);
@@ -255,7 +255,7 @@ var Controller;
                     Controller.updateHUD();
                 };
                 let type = Data.Animals.Types[tag];
-                addItem(page, type.name, type.description, Util.getImage('animals', tag), disable, type.cost, handler);
+                addItem(page, type.name, type.getDescription(), Util.getImage('animals', tag), disable, type.cost, handler);
                 page.show();
             }
         }
@@ -268,7 +268,7 @@ var Controller;
                     Controller.updateHUD();
                 };
                 let type = Data.People.Types[tag];
-                addItem(page, type.name, type.description, Util.getImage('people', tag), disable, type.cost, handler);
+                addItem(page, type.name, type.getDescription(), Util.getImage('people', tag), disable, type.cost, handler);
                 page.show();
             }
         }
@@ -281,7 +281,7 @@ var Controller;
                     Controller.updateHUD();
                 };
                 let type = Data.Armour.Types[tag];
-                addItem(page, type.name, type.description, Util.getImage('items', tag), disable, type.cost, handler);
+                addItem(page, type.name, type.getDescription(), Util.getImage('items', tag), disable, type.cost, handler);
                 page.show();
             }
         }
@@ -294,7 +294,7 @@ var Controller;
                     Controller.updateHUD();
                 };
                 let type = Data.Weapons.Types[tag];
-                addItem(page, type.name, type.description, Util.getImage('items', tag), disable, type.cost, handler);
+                addItem(page, type.name, type.getDescription(), Util.getImage('items', tag), disable, type.cost, handler);
                 page.show();
             }
         }
@@ -330,9 +330,10 @@ var Data;
     var Armour;
     (function (Armour) {
         class Type {
-            constructor(name, cost, description, sites, defence) {
+            constructor(name, cost, fame, description, sites, defence) {
                 this.name = name;
                 this.cost = cost;
+                this.fame = fame;
                 this.description = description;
                 this.sites = sites;
                 this.defence = defence;
@@ -347,16 +348,20 @@ var Data;
             getDefense(attackType) {
                 return this.defence[attackType] ? this.defence[attackType] : 0;
             }
+            getDescription() {
+                return this.description + ' (fame: ' + this.fame + ')';
+            }
         }
         Armour.Type = Type;
     })(Armour = Data.Armour || (Data.Armour = {}));
     var Weapons;
     (function (Weapons) {
         class Type {
-            constructor(name, block, cost, description, sites, attacks) {
+            constructor(name, block, cost, fame, description, sites, attacks) {
                 this.name = name;
                 this.block = block;
                 this.cost = cost;
+                this.fame = fame;
                 this.description = description;
                 this.sites = sites;
                 this.attacks = attacks;
@@ -377,6 +382,9 @@ var Data;
                     if (!found)
                         console.log('Weapon: "%s" site references unknown weapon site "%s/%s"', this.name, site.species, site.type);
                 }
+            }
+            getDescription() {
+                return this.description + ' (fame: ' + this.fame + ')';
             }
         }
         Weapons.Type = Type;
@@ -410,8 +418,9 @@ var Data;
     var Animals;
     (function (Animals) {
         class Type {
-            constructor(cost, species, name, description) {
+            constructor(cost, fame, species, name, description) {
                 this.cost = cost;
+                this.fame = fame;
                 this.species = species;
                 this.name = name;
                 this.description = description;
@@ -422,18 +431,25 @@ var Data;
                 if (!Species.Types[this.species].bodyParts)
                     console.log('Animal: "%s" has no body parts', this.name);
             }
+            getDescription() {
+                return this.description + ' (fame: ' + this.fame + ')';
+            }
         }
         Animals.Type = Type;
     })(Animals = Data.Animals || (Data.Animals = {}));
     var People;
     (function (People) {
         class Type {
-            constructor(cost, name, description) {
+            constructor(cost, fame, name, description) {
                 this.cost = cost;
+                this.fame = fame;
                 this.name = name;
                 this.description = description;
             }
             validate() {
+            }
+            getDescription() {
+                return this.description + ' (fame: ' + this.fame + ')';
             }
         }
         People.Type = Type;
@@ -473,14 +489,19 @@ var Data;
     })(Activities = Data.Activities || (Data.Activities = {}));
     var Events;
     (function (Events_1) {
-        class Event {
-            constructor(day, home, name) {
+        class AwayFightEvent {
+            constructor(day, injuryThreshold, fameRequired, losingFameReward, winningFameReward, losingMoneyReward, winningMoneyReward, name) {
                 this.day = day;
-                this.home = home;
+                this.injuryThreshold = injuryThreshold;
+                this.fameRequired = fameRequired;
+                this.losingFameReward = losingFameReward;
+                this.winningFameReward = winningFameReward;
+                this.losingMoneyReward = losingMoneyReward;
+                this.winningMoneyReward = winningMoneyReward;
                 this.name = name;
             }
         }
-        Events_1.Event = Event;
+        Events_1.AwayFightEvent = AwayFightEvent;
     })(Events = Data.Events || (Data.Events = {}));
     function validate() {
         console.log('Validating data...');
@@ -542,11 +563,12 @@ var Model;
     }
     Model.Attack = Attack;
     class Fighter {
-        constructor(id, species, name, image) {
+        constructor(id, species, name, image, fame) {
             this.id = id;
             this.species = species;
             this.name = name;
             this.image = image;
+            this.fame = fame;
             this.bodyParts = {};
             this.skills = {}; // +/- percent.
             this.nextBodyPartID = 1;
@@ -632,8 +654,15 @@ var Model;
         isDead() {
             return this.health <= 0;
         }
+        canFight(healthThresholdPercent) {
+            return this.health / this.getSpeciesData().health > healthThresholdPercent / 100;
+        }
         resetHealth() {
             this.health = this.getSpeciesData().health;
+            Model.invalidate();
+        }
+        addFame(fame) {
+            this.fame += fame;
             Model.invalidate();
         }
         getExperience(tag) {
@@ -667,9 +696,9 @@ var Model;
 var Model;
 (function (Model) {
     class Animal extends Model.Fighter {
-        constructor(id, tag, name) {
+        constructor(id, tag, name, fame) {
             let type = Data.Animals.Types[tag];
-            super(id, type.species, name, Util.getImage('animals', tag));
+            super(id, type.species, name, Util.getImage('animals', tag), fame);
         }
     }
     Model.Animal = Animal;
@@ -782,30 +811,95 @@ var Model;
             this.day = day;
         }
         static initPrototype(event) {
-            if (event.type == 'fight')
-                Util.setPrototype(event, FightEvent);
+            if (event.type == 'home_fight')
+                Util.setPrototype(event, HomeFightEvent);
+            else if (event.type == 'away_fight')
+                Util.setPrototype(event, AwayFightEvent);
         }
         getDescription() { Util.assert(false); return ''; }
     }
     Model.Event = Event;
+    class FightRewards {
+        constructor(money, fameA, fameB) {
+            this.money = money;
+            this.fameA = fameA;
+            this.fameB = fameB;
+        }
+    }
+    Model.FightRewards = FightRewards;
     class FightEvent extends Event {
-        constructor(day, home, name) {
-            super('fight', day);
-            this.home = home;
-            this.name = name;
+        constructor(type, day, injuryThreshold) {
+            super(type, day);
+            this.injuryThreshold = injuryThreshold;
         }
-        getDescription() {
-            return this.home ? "Home Fight" : this.name; // TODO: Specialise classes.
+        applyRewards(fight) {
+            Util.assert(fight.winnerIndex >= 0);
+            const won = fight.winnerIndex == 0;
+            const money = this.getMoneyReward(fight, fight.winnerIndex == 0);
+            const fameA = this.getFameReward(fight, fight.winnerIndex == 0);
+            const fameB = this.getFameReward(fight, fight.winnerIndex == 1);
+            Model.state.addMoney(money);
+            fight.getFighter(0).addFame(fameA);
+            fight.getFighter(1).addFame(fameB);
+            return new FightRewards(money, fameA, fameB);
         }
-        createNPCSide() {
-            Util.assert(!this.home);
-            let team = new Model.Team();
-            team.fighters[1] = new Model.Person(0, 'man', "Slapper Nuremberg");
-            let loadout = new Model.Loadout('1');
-            return new Model.Fight.Side(loadout, team);
+        getFameReward(fight, winning) {
+            return 0;
+        }
+        getMoneyReward(fight, winning) {
+            return 0;
         }
     }
     Model.FightEvent = FightEvent;
+    class HomeFightEvent extends FightEvent {
+        constructor(day, injuryThreshold) {
+            super('home_fight', day, injuryThreshold);
+        }
+        getDescription() {
+            return "Home Fight";
+        }
+        getAttendance(fame) {
+            return Math.floor(fame * Data.Misc.HomeFightPopularity);
+        }
+        getFameReward(fight, winning) {
+            const fame = fight.getFame(); // TODO: Arena fame.
+            const rate = winning ? Data.Misc.HomeFightWinningFame : Data.Misc.HomeFightLosingFame;
+            return this.getAttendance(fame) * rate;
+        }
+        getMoneyReward(fight, winning) {
+            // Doesn't matter who won.
+            const fame = fight.getFame(); // TODO: Arena fame.
+            return this.getAttendance(fame) * Data.Misc.HomeFightMoney;
+        }
+    }
+    Model.HomeFightEvent = HomeFightEvent;
+    class AwayFightEvent extends FightEvent {
+        constructor(day, injuryThreshold, fameRequired, losingFameReward, winningFameReward, losingMoneyReward, winningMoneyReward, name) {
+            super('away_fight', day, injuryThreshold);
+            this.fameRequired = fameRequired;
+            this.losingFameReward = losingFameReward;
+            this.winningFameReward = winningFameReward;
+            this.losingMoneyReward = losingMoneyReward;
+            this.winningMoneyReward = winningMoneyReward;
+            this.name = name;
+        }
+        getDescription() {
+            return this.name;
+        }
+        createNPCSide() {
+            let team = new Model.Team();
+            team.fighters[1] = new Model.Person(0, 'man', "Slapper Nuremberg", 0);
+            let loadout = new Model.Loadout('1');
+            return new Model.Fight.Side(loadout, team);
+        }
+        getFameReward(fight, winning) {
+            return winning ? this.winningFameReward : this.losingFameReward;
+        }
+        getMoneyReward(fight, winning) {
+            return winning ? this.winningMoneyReward : this.losingMoneyReward;
+        }
+    }
+    Model.AwayFightEvent = AwayFightEvent;
 })(Model || (Model = {}));
 "use strict";
 var Model;
@@ -839,6 +933,9 @@ var Model;
             getAttacks() {
                 return this.getFighter().getAttacks(this.loadout, this.getTeam());
             }
+            getEquipmentFame() {
+                return this.loadout.getEquipmentFame(this.getTeam());
+            }
             onLoad() {
                 if (this.npcTeam) {
                     Util.setPrototype(this.npcTeam, Model.Team);
@@ -850,12 +947,13 @@ var Model;
         }
         Fight.Side = Side;
         class State {
-            constructor(sideA, sideB) {
+            constructor(sideA, sideB, event) {
+                this.event = event;
+                this.winnerIndex = -1;
                 this.sides = [sideA, sideB];
                 this.text = '';
                 this.nextSideIndex = 0;
                 this.steps = 0;
-                this.finished = false;
             }
             onLoad() {
                 for (let side of this.sides) {
@@ -913,12 +1011,22 @@ var Model;
                 return Array.from(set);
             }
             step() {
-                let attackerSide = this.sides[this.nextSideIndex];
-                this.nextSideIndex = (this.nextSideIndex + 1) % this.sides.length;
-                let defenderSide = this.sides[this.nextSideIndex];
+                let attackerIndex = this.nextSideIndex;
+                let defenderIndex = (this.nextSideIndex + 1) % this.sides.length;
+                let attackerSide = this.sides[attackerIndex];
+                let defenderSide = this.sides[defenderIndex];
                 let result = this.attack(attackerSide, defenderSide);
                 this.text += result.description + '<br>';
-                this.finished = defenderSide.getFighter().isDead();
+                if (!this.isFighterOK(defenderSide.getFighter())) {
+                    this.winnerIndex = attackerIndex;
+                    this.text += attackerSide.getFighter().name + ' has won the fight!<br>';
+                    let rewards = this.event.applyRewards(this);
+                    this.text += this.sides[0].getFighter().name + ' has gained ' + rewards.fameA + ' fame.<br>';
+                    this.text += this.sides[1].getFighter().name + ' has gained ' + rewards.fameB + ' fame.<br>';
+                    this.text += 'You have gained ' + rewards.money + ' money.<br>';
+                }
+                else
+                    this.nextSideIndex = defenderIndex;
                 Model.invalidate();
                 return result;
             }
@@ -951,6 +1059,20 @@ var Model;
                 }
                 Model.invalidate();
                 return new AttackResult(attack, msg, baseDamage, defense, targetID);
+            }
+            isFighterOK(fighter) {
+                return fighter.canFight(this.event.injuryThreshold);
+            }
+            canStart() {
+                let fighterA = this.getFighter(0);
+                let fighterB = this.getFighter(1);
+                return fighterA !== fighterB && this.isFighterOK(fighterA) && this.isFighterOK(fighterB);
+            }
+            getFame() {
+                let fame = 0;
+                for (let side of this.sides)
+                    fame += side.getEquipmentFame() + side.getFighter().fame;
+                return fame;
             }
         }
         Fight.State = State;
@@ -1050,6 +1172,12 @@ var Model;
             }
             return null;
         }
+        getEquipmentFame(team) {
+            let fame = 0;
+            for (let itemPos of this.itemPositions)
+                fame += team.getItemData(itemPos.itemID).fame;
+            return fame;
+        }
     }
     Model.Loadout = Loadout;
 })(Model || (Model = {}));
@@ -1078,9 +1206,12 @@ var Model;
             this.time = 0; // Minutes.
             this.speed = 1; // Game minutes per second. 
             for (let data of Data.Events.Events) {
-                const event = new Model.FightEvent(data.day, data.home, data.name);
-                this.news.push(new Model.EventNews(event));
-                this.events.push(event);
+                let awayData = Util.dynamicCast(data, Data.Events.AwayFightEvent);
+                if (awayData) {
+                    const event = new Model.AwayFightEvent(awayData.day, awayData.injuryThreshold, awayData.fameRequired, awayData.losingFameReward, awayData.winningFameReward, awayData.losingMoneyReward, awayData.winningMoneyReward, awayData.name);
+                    this.news.push(new Model.EventNews(event));
+                    this.events.push(event);
+                }
             }
         }
         onLoad() {
@@ -1256,10 +1387,11 @@ var Model;
             this.team.addItem(Model.ItemType.Weapon, tag);
             Model.invalidate();
         }
-        startFight(sideA, sideB) {
+        startFight(fight) {
             Util.assert(this.fight == null);
             Util.assert(this.phase == Phase.Event);
-            this.fight = new Model.Fight.State(sideA, sideB);
+            Util.assert(fight && fight.canStart());
+            this.fight = fight;
             this.deleteEventsForToday();
             this.phase = Phase.Fight;
             Model.invalidate();
@@ -1328,9 +1460,9 @@ var Model;
 var Model;
 (function (Model) {
     class Person extends Model.Fighter {
-        constructor(id, tag, name) {
+        constructor(id, tag, name, fame) {
             let type = Data.People.Types[tag];
-            super(id, 'human', name, Util.getImage('people', tag));
+            super(id, 'human', name, Util.getImage('people', tag), fame);
         }
     }
     Model.Person = Person;
@@ -1367,13 +1499,15 @@ var Model;
         }
         addAnimal(tag) {
             Util.assert(tag in Data.Animals.Types);
-            this.fighters[this.nextFighterID] = new Model.Animal(this.nextFighterID, tag, this.getUniqueFighterName(Data.Animals.Types[tag].name));
+            let data = Data.Animals.Types[tag];
+            this.fighters[this.nextFighterID] = new Model.Animal(this.nextFighterID, tag, this.getUniqueFighterName(data.name), data.fame);
             ++this.nextFighterID;
             Model.invalidate();
         }
         addPerson(tag) {
             Util.assert(tag in Data.People.Types);
-            this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, tag, this.getUniqueFighterName(Data.People.Types[tag].name));
+            let data = Data.People.Types[tag];
+            this.fighters[this.nextFighterID] = new Model.Person(this.nextFighterID, tag, this.getUniqueFighterName(data.name), data.fame);
             ++this.nextFighterID;
             Model.invalidate();
         }
@@ -1560,6 +1694,15 @@ var Util;
         obj.__proto__ = type.prototype;
     }
     Util.setPrototype = setPrototype;
+    function dynamicCast(instance, ctor) {
+        return (instance instanceof ctor) ? instance : null;
+    }
+    Util.dynamicCast = dynamicCast;
+    function assertCast(instance, ctor) {
+        assert(instance instanceof ctor);
+        return instance;
+    }
+    Util.assertCast = assertCast;
     function getImage(dir, name) {
         return 'images/' + dir + '/' + name + '.png';
     }
@@ -1667,7 +1810,7 @@ var View;
         constructor(title) {
             super(title);
             this.tableFactory = new View.Table.Factory();
-            this.div.appendChild(this.tableFactory.element);
+            this.div.appendChild(this.tableFactory.makeScroller());
         }
         addItem(title, description, image, locked, handler) {
             let cells = [new View.Table.TextCell('<h4>' + title + '</h4>', 20), new View.Table.ImageCell(image, 20), new View.Table.TextCell(description)];
@@ -1685,9 +1828,12 @@ var View;
 (function (View) {
     class FighterUI {
         constructor(index, arenaPage) {
+            this.index = index;
             this.loadout = null;
             this.itemIDs = [];
             this.checkboxCells = [];
+            this.fameCells = [];
+            this.totalFame = 0;
             this.other = null;
             this.div = document.createElement('div');
             this.div.id = 'fighter_ui_div';
@@ -1695,29 +1841,47 @@ var View;
             let makeOption = function (id) {
                 let option = document.createElement('option');
                 option.text = Model.state.team.fighters[id].name;
-                if (Model.state.team.fighters[id].isDead())
+                if (!Model.state.team.fighters[id].canFight(arenaPage.event.injuryThreshold))
                     option.text += ' (x_x)';
                 return option;
             };
-            this.select = document.createElement('select');
-            this.select.addEventListener('change', () => { arenaPage.onFighterSelected(index); });
-            for (let id in Model.state.team.fighters)
-                this.select.options.add(makeOption(id));
-            this.div.appendChild(this.select);
-            // Item table.
+            let items = [];
+            for (let id in Model.state.team.fighters) {
+                let fighter = Model.state.team.fighters[id];
+                let name = fighter.name;
+                if (!fighter.canFight(arenaPage.event.injuryThreshold))
+                    name += ' (x_x)';
+                items.push(new View.Table.SelectCellItem(id, name));
+            }
             let tableFactory = new View.Table.Factory();
-            tableFactory.addColumnHeader('Item');
+            tableFactory.addColumnHeader('Fighter ' + (index + 1));
+            tableFactory.addColumnHeader('Fame');
             tableFactory.addColumnHeader('Equip');
+            // Fighter row.
+            let selectCell = new View.Table.SelectCell(0, items, (value) => { arenaPage.onFighterSelected(index); });
+            this.fighterFameCell = new View.Table.TextCell('');
+            tableFactory.addRow([selectCell, this.fighterFameCell, null], false, null);
+            this.select = selectCell.selectElement;
+            this.select.selectedIndex = 0;
+            // Item rows.
             for (let id in Model.state.team.items) {
                 let item = Model.state.team.items[id];
+                let data = Model.state.team.getItemData(id);
                 let handler = (value) => { arenaPage.onItemChecked(index, id, value); };
                 let checkboxCell = new View.Table.CheckboxCell(handler);
-                let cells = [new View.Table.TextCell(Model.state.team.getItemData(id).name), checkboxCell];
+                let fameCell = new View.Table.TextCell(data.fame.toString());
+                let cells = [new View.Table.TextCell(data.name), fameCell, checkboxCell];
                 tableFactory.addRow(cells, false, null);
                 this.itemIDs.push(id);
                 this.checkboxCells.push(checkboxCell);
+                this.fameCells.push(fameCell);
             }
-            this.div.appendChild(tableFactory.element);
+            // Total row.
+            this.totalFameCell = new View.Table.TextCell('');
+            let cells = [new View.Table.TextCell('Total'), this.totalFameCell, null];
+            let row = tableFactory.addRow(cells, false, null);
+            row.style.fontWeight = 'bold';
+            this.div.appendChild(tableFactory.makeScroller());
         }
         getOtherLoadout() {
             return this.other ? this.other.loadout : null;
@@ -1728,6 +1892,9 @@ var View;
         getFighter() {
             let id = this.getFighterID();
             return id ? Model.state.team.fighters[id] : null;
+        }
+        makeSide() {
+            return this.getFighter() ? new Model.Fight.Side(this.loadout, null) : null;
         }
         updateFighter() {
             if (this.select.selectedIndex < 0) {
@@ -1740,6 +1907,8 @@ var View;
                 this.loadout = otherLoadout;
             else
                 this.loadout = new Model.Loadout(fighterID);
+            this.fighterFameCell.cellElement.innerText = this.getFighter().fame.toString();
+            this.updateItems();
         }
         equipItem(itemID, value) {
             if (value)
@@ -1754,37 +1923,55 @@ var View;
                 let otherLoadout = this.getOtherLoadout();
                 checkbox.checked = this.loadout && this.loadout.hasItemID(itemID);
                 checkbox.disabled = !this.loadout || (!checkbox.checked && ((otherLoadout && otherLoadout.hasItemID(itemID)) || !this.loadout.canAddItem(itemID, Model.state.team)));
+                this.fameCells[i].cellElement.style.color = checkbox.checked ? 'black' : 'grey';
             }
+            this.totalFame = this.getFighter().fame + this.makeSide().getEquipmentFame();
+            this.totalFameCell.cellElement.innerText = this.totalFame.toString();
         }
     }
     class ArenaPage extends View.Page {
         constructor(event) {
             super('Choose Fighters');
             this.fighterUIs = [];
+            this.fameOK = true;
+            this.fight = null;
             this.onStartButton = () => {
-                let sideA = new Model.Fight.Side(this.fighterUIs[0].loadout, null);
-                let sideB = this.event.home ? new Model.Fight.Side(this.fighterUIs[1].loadout, null) : this.event.createNPCSide();
-                Model.state.startFight(sideA, sideB);
+                Model.state.startFight(this.fight);
                 View.Page.hideCurrent();
             };
             this.onFighterSelected = (fighterIndex) => {
                 this.fighterUIs[fighterIndex].updateFighter();
-                this.updateStartButton();
-                this.updateItems();
+                this.updateFight();
             };
             this.onItemChecked = (fighterIndex, itemID, value) => {
                 this.fighterUIs[fighterIndex].equipItem(itemID, value);
                 this.updateItems();
+                this.updateFight();
             };
-            this.event = event;
-            Util.assert(!!this.event);
+            this.event = Util.assertCast(event, Model.FightEvent);
             this.addFighterUI();
-            if (this.event.home)
+            if (this.getHomeFightEvent())
                 this.addFighterUI();
+            let statsDiv = document.createElement('div');
+            statsDiv.id = 'arena_stats_div';
+            this.div.appendChild(statsDiv);
+            const home = this.getHomeFightEvent() != null;
+            this.statsTable = document.createElement('table');
+            this.statsTable.id = 'arena_stats_table';
+            statsDiv.appendChild(this.statsTable);
+            let hr = document.createElement('hr');
+            statsDiv.appendChild(hr);
+            let rewardsTitle = document.createElement('span');
+            rewardsTitle.innerHTML = '<strong>Rewards:</strong>';
+            statsDiv.appendChild(rewardsTitle);
+            this.rewardsTable = document.createElement('table');
+            this.rewardsTable.id = 'arena_stats_table';
+            statsDiv.appendChild(this.rewardsTable);
             this.button = document.createElement('button');
             this.button.addEventListener('click', this.onStartButton);
+            this.button.innerText = 'Start';
             this.div.appendChild(this.button);
-            this.updateStartButton();
+            this.updateFight();
         }
         addFighterUI() {
             let index = this.fighterUIs.length;
@@ -1798,7 +1985,6 @@ var View;
                 fighterUI.other = this.fighterUIs[0];
             }
             fighterUI.updateFighter();
-            fighterUI.updateItems();
         }
         onShow() {
         }
@@ -1811,19 +1997,54 @@ var View;
             for (let ui of this.fighterUIs)
                 ui.updateItems();
         }
-        updateStartButton() {
-            if (Model.state.fight) {
-                this.button.innerText = 'Stop';
-                this.button.disabled = false;
-                return;
+        updateFight() {
+            let awayFightEvent = this.getAwayFightEvent();
+            let sideA = this.fighterUIs[0].makeSide();
+            let sideB = awayFightEvent ? awayFightEvent.createNPCSide() : this.fighterUIs[1].makeSide();
+            this.fight = new Model.Fight.State(sideA, sideB, this.event);
+            this.updateStats();
+            this.button.disabled = !this.fight || !this.fight.canStart() || !this.fameOK;
+        }
+        updateStats() {
+            let tableFactory = new View.Table.Factory(this.statsTable);
+            let addRow = (a, b) => {
+                return tableFactory.addRow([new View.Table.TextCell(a), new View.Table.TextCell(b)], false, null);
+            };
+            let away = this.getAwayFightEvent();
+            if (away) {
+                this.fameOK = this.fighterUIs[0].totalFame >= away.fameRequired;
+                let row = addRow('Fame required', away.fameRequired.toString());
+                row.style.fontWeight = 'bold';
+                row.style.color = this.fameOK ? 'green' : 'red';
             }
-            this.button.innerText = 'Start';
-            let fighterA = this.fighterUIs[0].getFighter();
-            this.button.disabled = !fighterA || fighterA.isDead();
-            if (!this.button.disabled && this.event.home) {
-                let fighterB = this.fighterUIs[1].getFighter();
-                this.button.disabled = !fighterB || fighterB.isDead() || fighterA === fighterB;
+            else {
+                let total = 0;
+                for (let ui of this.fighterUIs) {
+                    let label = 'Fighter ' + (ui.index + 1) + " fame";
+                    addRow(label, ui.totalFame.toString());
+                    total += ui.totalFame;
+                }
+                addRow('Arena fame', 'n/a');
+                addRow('Total fame', total.toString());
+                let attendance = this.getHomeFightEvent().getAttendance(total);
+                let row = addRow('Attendance', attendance.toString());
+                row.style.fontWeight = 'bold';
             }
+            tableFactory = new View.Table.Factory(this.rewardsTable);
+            addRow('Winning fame', this.event.getFameReward(this.fight, true).toString());
+            addRow('Losing fame', this.event.getFameReward(this.fight, false).toString());
+            if (away) {
+                addRow('Winning money', this.event.getMoneyReward(this.fight, true).toString());
+                addRow('Losing money', this.event.getMoneyReward(this.fight, false).toString());
+            }
+            else
+                addRow('Money', this.event.getMoneyReward(this.fight, false).toString());
+        }
+        getHomeFightEvent() {
+            return Util.dynamicCast(this.event, Model.HomeFightEvent);
+        }
+        getAwayFightEvent() {
+            return Util.dynamicCast(this.event, Model.AwayFightEvent);
         }
     }
     View.ArenaPage = ArenaPage;
@@ -1836,10 +2057,11 @@ var View;
         constructor() {
             super('Barracks (' + Model.state.team.getPeople().length + '/' + Model.state.buildings.getCapacity('barracks') + ')');
             let tableFactory = new View.Table.Factory();
-            this.div.appendChild(tableFactory.element);
+            this.div.appendChild(tableFactory.makeScroller());
             tableFactory.addColumnHeader('Name', 20);
             tableFactory.addColumnHeader('Image', 30);
             tableFactory.addColumnHeader('Health', 10);
+            tableFactory.addColumnHeader('Fame', 10);
             tableFactory.addColumnHeader('Skills', 10);
             tableFactory.addColumnHeader('Activity', 10);
             const activityItems = [];
@@ -1850,6 +2072,7 @@ var View;
                 cells.push(new View.Table.TextCell('<h4>' + person.name + '</h4>'));
                 cells.push(new View.Table.ImageCell(person.image));
                 cells.push(new View.Table.TextCell(person.health.toString() + '/' + person.getSpeciesData().health));
+                cells.push(new View.Table.TextCell(person.fame.toString()));
                 for (let c of Util.formatRows(person.getSkills()))
                     cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
                 let cell = new View.Table.SelectCell(100, activityItems, (value) => { person.setActivity(value); });
@@ -2168,8 +2391,9 @@ var View;
             this.sequence.items.push(new View.Animation(1000));
             this.sequence.start();
             this.update();
-            if (Model.state.fight.finished)
+            if (Model.state.fight.winnerIndex >= 0) {
                 this.stopFight();
+            }
         }
         makeHumanSequence(result, attackerIndex, defenderIndex) {
             let sourcePart = this.fighters[attackerIndex].bodyParts[result.attack.sourceID];
@@ -2328,11 +2552,7 @@ var View;
         constructor() {
             super('Home');
             this.onAddHomeFight = () => {
-                Model.state.addEvent(new Model.FightEvent(Model.state.getDay() + 1, true, 'Home Fight'));
-                this.update();
-            };
-            this.onAddAwayFight = () => {
-                Model.state.addEvent(new Model.FightEvent(Model.state.getDay() + 1, false, 'Away Fight'));
+                Model.state.addEvent(new Model.HomeFightEvent(Model.state.getDay() + 1, Data.Misc.HomeFightInjuryThreshold));
                 this.update();
             };
             let topDiv = document.createElement('div');
@@ -2342,11 +2562,7 @@ var View;
             this.homeButton = document.createElement('button');
             this.homeButton.addEventListener('click', this.onAddHomeFight);
             this.homeButton.innerText = 'Add Home Fight';
-            this.awayButton = document.createElement('button');
-            this.awayButton.addEventListener('click', this.onAddAwayFight);
-            this.awayButton.innerText = 'Add Away Fight';
             topDiv.appendChild(this.homeButton);
-            topDiv.appendChild(this.awayButton);
             this.div.appendChild(topDiv);
             this.div.appendChild(this.bottomDiv);
             this.update();
@@ -2361,9 +2577,9 @@ var View;
             }
             if (this.bottomDiv.firstChild)
                 this.bottomDiv.removeChild(this.bottomDiv.firstChild);
-            this.bottomDiv.appendChild(tableFactory.element);
+            this.bottomDiv.appendChild(tableFactory.makeScroller());
             let eventsForTomorrow = Model.state.getEventsForDay(Model.state.getDay() + 1);
-            this.homeButton.disabled = this.awayButton.disabled = eventsForTomorrow.length > 0;
+            this.homeButton.disabled = eventsForTomorrow.length > 0;
         }
     }
     View.HomePage = HomePage;
@@ -2376,15 +2592,17 @@ var View;
         constructor() {
             super('Kennels (' + Model.state.team.getAnimals().length + '/' + Model.state.buildings.getCapacity('kennels') + ')');
             let tableFactory = new View.Table.Factory();
-            this.div.appendChild(tableFactory.element);
+            this.div.appendChild(tableFactory.makeScroller());
             tableFactory.addColumnHeader('Name', 20);
             tableFactory.addColumnHeader('Image', 30);
             tableFactory.addColumnHeader('Health', 10);
+            tableFactory.addColumnHeader('Fame', 10);
             for (let animal of Model.state.team.getAnimals()) {
                 let cells = [];
                 cells.push(new View.Table.TextCell('<h4>' + animal.name + '</h4>'));
                 cells.push(new View.Table.ImageCell(animal.image));
                 cells.push(new View.Table.TextCell(animal.health.toString() + '/' + animal.getSpeciesData().health));
+                cells.push(new View.Table.TextCell(animal.fame.toString()));
                 tableFactory.addRow(cells, false, null);
             }
         }
@@ -2553,6 +2771,36 @@ var View;
     }
     View.NewsPage = NewsPage;
 })(View || (View = {}));
+"use strict";
+var View;
+(function (View) {
+    class Preloader {
+        constructor(onFinished = null) {
+            this.onFinished = onFinished;
+            this.paths = [];
+            this.images = [];
+            this.finished = 0;
+        }
+        go() {
+            for (let path of this.paths) {
+                let image = new Image();
+                if (this.onFinished)
+                    image.onload = () => { this.onLoad(); };
+                image.src = path;
+                this.images.push(image);
+            }
+        }
+        isFinished() {
+            return this.finished == this.paths.length;
+        }
+        onLoad() {
+            ++this.finished;
+            if (this.isFinished())
+                this.onFinished();
+        }
+    }
+    View.Preloader = Preloader;
+})(View || (View = {}));
 /// <reference path="page.ts" />
 "use strict";
 var View;
@@ -2561,14 +2809,15 @@ var View;
         constructor() {
             super('Storage (' + Model.state.team.getItemCount() + '/' + Model.state.buildings.getCapacity('storage') + ')');
             let tableFactory = new View.Table.Factory();
-            this.div.appendChild(tableFactory.element);
+            this.div.appendChild(tableFactory.makeScroller());
             tableFactory.addColumnHeader('Name', 20);
             tableFactory.addColumnHeader('Image', 10);
-            tableFactory.addColumnHeader('Type', 70);
+            tableFactory.addColumnHeader('Fame', 10);
+            tableFactory.addColumnHeader('Type', 60);
             for (let id in Model.state.team.items) {
                 let item = Model.state.team.items[id];
                 let data = Model.state.team.getItemData(id);
-                let cells = [new View.Table.TextCell('<h4>' + data.name + ' </h4>'), new View.Table.ImageCell(Util.getImage('items', item.tag)), new View.Table.TextCell(item.type == Model.ItemType.Armour ? 'Armour' : 'Weapon')];
+                let cells = [new View.Table.TextCell('<h4>' + data.name + ' </h4>'), new View.Table.ImageCell(Util.getImage('items', item.tag)), new View.Table.TextCell(data.fame.toString()), new View.Table.TextCell(item.type == Model.ItemType.Armour ? 'Armour' : 'Weapon')];
                 tableFactory.addRow(cells, false, null);
             }
         }
@@ -2583,12 +2832,13 @@ var View;
         class Cell {
             constructor(width) {
                 this.width = width;
+                this.cellElement = null;
             } // %
             getElement() {
-                let e = document.createElement('td');
+                this.cellElement = document.createElement('td');
                 if (this.width)
-                    e.style.width = this.width.toString() + '%';
-                return e;
+                    this.cellElement.style.width = this.width.toString() + '%';
+                return this.cellElement;
             }
         }
         Table.Cell = Cell;
@@ -2636,16 +2886,16 @@ var View;
             }
             getElement() {
                 let e = super.getElement();
-                let select = document.createElement('select');
+                this.selectElement = document.createElement('select');
                 for (let i = 0, item; item = this.items[i]; ++i) {
                     let optionElement = document.createElement('option');
                     optionElement.value = item.tag;
                     optionElement.innerText = item.name;
-                    select.appendChild(optionElement);
+                    this.selectElement.appendChild(optionElement);
                 }
-                select.value = this.selectedTag;
-                select.addEventListener('change', () => { this.handler(select.value); });
-                e.appendChild(select);
+                this.selectElement.value = this.selectedTag;
+                this.selectElement.addEventListener('change', () => { this.handler(this.selectElement.value); });
+                e.appendChild(this.selectElement);
                 return e;
             }
         }
@@ -2666,11 +2916,9 @@ var View;
         }
         Table.CheckboxCell = CheckboxCell;
         class Factory {
-            constructor() {
-                this.element = document.createElement('div');
-                this.table = document.createElement('table');
-                this.element.appendChild(this.table);
-                this.element.className = 'scroller';
+            constructor(table = null) {
+                this.table = table ? table : document.createElement('table');
+                this.table.innerHTML = '';
             }
             addColumnHeader(name, width) {
                 if (!this.headerRow) {
@@ -2688,12 +2936,19 @@ var View;
                 row.className = 'table_row';
                 this.table.appendChild(row);
                 for (let cell of cells)
-                    row.appendChild(cell.getElement());
+                    row.appendChild((cell ? cell : new Cell()).getElement());
                 row.addEventListener('click', handler);
                 if (locked)
                     row.style.opacity = '0.5';
                 if (!locked && handler)
                     row.className += ' highlight';
+                return row;
+            }
+            makeScroller() {
+                let div = document.createElement('div');
+                div.appendChild(this.table);
+                div.className = 'scroller';
+                return div;
             }
         }
         Table.Factory = Factory;
@@ -2815,34 +3070,4 @@ var View;
         document.getElementById('skip_day_btn').disabled = !enable;
     }
     View.enable = enable;
-})(View || (View = {}));
-"use strict";
-var View;
-(function (View) {
-    class Preloader {
-        constructor(onFinished = null) {
-            this.onFinished = onFinished;
-            this.paths = [];
-            this.images = [];
-            this.finished = 0;
-        }
-        go() {
-            for (let path of this.paths) {
-                let image = new Image();
-                if (this.onFinished)
-                    image.onload = () => { this.onLoad(); };
-                image.src = path;
-                this.images.push(image);
-            }
-        }
-        isFinished() {
-            return this.finished == this.paths.length;
-        }
-        onLoad() {
-            ++this.finished;
-            if (this.isFinished())
-                this.onFinished();
-        }
-    }
-    View.Preloader = Preloader;
 })(View || (View = {}));

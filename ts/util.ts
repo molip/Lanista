@@ -61,6 +61,17 @@
 		obj.__proto__ = type.prototype;
 	}
 
+	export function dynamicCast<T>(instance: any, ctor: { new(...args: any[]): T })
+	{
+		return (instance instanceof ctor) ? instance : null;
+	}
+
+	export function assertCast<T>(instance: any, ctor: { new (...args: any[]): T })
+	{
+		assert(instance instanceof ctor);
+		return instance as T;
+	}
+
 	export function getImage(dir: string, name: string)
 	{
 		return 'images/' + dir + '/' + name + '.png';

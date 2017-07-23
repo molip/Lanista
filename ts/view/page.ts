@@ -60,7 +60,7 @@ namespace View
 		{
 			super(title);
 			this.tableFactory = new Table.Factory();
-			this.div.appendChild(this.tableFactory.element);
+			this.div.appendChild(this.tableFactory.makeScroller());
 		}
 
 		addItem(title: string, description: string, image: string, locked: boolean, handler: ()=>void)

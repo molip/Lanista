@@ -258,8 +258,10 @@ namespace View
 			this.sequence.start();
 
 			this.update();
-			if (Model.state.fight.finished)
+			if (Model.state.fight.winnerIndex >= 0)
+			{
 				this.stopFight();
+			}
 		}
 
 		makeHumanSequence(result: Model.Fight.AttackResult, attackerIndex: number, defenderIndex: number)

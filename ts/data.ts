@@ -12,7 +12,7 @@
 	{
 		export class Type
 		{
-			constructor(public readonly name: string, public readonly cost: number, public readonly description: string, public readonly sites: Site[], public readonly defence: { [key: string]: number }) { }
+			constructor(public readonly name: string, public readonly cost: number, public readonly fame: number, public readonly description: string, public readonly sites: Site[], public readonly defence: { [key: string]: number }) { }
 			validate()
 			{
 				for (let site of this.sites)
@@ -27,6 +27,11 @@
 			{
 				return this.defence[attackType] ? this.defence[attackType] : 0;
 			}
+
+			getDescription()
+			{
+				return this.description + ' (fame: ' + this.fame + ')';
+			}
 		}
 
 		export let Types: { [key: string]: Type };
@@ -36,7 +41,7 @@
 	{
 		export class Type
 		{
-			constructor(public readonly name: string, public readonly block: number, public readonly cost: number, public readonly description: string, public readonly sites: Site[], public readonly attacks: Attack[]) { }
+			constructor(public readonly name: string, public readonly block: number, public readonly cost: number, public readonly fame: number, public readonly description: string, public readonly sites: Site[], public readonly attacks: Attack[]) { }
 			validate()
 			{
 				for (let site of this.sites)
@@ -58,6 +63,11 @@
 					if (!found) 
 						console.log('Weapon: "%s" site references unknown weapon site "%s/%s"', this.name, site.species, site.type);
 				}
+			}
+
+			getDescription()
+			{
+				return this.description + ' (fame: ' + this.fame + ')';
 			}
 		}
 		export let Types: { [key: string]: Type };
@@ -87,7 +97,7 @@
 	{
 		export class Type
 		{
-			constructor(public readonly cost: number, public readonly species: string, public readonly name: string, public readonly description: string) { }
+			constructor(public readonly cost: number, public readonly fame: number, public readonly species: string, public readonly name: string, public readonly description: string) { }
 			validate()
 			{
 				if (!Species.Types[this.species])
@@ -95,6 +105,11 @@
 
 				if (!Species.Types[this.species].bodyParts)
 					console.log('Animal: "%s" has no body parts', this.name);
+			}
+
+			getDescription()
+			{
+				return this.description + ' (fame: ' + this.fame + ')';
 			}
 		}
 		export let Types: { [key: string]: Type };
@@ -104,9 +119,14 @@
 	{
 		export class Type
 		{
-			constructor(public cost: number, public name: string, public description: string) { }
+			constructor(public readonly cost: number, public readonly fame: number, public readonly name: string, public readonly description: string) { }
 			validate()
 			{
+			}
+
+			getDescription()
+			{
+				return this.description + ' (fame: ' + this.fame + ')';
 			}
 		}
 		export let Types: { [key: string]: Type };
@@ -135,9 +155,9 @@
 
 	export namespace Events
 	{
-		export class Event
+		export class AwayFightEvent
 		{
-			constructor(public day: number, public home: boolean, public name?: string) { }
+			constructor(public readonly day: number, public readonly injuryThreshold: number, public readonly fameRequired: number, public readonly losingFameReward: number, public readonly winningFameReward: number, public readonly losingMoneyReward: number, public readonly winningMoneyReward: number, public name: string) { }
 		}
 
 		export let Events: Event[];
@@ -179,5 +199,10 @@
 		export let TrainingRate: number;
 		export let StartingMoney: number;
 		export let BaseAttackSkill: number;
+		export let HomeFightInjuryThreshold: number;
+		export let HomeFightPopularity: number;
+		export let HomeFightMoney: number;
+		export let HomeFightLosingFame: number;
+		export let HomeFightWinningFame: number;
 	}
 }

@@ -22,9 +22,13 @@ namespace Model
 		{
 			for (let data of Data.Events.Events)
 			{
-				const event = new FightEvent(data.day, data.home, data.name);
-				this.news.push(new EventNews(event));
-				this.events.push(event);
+				let awayData = Util.dynamicCast(data, Data.Events.AwayFightEvent)
+				if (awayData)
+				{
+					const event = new AwayFightEvent(awayData.day, awayData.injuryThreshold, awayData.fameRequired, awayData.losingFameReward, awayData.winningFameReward, awayData.losingMoneyReward, awayData.winningMoneyReward, awayData.name);
+					this.news.push(new EventNews(event));
+					this.events.push(event);
+				}
 			}
 		}
 
@@ -274,11 +278,12 @@ namespace Model
 			Model.invalidate();
 		}
 
-		startFight(sideA: Fight.Side, sideB: Fight.Side)
+		startFight(fight: Fight.State)
 		{
 			Util.assert(this.fight == null);
 			Util.assert(this.phase == Phase.Event);
-			this.fight = new Fight.State(sideA, sideB);
+			Util.assert(fight && fight.canStart());
+			this.fight = fight;
 			this.deleteEventsForToday();
 			this.phase = Phase.Fight;
 			Model.invalidate();

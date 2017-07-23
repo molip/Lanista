@@ -1,3 +1,4 @@
+
 /// <reference path="page.ts" />
 
 namespace View 
@@ -9,9 +10,13 @@ namespace View
 		loadout: Model.Loadout = null;
 		itemIDs: string[] = [];
 		checkboxCells: Table.CheckboxCell[] = [];
+		fameCells: Table.TextCell[] = [];
+		fighterFameCell: Table.TextCell;
+		totalFameCell: Table.TextCell;
+		totalFame = 0;
 		other: FighterUI = null;
 
-		constructor(index: number, arenaPage: ArenaPage)
+		constructor(public index: number, arenaPage: ArenaPage)
 		{
 			this.div = document.createElement('div');
 			this.div.id = 'fighter_ui_div';
@@ -22,38 +27,59 @@ namespace View
 			{
 				let option = document.createElement('option');
 				option.text = Model.state.team.fighters[id].name;
-				if (Model.state.team.fighters[id].isDead())
+				if (!Model.state.team.fighters[id].canFight(arenaPage.event.injuryThreshold))
 					option.text += ' (x_x)';
 				return option;
 			};
 
-			this.select = document.createElement('select');
-			this.select.addEventListener('change', () => { arenaPage.onFighterSelected(index); });
+			let items: Table.SelectCellItem[] = [];
+
 			for (let id in Model.state.team.fighters)
-				this.select.options.add(makeOption(id));
+			{
+				let fighter = Model.state.team.fighters[id];
+				let name = fighter.name;
+				if (!fighter.canFight(arenaPage.event.injuryThreshold))
+					name += ' (x_x)';
 
-			this.div.appendChild(this.select);
-
-			// Item table.
+				items.push(new Table.SelectCellItem(id, name));
+			}
 
 			let tableFactory = new Table.Factory();
 
-			tableFactory.addColumnHeader('Item');
+			tableFactory.addColumnHeader('Fighter ' + (index + 1));
+			tableFactory.addColumnHeader('Fame');
 			tableFactory.addColumnHeader('Equip');
 
+			// Fighter row.
+			let selectCell = new Table.SelectCell(0, items, (value: string) => { arenaPage.onFighterSelected(index); });
+			this.fighterFameCell = new Table.TextCell('');
+			tableFactory.addRow([selectCell, this.fighterFameCell, null], false, null);
+			this.select = selectCell.selectElement;
+			this.select.selectedIndex = 0;
+
+			// Item rows.
 			for (let id in Model.state.team.items)
 			{
 				let item = Model.state.team.items[id];
+				let data = Model.state.team.getItemData(id);
 				let handler = (value: boolean) => { arenaPage.onItemChecked(index, id, value); }
 				let checkboxCell = new Table.CheckboxCell(handler);
-				let cells = [new Table.TextCell(Model.state.team.getItemData(id).name), checkboxCell];
+				let fameCell = new Table.TextCell(data.fame.toString());
+				let cells = [new Table.TextCell(data.name), fameCell, checkboxCell];
 				tableFactory.addRow(cells, false, null);
 
 				this.itemIDs.push(id);
 				this.checkboxCells.push(checkboxCell);
+				this.fameCells.push(fameCell);
 			}
 
-			this.div.appendChild(tableFactory.element);
+			// Total row.
+			this.totalFameCell = new Table.TextCell('');
+			let cells = [new Table.TextCell('Total'), this.totalFameCell, null];
+			let row = tableFactory.addRow(cells, false, null);
+			row.style.fontWeight = 'bold';
+
+			this.div.appendChild(tableFactory.makeScroller());
 		}
 
 		private getOtherLoadout()
@@ -72,6 +98,11 @@ namespace View
 			return id ? Model.state.team.fighters[id] : null;
 		}
 
+		makeSide()
+		{
+			return this.getFighter() ? new Model.Fight.Side(this.loadout, null) : null;
+		}
+
 		updateFighter()
 		{
 			if (this.select.selectedIndex < 0)
@@ -87,6 +118,10 @@ namespace View
 				this.loadout = otherLoadout;
 			else
 				this.loadout = new Model.Loadout(fighterID);
+
+			this.fighterFameCell.cellElement.innerText = this.getFighter().fame.toString();
+
+			this.updateItems();
 		}
 
 		equipItem(itemID: string, value: boolean)
@@ -107,7 +142,11 @@ namespace View
 
 				checkbox.checked = this.loadout && this.loadout.hasItemID(itemID);
 				checkbox.disabled = !this.loadout || (!checkbox.checked && ((otherLoadout && otherLoadout.hasItemID(itemID)) || !this.loadout.canAddItem(itemID, Model.state.team)));
+				this.fameCells[i].cellElement.style.color = checkbox.checked ? 'black' : 'grey';
 			}
+
+			this.totalFame = this.getFighter().fame + this.makeSide().getEquipmentFame();
+			this.totalFameCell.cellElement.innerText = this.totalFame.toString();
 		}
 	}
 
@@ -115,26 +154,51 @@ namespace View
 	{
 		button: HTMLButtonElement;
 		fighterUIs: FighterUI[] = [];
+		statsTable: HTMLTableElement;
+		rewardsTable: HTMLTableElement;
 
 		event: Model.FightEvent;
+		fameOK = true;
+		fight: Model.Fight.State = null;
 
 		constructor(event: Model.Event)
 		{
 			super('Choose Fighters');
 
-			this.event = event as Model.FightEvent;
-			Util.assert(!!this.event);
+			this.event = Util.assertCast(event, Model.FightEvent);
 
 			this.addFighterUI();
 
-			if (this.event.home)
+			if (this.getHomeFightEvent())
 				this.addFighterUI();
+
+			let statsDiv = document.createElement('div');
+			statsDiv.id = 'arena_stats_div';
+			this.div.appendChild(statsDiv);
+
+			const home = this.getHomeFightEvent() != null;
+
+			this.statsTable = document.createElement('table');
+			this.statsTable.id = 'arena_stats_table';
+			statsDiv.appendChild(this.statsTable);
+
+			let hr = document.createElement('hr');
+			statsDiv.appendChild(hr);
+
+			let rewardsTitle = document.createElement('span');
+			rewardsTitle.innerHTML = '<strong>Rewards:</strong>';
+			statsDiv.appendChild(rewardsTitle);
+
+			this.rewardsTable = document.createElement('table');
+			this.rewardsTable.id = 'arena_stats_table';
+			statsDiv.appendChild(this.rewardsTable);
 
 			this.button = document.createElement('button');
 			this.button.addEventListener('click', this.onStartButton);
+			this.button.innerText = 'Start';
 			this.div.appendChild(this.button);
 
-			this.updateStartButton();
+			this.updateFight();
 		}
 
 		addFighterUI()
@@ -154,7 +218,6 @@ namespace View
 			}
 
 			fighterUI.updateFighter();
-			fighterUI.updateItems();
 		}
 
 		onShow()
@@ -171,25 +234,21 @@ namespace View
 
 		onStartButton = () =>
 		{
-			let sideA = new Model.Fight.Side(this.fighterUIs[0].loadout, null);
-			let sideB = this.event.home ? new Model.Fight.Side(this.fighterUIs[1].loadout, null) : this.event.createNPCSide();
-
-			Model.state.startFight(sideA, sideB);
-
+			Model.state.startFight(this.fight);
 			Page.hideCurrent();
 		}
 		
 		onFighterSelected = (fighterIndex: number) =>
 		{
 			this.fighterUIs[fighterIndex].updateFighter();
-			this.updateStartButton();
-			this.updateItems();
+			this.updateFight();
 		}
 
 		onItemChecked = (fighterIndex: number, itemID: string, value: boolean) =>
 		{
 			this.fighterUIs[fighterIndex].equipItem(itemID, value);
 			this.updateItems();
+			this.updateFight();
 		}
 
 		updateItems()
@@ -198,25 +257,75 @@ namespace View
 				ui.updateItems();
 		}
 
-		updateStartButton()
+		updateFight()
 		{
-			if (Model.state.fight)
+			let awayFightEvent = this.getAwayFightEvent();
+
+			let sideA = this.fighterUIs[0].makeSide();
+			let sideB = awayFightEvent ? awayFightEvent.createNPCSide() : this.fighterUIs[1].makeSide();
+			this.fight = new Model.Fight.State(sideA, sideB, this.event);
+
+			this.updateStats();
+			this.button.disabled = !this.fight || !this.fight.canStart() || !this.fameOK;
+		}
+
+		updateStats()
+		{
+			let tableFactory = new Table.Factory(this.statsTable);
+
+			let addRow = (a: string, b: string) =>
 			{
-				this.button.innerText = 'Stop';
-				this.button.disabled = false;
-				return;
+				return tableFactory.addRow([new Table.TextCell(a), new Table.TextCell(b)], false, null);
+			};
+
+			let away = this.getAwayFightEvent();
+			if (away)
+			{
+				this.fameOK = this.fighterUIs[0].totalFame >= away.fameRequired;
+				let row = addRow('Fame required', away.fameRequired.toString());
+				row.style.fontWeight = 'bold';
+				row.style.color = this.fameOK ? 'green' : 'red';
+			}
+			else
+			{
+				let total = 0;
+
+				for (let ui of this.fighterUIs)
+				{
+					let label = 'Fighter ' + (ui.index + 1) + " fame";
+					addRow(label, ui.totalFame.toString());
+					total += ui.totalFame;
+				}
+
+				addRow('Arena fame', 'n/a');
+				addRow('Total fame', total.toString());
+
+				let attendance = this.getHomeFightEvent().getAttendance(total);
+				let row = addRow('Attendance', attendance.toString());
+				row.style.fontWeight = 'bold';
 			}
 
-			this.button.innerText = 'Start';
-			let fighterA = this.fighterUIs[0].getFighter();
+			tableFactory = new Table.Factory(this.rewardsTable);
+			addRow('Winning fame', this.event.getFameReward(this.fight, true).toString());
+			addRow('Losing fame', this.event.getFameReward(this.fight, false).toString());
 
-			this.button.disabled = !fighterA || fighterA.isDead();
-
-			if (!this.button.disabled && this.event.home)
+			if (away)
 			{
-				let fighterB = this.fighterUIs[1].getFighter();
-				this.button.disabled = !fighterB || fighterB.isDead() || fighterA === fighterB;
+				addRow('Winning money', this.event.getMoneyReward(this.fight, true).toString());
+				addRow('Losing money', this.event.getMoneyReward(this.fight, false).toString());
 			}
+			else
+				addRow('Money', this.event.getMoneyReward(this.fight, false).toString());
+		}
+
+		private getHomeFightEvent()
+		{
+			return Util.dynamicCast(this.event, Model.HomeFightEvent);
+		}
+
+		private getAwayFightEvent()
+		{
+			return Util.dynamicCast(this.event, Model.AwayFightEvent);
 		}
 	}
 }

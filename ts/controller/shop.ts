@@ -60,7 +60,7 @@ namespace Controller
 				};
 
 				let type = Data.Animals.Types[tag];
-				addItem(page, type.name, type.description, Util.getImage('animals', tag), disable, type.cost, handler);
+				addItem(page, type.name, type.getDescription(), Util.getImage('animals', tag), disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -78,7 +78,7 @@ namespace Controller
 				};
 
 				let type = Data.People.Types[tag];
-				addItem(page, type.name, type.description, Util.getImage('people', tag), disable, type.cost, handler);
+				addItem(page, type.name, type.getDescription(), Util.getImage('people', tag), disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -97,7 +97,7 @@ namespace Controller
 				};
 
 				let type = Data.Armour.Types[tag];
-				addItem(page, type.name, type.description, Util.getImage('items', tag), disable, type.cost, handler);
+				addItem(page, type.name, type.getDescription(), Util.getImage('items', tag), disable, type.cost, handler);
 				page.show();
 			}
 		}
@@ -116,7 +116,7 @@ namespace Controller
 				};
 
 				let type = Data.Weapons.Types[tag];
-				addItem(page, type.name, type.description, Util.getImage('items', tag), disable, type.cost, handler);
+				addItem(page, type.name, type.getDescription(), Util.getImage('items', tag), disable, type.cost, handler);
 				page.show();
 			}
 		}

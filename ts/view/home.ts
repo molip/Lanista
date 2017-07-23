@@ -5,7 +5,6 @@ namespace View
 	export class HomePage extends Page
 	{
 		private homeButton: HTMLButtonElement;
-		private awayButton: HTMLButtonElement;
 		private bottomDiv: HTMLDivElement;
 
 		constructor()
@@ -22,12 +21,7 @@ namespace View
 			this.homeButton.addEventListener('click', this.onAddHomeFight);
 			this.homeButton.innerText = 'Add Home Fight';
 
-			this.awayButton = document.createElement('button');
-			this.awayButton.addEventListener('click', this.onAddAwayFight);
-			this.awayButton.innerText = 'Add Away Fight';
-
 			topDiv.appendChild(this.homeButton);
-			topDiv.appendChild(this.awayButton);
 
 			this.div.appendChild(topDiv);
 			this.div.appendChild(this.bottomDiv);
@@ -37,13 +31,7 @@ namespace View
 
 		private onAddHomeFight = () =>
 		{
-			Model.state.addEvent(new Model.FightEvent(Model.state.getDay() + 1, true, 'Home Fight'));
-			this.update();
-		}
-
-		private onAddAwayFight = () =>
-		{
-			Model.state.addEvent(new Model.FightEvent(Model.state.getDay() + 1, false, 'Away Fight'));
+			Model.state.addEvent(new Model.HomeFightEvent(Model.state.getDay() + 1, Data.Misc.HomeFightInjuryThreshold));
 			this.update();
 		}
 
@@ -63,10 +51,10 @@ namespace View
 			if (this.bottomDiv.firstChild)
 				this.bottomDiv.removeChild(this.bottomDiv.firstChild);
 
-			this.bottomDiv.appendChild(tableFactory.element);
+			this.bottomDiv.appendChild(tableFactory.makeScroller());
 
 			let eventsForTomorrow = Model.state.getEventsForDay(Model.state.getDay() + 1);
-			this.homeButton.disabled = this.awayButton.disabled = eventsForTomorrow.length > 0;
+			this.homeButton.disabled = eventsForTomorrow.length > 0;
 		}
 	}
 }

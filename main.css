@@ -63,11 +63,16 @@ th {
 {
     float: left;
     position: relative;
-    width:12em;
+    width:20em;
     height:27em;
     border: 1px solid;
     margin: 0.5em;
     padding: 0.5em;
+}
+
+#fighter_ui_div > .p
+{
+    width: 90%;
 }
 
 #fighter_ui_div > .scroller
@@ -80,6 +85,21 @@ th {
 #fighter_ui_div tr 
 {
     height:1em;
+}
+
+#arena_stats_div
+{
+    float: left;
+    width: 16em;
+    height: 27em;
+    border: 1px solid;
+    margin: 0.5em;
+    padding: 0.5em;
+}
+
+#arena_stats_table
+{
+    font-size: 1em;
 }
 
 #master_div {

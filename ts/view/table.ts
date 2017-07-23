@@ -4,14 +4,17 @@ namespace View
 	{
 		export class Cell
 		{
+			cellElement: HTMLTableDataCellElement= null;
+
 			constructor(public width?: number) { } // %
 
 			getElement(): HTMLTableDataCellElement
 			{
-				let e = document.createElement('td');
+				this.cellElement = document.createElement('td');
 				if (this.width)
-					e.style.width = this.width.toString() + '%';
-				return e;
+					this.cellElement.style.width = this.width.toString() + '%';
+
+				return this.cellElement;
 			}
 		}
 
@@ -58,6 +61,7 @@ namespace View
 		export class SelectCell extends Cell
 		{
 			selectedTag: string;
+			selectElement: HTMLSelectElement;
 
 			constructor(width: number, private items: SelectCellItem[], private handler: (value: string) => void)
 			{
@@ -67,17 +71,17 @@ namespace View
 			getElement(): HTMLTableDataCellElement
 			{
 				let e = super.getElement();
-				let select = document.createElement('select');
+				this.selectElement = document.createElement('select');
 				for (let i = 0, item; item = this.items[i]; ++i)
 				{
 					let optionElement = document.createElement('option');
 					optionElement.value = item.tag;
 					optionElement.innerText = item.name;
-					select.appendChild(optionElement);
+					this.selectElement.appendChild(optionElement);
 				}
-				select.value = this.selectedTag;
-				select.addEventListener('change', () => { this.handler(select.value); });
-				e.appendChild(select);
+				this.selectElement.value = this.selectedTag;
+				this.selectElement.addEventListener('change', () => { this.handler(this.selectElement.value); });
+				e.appendChild(this.selectElement);
 				return e;
 			}
 		}
@@ -105,15 +109,12 @@ namespace View
 
 		export class Factory
 		{
-			element: HTMLDivElement;
-			private table: HTMLTableElement;
+			table: HTMLTableElement;
 			private headerRow: HTMLTableRowElement;
-			constructor() 
+			constructor(table: HTMLTableElement = null)
 			{
-				this.element = document.createElement('div');
-				this.table = document.createElement('table');
-				this.element.appendChild(this.table);
-				this.element.className = 'scroller';
+				this.table = table ? table : document.createElement('table');
+				this.table.innerHTML = '';
 			}
 
 			addColumnHeader(name: string, width?: number)
@@ -137,13 +138,23 @@ namespace View
 				row.className = 'table_row';
 				this.table.appendChild(row);
 				for (let cell of cells)
-					row.appendChild(cell.getElement());
+					row.appendChild((cell ? cell : new Cell()).getElement());
 				row.addEventListener('click', handler);
 				if (locked)
 					row.style.opacity = '0.5';
 
 				if (!locked && handler)
 					row.className += ' highlight';
+
+				return row;
+			}
+
+			makeScroller()
+			{
+				let div = document.createElement('div');
+				div.appendChild(this.table);
+				div.className = 'scroller';
+				return div;
 			}
 		}
 	}

@@ -70,7 +70,7 @@ namespace Controller
 	{
 		Util.assert(events.length == 1);
 
-		if (events[0].type == 'fight')
+		if (events[0] instanceof Model.FightEvent)
 			new View.ArenaPage(events[0]).show();
 		else
 			Util.assert(false);
