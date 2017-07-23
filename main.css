@@ -63,7 +63,7 @@ th {
 {
     float: left;
     position: relative;
-    width:12em;
+    width:20em;
     height:27em;
     border: 1px solid;
     margin: 0.5em;
@@ -90,7 +90,7 @@ th {
 #arena_stats_div
 {
     float: left;
-    width: 15em;
+    width: 16em;
     height: 27em;
     border: 1px solid;
     margin: 0.5em;

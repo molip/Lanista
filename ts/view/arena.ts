@@ -10,6 +10,10 @@ namespace View
 		loadout: Model.Loadout = null;
 		itemIDs: string[] = [];
 		checkboxCells: Table.CheckboxCell[] = [];
+		fameCells: Table.TextCell[] = [];
+		fighterFameCell: Table.TextCell;
+		totalFameCell: Table.TextCell;
+		totalFame = 0;
 		other: FighterUI = null;
 
 		constructor(public index: number, arenaPage: ArenaPage)
@@ -28,31 +32,52 @@ namespace View
 				return option;
 			};
 
-			this.select = document.createElement('select');
-			this.select.addEventListener('change', () => { arenaPage.onFighterSelected(index); });
+			let items: Table.SelectCellItem[] = [];
+
 			for (let id in Model.state.team.fighters)
-				this.select.options.add(makeOption(id));
+			{
+				let fighter = Model.state.team.fighters[id];
+				let name = fighter.name;
+				if (!fighter.canFight(arenaPage.event.injuryThreshold))
+					name += ' (x_x)';
 
-			this.div.appendChild(this.select);
-
-			// Item table.
+				items.push(new Table.SelectCellItem(id, name));
+			}
 
 			let tableFactory = new Table.Factory();
 
-			tableFactory.addColumnHeader('Item');
+			tableFactory.addColumnHeader('Fighter ' + (index + 1));
+			tableFactory.addColumnHeader('Fame');
 			tableFactory.addColumnHeader('Equip');
 
+			// Fighter row.
+			let selectCell = new Table.SelectCell(0, items, (value: string) => { arenaPage.onFighterSelected(index); });
+			this.fighterFameCell = new Table.TextCell('');
+			tableFactory.addRow([selectCell, this.fighterFameCell, null], false, null);
+			this.select = selectCell.selectElement;
+			this.select.selectedIndex = 0;
+
+			// Item rows.
 			for (let id in Model.state.team.items)
 			{
 				let item = Model.state.team.items[id];
+				let data = Model.state.team.getItemData(id);
 				let handler = (value: boolean) => { arenaPage.onItemChecked(index, id, value); }
 				let checkboxCell = new Table.CheckboxCell(handler);
-				let cells = [new Table.TextCell(Model.state.team.getItemData(id).name), checkboxCell];
+				let fameCell = new Table.TextCell(data.fame.toString());
+				let cells = [new Table.TextCell(data.name), fameCell, checkboxCell];
 				tableFactory.addRow(cells, false, null);
 
 				this.itemIDs.push(id);
 				this.checkboxCells.push(checkboxCell);
+				this.fameCells.push(fameCell);
 			}
+
+			// Total row.
+			this.totalFameCell = new Table.TextCell('');
+			let cells = [new Table.TextCell('Total'), this.totalFameCell, null];
+			let row = tableFactory.addRow(cells, false, null);
+			row.style.fontWeight = 'bold';
 
 			this.div.appendChild(tableFactory.makeScroller());
 		}
@@ -94,6 +119,8 @@ namespace View
 			else
 				this.loadout = new Model.Loadout(fighterID);
 
+			this.fighterFameCell.cellElement.innerText = this.getFighter().fame.toString();
+
 			this.updateItems();
 		}
 
@@ -115,7 +142,11 @@ namespace View
 
 				checkbox.checked = this.loadout && this.loadout.hasItemID(itemID);
 				checkbox.disabled = !this.loadout || (!checkbox.checked && ((otherLoadout && otherLoadout.hasItemID(itemID)) || !this.loadout.canAddItem(itemID, Model.state.team)));
+				this.fameCells[i].cellElement.style.color = checkbox.checked ? 'black' : 'grey';
 			}
+
+			this.totalFame = this.getFighter().fame + this.makeSide().getEquipmentFame();
+			this.totalFameCell.cellElement.innerText = this.totalFame.toString();
 		}
 	}
 

@@ -32,6 +32,11 @@ namespace Model
 				return this.getFighter().getAttacks(this.loadout, this.getTeam());
 			}
 
+			getEquipmentFame()
+			{
+				return this.loadout.getEquipmentFame(this.getTeam());
+			}
+
 			onLoad()
 			{
 				if (this.npcTeam)
@@ -221,6 +226,15 @@ namespace Model
 				let fighterA = this.getFighter(0);
 				let fighterB = this.getFighter(1);
 				return fighterA !== fighterB && this.isFighterOK(fighterA) && this.isFighterOK(fighterB);
+			}
+
+			getFame()
+			{
+				let fame = 0;
+				for (let side of this.sides)
+					fame += side.getEquipmentFame() + side.getFighter().fame;
+
+				return fame;
 			}
 		}
 	}
