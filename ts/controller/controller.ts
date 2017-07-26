@@ -14,6 +14,26 @@ namespace Controller
 		window.addEventListener('keydown', Controller.onKeyDown);
 		window.addEventListener('resize', View.updateLayout);
 
+		//let page = new View.BirthdayPage();
+		//page.show();
+
+		let event = new Model.AwayFightEvent(0, 0, 0, 0, 0, 0, 0, '');
+
+		let teamA = new Model.Team();
+		teamA.fighters[1] = new Model.Person(0, 'man', "Happy birthday", 0);
+		teamA.addItem(Model.ItemType.Weapon, 'happy');
+		let loadoutA = new Model.Loadout('1');
+		loadoutA.addItem('1', teamA);
+
+		let teamB = new Model.Team();
+		teamB.fighters[1] = new Model.Person(0, 'man', "Jim", 0);
+		teamB.addItem(Model.ItemType.Weapon, 'jim');
+		let loadoutB = new Model.Loadout('1');
+		loadoutB.addItem('1', teamB);
+
+		let fight = new Model.Fight.State(new Model.Fight.Side(loadoutA, teamA), new Model.Fight.Side(loadoutB, teamB), event);
+		Model.state.startFight(fight);
+
 		if (Model.state.fight)
 			showFightPage();
 	}

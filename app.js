@@ -53,6 +53,21 @@ var Controller;
         window.setInterval(Controller.onTick, 1000);
         window.addEventListener('keydown', Controller.onKeyDown);
         window.addEventListener('resize', View.updateLayout);
+        //let page = new View.BirthdayPage();
+        //page.show();
+        let event = new Model.AwayFightEvent(0, 0, 0, 0, 0, 0, 0, '');
+        let teamA = new Model.Team();
+        teamA.fighters[1] = new Model.Person(0, 'man', "Happy birthday", 0);
+        teamA.addItem(Model.ItemType.Weapon, 'happy');
+        let loadoutA = new Model.Loadout('1');
+        loadoutA.addItem('1', teamA);
+        let teamB = new Model.Team();
+        teamB.fighters[1] = new Model.Person(0, 'man', "Jim", 0);
+        teamB.addItem(Model.ItemType.Weapon, 'jim');
+        let loadoutB = new Model.Loadout('1');
+        loadoutB.addItem('1', teamB);
+        let fight = new Model.Fight.State(new Model.Fight.Side(loadoutA, teamA), new Model.Fight.Side(loadoutB, teamB), event);
+        Model.state.startFight(fight);
         if (Model.state.fight)
             showFightPage();
     }
@@ -889,7 +904,9 @@ var Model;
         createNPCSide() {
             let team = new Model.Team();
             team.fighters[1] = new Model.Person(0, 'man', "Slapper Nuremberg", 0);
+            team.addItem(Model.ItemType.Weapon, 'halberd');
             let loadout = new Model.Loadout('1');
+            loadout.addItem('1', team);
             return new Model.Fight.Side(loadout, team);
         }
         getFameReward(fight, winning) {
@@ -931,7 +948,10 @@ var Model;
                 return this.npcTeam ? this.npcTeam : Model.state.team;
             }
             getAttacks() {
-                return this.getFighter().getAttacks(this.loadout, this.getTeam());
+                let item = this.getTeam().getItem('1');
+                let data = this.getTeam().getWeaponData('1');
+                let attack = new Model.Attack(data.attacks[0], item.tag, '3', -51);
+                return [attack];
             }
             getEquipmentFame() {
                 return this.loadout.getEquipmentFame(this.getTeam());
@@ -950,6 +970,7 @@ var Model;
             constructor(sideA, sideB, event) {
                 this.event = event;
                 this.winnerIndex = -1;
+                this.showWeapons = false;
                 this.sides = [sideA, sideB];
                 this.text = '';
                 this.nextSideIndex = 0;
@@ -981,19 +1002,22 @@ var Model;
                         bodyImage = 'both arms up';
                 }
                 images.push(basePath + bodyImage + '.png');
-                // Add weapon images.
-                let side = this.sides[fighterIndex];
-                for (let itemPos of side.loadout.itemPositions) {
-                    let item = side.getTeam().getItem(itemPos.itemID);
-                    if (item.type == Model.ItemType.Weapon) {
-                        let weaponPath = '';
-                        if (itemPos.bodyPartIDs.length == 1)
-                            weaponPath = fighter.bodyParts[itemPos.bodyPartIDs[0]].index == 1 ? 'right ' : 'left ';
-                        weaponPath += item.tag;
-                        if (attack && itemPos.bodyPartIDs.indexOf(attack.sourceID) >= 0)
-                            weaponPath += ' up';
-                        images.push(basePath + weaponPath + '.png');
+                if (this.showWeapons) {
+                    // Add weapon images.
+                    let side = this.sides[fighterIndex];
+                    for (let itemPos of side.loadout.itemPositions) {
+                        let item = side.getTeam().getItem(itemPos.itemID);
+                        if (item.type == Model.ItemType.Weapon) {
+                            let weaponPath = '';
+                            if (itemPos.bodyPartIDs.length == 1)
+                                weaponPath = fighter.bodyParts[itemPos.bodyPartIDs[0]].index == 1 ? 'right ' : 'left ';
+                            weaponPath += item.tag;
+                            if (attack && itemPos.bodyPartIDs.indexOf(attack.sourceID) >= 0)
+                                weaponPath += ' up';
+                            images.push(basePath + weaponPath + '.png');
+                        }
                     }
+                    images.push(basePath + 'hat.png');
                 }
                 return images;
             }
@@ -1197,7 +1221,7 @@ var Model;
     class State {
         constructor() {
             this.money = Data.Misc.StartingMoney;
-            this.phase = Phase.Dawn;
+            this.phase = Phase.Day;
             this.buildings = new Model.Buildings.State();
             this.team = new Model.Team();
             this.fight = null;
@@ -1389,7 +1413,7 @@ var Model;
         }
         startFight(fight) {
             Util.assert(this.fight == null);
-            Util.assert(this.phase == Phase.Event);
+            //Util.assert(this.phase == Phase.Event);
             Util.assert(fight && fight.canStart());
             this.fight = fight;
             this.deleteEventsForToday();
@@ -1404,7 +1428,7 @@ var Model;
             Model.invalidate();
         }
     }
-    State.key = "state.v19";
+    State.key = "state.v19bb";
     Model.State = State;
     let dirty = false;
     function init() {
@@ -1795,7 +1819,7 @@ var View;
             let backButton = document.createElement('button');
             backButton.id = 'back_button';
             backButton.innerText = 'Back';
-            backButton.addEventListener('click', Page.hideCurrent);
+            //backButton.addEventListener('click', Page.hideCurrent);
             elem.appendChild(backButton);
             elem.appendChild(this.div);
             elem.className = 'show';
@@ -2287,7 +2311,7 @@ var View;
     }
     class FightPage extends View.Page {
         constructor() {
-            super('Fight');
+            super('Special Birthday Fight');
             this.backgroundImage = new View.CanvasImage();
             this.images = [[], []];
             this.idleImagePaths = [[], []];
@@ -2302,6 +2326,9 @@ var View;
                     this.stopFight();
                 }
                 else {
+                    Model.state.fight.showWeapons = true;
+                    this.idleImagePaths[0].length = 0;
+                    this.idleImagePaths[1].length = 0;
                     this.button.innerText = 'Stop';
                     this.doAttack();
                     this.timer = window.setInterval(this.onTick, 40);
@@ -2327,7 +2354,7 @@ var View;
             let topDiv = document.createElement('div');
             topDiv.className = 'top_section';
             this.button = document.createElement('button');
-            this.button.addEventListener('click', this.onStartButton);
+            //this.button.addEventListener('click', this.onStartButton);
             this.button.innerText = 'Start';
             this.speedCheckbox = document.createElement('input');
             this.speedCheckbox.type = 'checkbox';
@@ -2362,6 +2389,7 @@ var View;
             this.canvas.element.width = View.Width;
             this.canvas.element.height = View.Width * this.canvas.element.clientHeight / this.canvas.element.clientWidth;
             this.draw();
+            window.setTimeout(this.onStartButton, 14500);
         }
         onClose() {
             if (Model.state.fight)
@@ -2403,7 +2431,7 @@ var View;
             if (result.attackDamage > 0)
                 sequence.items.push(new HitAnimation(pointB));
             else
-                sequence.items.push(new View.Animation(1000));
+                sequence.items.push(new View.Animation(800));
             let endAnim = new View.Animation(0);
             endAnim.onStart = () => { this.currentAttack = null; this.updateImages(); };
             sequence.items.push(endAnim);
@@ -3070,4 +3098,19 @@ var View;
         document.getElementById('skip_day_btn').disabled = !enable;
     }
     View.enable = enable;
+})(View || (View = {}));
+"use strict";
+var View;
+(function (View) {
+    class BirthdayPage extends View.FightPage {
+        //fight: Model.Fight.State;
+        //event: Model.AwayFightEvent;
+        constructor() {
+            let event = new Model.AwayFightEvent(0, 0, 0, 0, 0, 0, 0, '');
+            let fight = new Model.Fight.State(event.createNPCSide(), event.createNPCSide(), event);
+            Model.state.startFight(fight);
+            super();
+        }
+    }
+    View.BirthdayPage = BirthdayPage;
 })(View || (View = {}));

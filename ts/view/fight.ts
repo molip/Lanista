@@ -143,7 +143,7 @@ namespace View
 
 		constructor()
 		{
-			super('Fight');
+			super('Special Birthday Fight');
 
 			Util.assert(Model.state.fight != null);
 
@@ -151,7 +151,7 @@ namespace View
 			topDiv.className = 'top_section';
 
 			this.button = document.createElement('button');
-			this.button.addEventListener('click', this.onStartButton);
+			//this.button.addEventListener('click', this.onStartButton);
 			this.button.innerText = 'Start';
 
 			this.speedCheckbox = document.createElement('input');
@@ -200,6 +200,8 @@ namespace View
 			this.canvas.element.height = View.Width * this.canvas.element.clientHeight / this.canvas.element.clientWidth;
 
 			this.draw();
+
+			window.setTimeout(this.onStartButton, 14500);
 		}
 
 		onClose()
@@ -221,6 +223,10 @@ namespace View
 			}
 			else
 			{
+				Model.state.fight.showWeapons = true;
+				this.idleImagePaths[0].length = 0;
+				this.idleImagePaths[1].length = 0;
+
 				this.button.innerText = 'Stop';
 				this.doAttack();
 				this.timer = window.setInterval(this.onTick, 40);
@@ -275,7 +281,7 @@ namespace View
 			if (result.attackDamage > 0)
 				sequence.items.push(new HitAnimation(pointB));
 			else
-				sequence.items.push(new Animation(1000));
+				sequence.items.push(new Animation(800));
 
 			let endAnim = new Animation(0);
 			endAnim.onStart = () => { this.currentAttack = null; this.updateImages(); }

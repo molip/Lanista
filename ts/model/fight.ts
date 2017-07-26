@@ -29,7 +29,10 @@ namespace Model
 
 			getAttacks()
 			{
-				return this.getFighter().getAttacks(this.loadout, this.getTeam());
+				let item = this.getTeam().getItem('1');
+				let data = this.getTeam().getWeaponData('1');
+				let attack = new Attack(data.attacks[0], item.tag, '3', -51);
+				return [attack];
 			}
 
 			getEquipmentFame()
@@ -57,6 +60,8 @@ namespace Model
 			nextSideIndex: number;
 			steps: number;
 			winnerIndex = -1;
+			showWeapons = false;
+
 			constructor(sideA: Side, sideB: Side, private event: FightEvent)
 			{
 				this.sides = [sideA, sideB];
@@ -106,26 +111,30 @@ namespace Model
 
 				images.push(basePath + bodyImage + '.png');
 
-				// Add weapon images.
-				let side = this.sides[fighterIndex];
-				for (let itemPos of side.loadout.itemPositions)
+				if (this.showWeapons)
 				{
-					let item = side.getTeam().getItem(itemPos.itemID);
-					if (item.type == ItemType.Weapon)
+					// Add weapon images.
+					let side = this.sides[fighterIndex];
+					for (let itemPos of side.loadout.itemPositions)
 					{
-						let weaponPath = '';
-						if (itemPos.bodyPartIDs.length == 1) // Single-handed.
-							weaponPath = fighter.bodyParts[itemPos.bodyPartIDs[0]].index == 1 ? 'right ' : 'left ';
+						let item = side.getTeam().getItem(itemPos.itemID);
+						if (item.type == ItemType.Weapon)
+						{
+							let weaponPath = '';
+							if (itemPos.bodyPartIDs.length == 1) // Single-handed.
+								weaponPath = fighter.bodyParts[itemPos.bodyPartIDs[0]].index == 1 ? 'right ' : 'left ';
 
-						weaponPath += item.tag;
+							weaponPath += item.tag;
 
-						if (attack && itemPos.bodyPartIDs.indexOf(attack.sourceID) >= 0)
-							weaponPath += ' up';
+							if (attack && itemPos.bodyPartIDs.indexOf(attack.sourceID) >= 0)
+								weaponPath += ' up';
 
-						images.push(basePath + weaponPath + '.png');
+							images.push(basePath + weaponPath + '.png');
+						}
 					}
-				}
 
+					images.push(basePath + 'hat.png');
+				}
 				return images;
 			}
 

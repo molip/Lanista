@@ -6,10 +6,10 @@ namespace Model
 
 	export class State
 	{
-		static readonly key: string = "state.v19";
+		static readonly key: string = "state.v19bb";
 
 		private money = Data.Misc.StartingMoney;
-		phase: Phase = Phase.Dawn;
+		phase: Phase = Phase.Day;
 		buildings = new Buildings.State();
 		team: Team = new Team();
 		fight: Fight.State = null;
@@ -281,7 +281,7 @@ namespace Model
 		startFight(fight: Fight.State)
 		{
 			Util.assert(this.fight == null);
-			Util.assert(this.phase == Phase.Event);
+			//Util.assert(this.phase == Phase.Event);
 			Util.assert(fight && fight.canStart());
 			this.fight = fight;
 			this.deleteEventsForToday();

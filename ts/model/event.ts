@@ -101,7 +101,9 @@ namespace Model
 		{
 			let team = new Model.Team();
 			team.fighters[1] = new Model.Person(0, 'man', "Slapper Nuremberg", 0);
+			team.addItem(ItemType.Weapon, 'halberd');
 			let loadout = new Model.Loadout('1');
+			loadout.addItem('1', team);
 			return new Model.Fight.Side(loadout, team);
 		}
 

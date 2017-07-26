@@ -40,7 +40,7 @@ namespace View
 			let backButton = document.createElement('button');
 			backButton.id = 'back_button';
 			backButton.innerText = 'Back';
-			backButton.addEventListener('click', Page.hideCurrent);
+			//backButton.addEventListener('click', Page.hideCurrent);
 
 			elem.appendChild(backButton);
 			elem.appendChild(this.div);
