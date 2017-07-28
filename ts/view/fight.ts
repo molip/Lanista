@@ -140,6 +140,7 @@ namespace View
 		fighters: Model.Fighter[];
 		healths: number[] = [];
 		preloader: Preloader;
+		winnerIndex = -1;
 
 		constructor()
 		{
@@ -260,6 +261,7 @@ namespace View
 			this.update();
 			if (Model.state.fight.winnerIndex >= 0)
 			{
+				this.winnerIndex = Model.state.fight.winnerIndex;
 				this.stopFight();
 			}
 		}
@@ -466,24 +468,35 @@ namespace View
 			ctx.save();
 			sceneXform.apply(ctx);
 			ctx.translate(rectA.left, rectA.top);
-			for (let image of this.images[0])
-				image.draw(ctx);
+			this.drawFighter(0, ctx);
 			ctx.restore();
 
 			ctx.save();
 			sceneXform.apply(ctx);
 			ctx.translate(rectB.right, rectB.top);
 			ctx.scale(-1, 1);
-			for (let image of this.images[1])
-				image.draw(ctx);
+			this.drawFighter(1, ctx);
 			ctx.restore();
 
 			this.drawHealthBars(ctx, sceneXform, 0);
 			this.drawHealthBars(ctx, sceneXform, 1);
 
-			//sceneXform.apply(ctx);
 			if (this.sequence)
 				this.sequence.draw(ctx, sceneXform);
+		}
+
+		drawFighter(index: number, ctx: CanvasRenderingContext2D)
+		{
+			if (this.winnerIndex >= 0 && index != this.winnerIndex) // Dead! 
+			{
+				let rect = this.getImageRect(index);
+				ctx.translate(0, rect.height());
+				ctx.rotate(-Math.PI / 2);
+				ctx.translate(0, -rect.height());
+			}
+
+			for (let image of this.images[index])
+				image.draw(ctx);
 		}
 	}
 }
