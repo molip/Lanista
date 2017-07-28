@@ -17,7 +17,8 @@ namespace Model
 
 	export class FightRewards
 	{
-		constructor(public money: number, public fameA: number, public fameB: number) { }
+		money: number = 0;
+		fame: number[] = [];
 	}
 
 	export class FightEvent extends Event
@@ -27,19 +28,17 @@ namespace Model
 			super(type, day);
 		}
 
-		applyRewards(fight: Fight.State)
+		getRewards(fight: Fight.State)
 		{
 			Util.assert(fight.winnerIndex >= 0);
-			const won = fight.winnerIndex == 0;
-			const money = this.getMoneyReward(fight, fight.winnerIndex == 0);
-			const fameA = this.getFameReward(fight, fight.winnerIndex == 0);
-			const fameB = this.getFameReward(fight, fight.winnerIndex == 1);
 
-			Model.state.addMoney(money);
-			fight.getFighter(0).addFame(fameA);
-			fight.getFighter(1).addFame(fameB);
+			let rewards = new FightRewards();
 
-			return new FightRewards(money, fameA, fameB);
+			rewards.money = this.getMoneyReward(fight, fight.winnerIndex == 0);
+			for (let i = 0; i < 2; ++i)
+				rewards.fame.push(this.getFameReward(fight, fight.winnerIndex == i));
+
+			return rewards;
 		}
 
 		getFameReward(fight: Fight.State, winning: boolean)

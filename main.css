@@ -59,6 +59,17 @@ th {
 	height:20%;
 }
 
+#fight_results {
+    border: 1px solid;
+    background-color: white;
+    left: 25%;
+    right: 25%;
+    top: 10%;
+    position: absolute;
+    text-align: center;
+    padding: 0.5em;
+}
+
 #fighter_ui_div 
 {
     float: left;

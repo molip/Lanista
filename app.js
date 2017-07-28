@@ -820,10 +820,9 @@ var Model;
     }
     Model.Event = Event;
     class FightRewards {
-        constructor(money, fameA, fameB) {
-            this.money = money;
-            this.fameA = fameA;
-            this.fameB = fameB;
+        constructor() {
+            this.money = 0;
+            this.fame = [];
         }
     }
     Model.FightRewards = FightRewards;
@@ -832,16 +831,13 @@ var Model;
             super(type, day);
             this.injuryThreshold = injuryThreshold;
         }
-        applyRewards(fight) {
+        getRewards(fight) {
             Util.assert(fight.winnerIndex >= 0);
-            const won = fight.winnerIndex == 0;
-            const money = this.getMoneyReward(fight, fight.winnerIndex == 0);
-            const fameA = this.getFameReward(fight, fight.winnerIndex == 0);
-            const fameB = this.getFameReward(fight, fight.winnerIndex == 1);
-            Model.state.addMoney(money);
-            fight.getFighter(0).addFame(fameA);
-            fight.getFighter(1).addFame(fameB);
-            return new FightRewards(money, fameA, fameB);
+            let rewards = new FightRewards();
+            rewards.money = this.getMoneyReward(fight, fight.winnerIndex == 0);
+            for (let i = 0; i < 2; ++i)
+                rewards.fame.push(this.getFameReward(fight, fight.winnerIndex == i));
+            return rewards;
         }
         getFameReward(fight, winning) {
             return 0;
@@ -1019,16 +1015,18 @@ var Model;
                 this.text += result.description + '<br>';
                 if (!this.isFighterOK(defenderSide.getFighter())) {
                     this.winnerIndex = attackerIndex;
-                    this.text += attackerSide.getFighter().name + ' has won the fight!<br>';
-                    let rewards = this.event.applyRewards(this);
-                    this.text += this.sides[0].getFighter().name + ' has gained ' + rewards.fameA + ' fame.<br>';
-                    this.text += this.sides[1].getFighter().name + ' has gained ' + rewards.fameB + ' fame.<br>';
-                    this.text += 'You have gained ' + rewards.money + ' money.<br>';
+                    let rewards = this.getRewards();
+                    Model.state.addMoney(rewards.money);
+                    for (let i = 0; i < 2; ++i)
+                        this.getFighter(i).addFame(rewards.fame[i]);
                 }
                 else
                     this.nextSideIndex = defenderIndex;
                 Model.invalidate();
                 return result;
+            }
+            getRewards() {
+                return this.event.getRewards(this);
             }
             attack(attackerSide, defenderSide) {
                 let attacker = attackerSide.getFighter();
@@ -2296,16 +2294,12 @@ var View;
             this.sequence = null;
             this.timer = 0;
             this.healths = [];
+            this.winnerIndex = -1;
             this.onStartButton = () => {
-                Util.assert(Model.state.fight != null);
-                if (this.timer) {
-                    this.stopFight();
-                }
-                else {
-                    this.button.innerText = 'Stop';
-                    this.doAttack();
-                    this.timer = window.setInterval(this.onTick, 40);
-                }
+                Util.assert(Model.state.fight != null && this.timer == 0);
+                this.button.disabled = true;
+                this.doAttack();
+                this.timer = window.setInterval(this.onTick, 40);
             };
             this.onTick = () => {
                 if (this.sequence) {
@@ -2370,8 +2364,18 @@ var View;
             return true;
         }
         stopFight() {
+            Util.assert(Model.state.fight != null);
+            this.winnerIndex = Model.state.fight.winnerIndex;
+            const loserIndex = this.winnerIndex ? 0 : 1;
+            const rewards = Model.state.fight.getRewards();
+            let div = document.createElement('div');
+            div.id = 'fight_results';
+            this.div.appendChild(div);
+            let html = '<b>' + Model.state.fight.getFighter(this.winnerIndex).name + ' has won! Fame +' + rewards.fame[this.winnerIndex] + '</b><br>';
+            html += Model.state.fight.getFighter(loserIndex).name + ' has lost. Fame +' + rewards.fame[loserIndex] + '<br><br>';
+            html += 'Money earned: ' + rewards.money;
+            div.innerHTML = html;
             Model.state.endFight();
-            this.button.disabled = true;
         }
         doAttack() {
             Util.assert(!!Model.state.fight);
@@ -2391,9 +2395,8 @@ var View;
             this.sequence.items.push(new View.Animation(1000));
             this.sequence.start();
             this.update();
-            if (Model.state.fight.winnerIndex >= 0) {
+            if (Model.state.fight.winnerIndex >= 0)
                 this.stopFight();
-            }
         }
         makeHumanSequence(result, attackerIndex, defenderIndex) {
             let sourcePart = this.fighters[attackerIndex].bodyParts[result.attack.sourceID];
@@ -2525,21 +2528,28 @@ var View;
             ctx.save();
             sceneXform.apply(ctx);
             ctx.translate(rectA.left, rectA.top);
-            for (let image of this.images[0])
-                image.draw(ctx);
+            this.drawFighter(0, ctx);
             ctx.restore();
             ctx.save();
             sceneXform.apply(ctx);
             ctx.translate(rectB.right, rectB.top);
             ctx.scale(-1, 1);
-            for (let image of this.images[1])
-                image.draw(ctx);
+            this.drawFighter(1, ctx);
             ctx.restore();
             this.drawHealthBars(ctx, sceneXform, 0);
             this.drawHealthBars(ctx, sceneXform, 1);
-            //sceneXform.apply(ctx);
             if (this.sequence)
                 this.sequence.draw(ctx, sceneXform);
+        }
+        drawFighter(index, ctx) {
+            if (this.winnerIndex >= 0 && index != this.winnerIndex) {
+                let rect = this.getImageRect(index);
+                ctx.translate(0, rect.height());
+                ctx.rotate(-Math.PI / 2);
+                ctx.translate(0, -rect.height());
+            }
+            for (let image of this.images[index])
+                image.draw(ctx);
         }
     }
     View.FightPage = FightPage;

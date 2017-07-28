@@ -140,6 +140,7 @@ namespace View
 		fighters: Model.Fighter[];
 		healths: number[] = [];
 		preloader: Preloader;
+		winnerIndex = -1;
 
 		constructor()
 		{
@@ -213,24 +214,29 @@ namespace View
 
 		onStartButton = () =>
 		{
-			Util.assert(Model.state.fight != null);
-
-			if (this.timer)
-			{
-				this.stopFight();
-			}
-			else
-			{
-				this.button.innerText = 'Stop';
-				this.doAttack();
-				this.timer = window.setInterval(this.onTick, 40);
-			}
+			Util.assert(Model.state.fight != null && this.timer == 0);
+			this.button.disabled = true;
+			this.doAttack();
+			this.timer = window.setInterval(this.onTick, 40);
 		}
 
 		stopFight()
 		{
+			Util.assert(Model.state.fight != null);
+			this.winnerIndex = Model.state.fight.winnerIndex;
+			const loserIndex = this.winnerIndex ? 0 : 1;
+			const rewards = Model.state.fight.getRewards();
+
+			let div = document.createElement('div');
+			div.id = 'fight_results';
+			this.div.appendChild(div);
+
+			let html = '<b>' + Model.state.fight.getFighter(this.winnerIndex).name + ' has won! Fame +' + rewards.fame[this.winnerIndex] + '</b><br>';
+			html += Model.state.fight.getFighter(loserIndex).name + ' has lost. Fame +' + rewards.fame[loserIndex] + '<br><br>';
+			html += 'Money earned: ' + rewards.money;
+			div.innerHTML = html;
+
 			Model.state.endFight();
-			this.button.disabled = true;
 		}
 
 		doAttack()
@@ -259,9 +265,7 @@ namespace View
 
 			this.update();
 			if (Model.state.fight.winnerIndex >= 0)
-			{
 				this.stopFight();
-			}
 		}
 
 		makeHumanSequence(result: Model.Fight.AttackResult, attackerIndex: number, defenderIndex: number)
@@ -466,24 +470,35 @@ namespace View
 			ctx.save();
 			sceneXform.apply(ctx);
 			ctx.translate(rectA.left, rectA.top);
-			for (let image of this.images[0])
-				image.draw(ctx);
+			this.drawFighter(0, ctx);
 			ctx.restore();
 
 			ctx.save();
 			sceneXform.apply(ctx);
 			ctx.translate(rectB.right, rectB.top);
 			ctx.scale(-1, 1);
-			for (let image of this.images[1])
-				image.draw(ctx);
+			this.drawFighter(1, ctx);
 			ctx.restore();
 
 			this.drawHealthBars(ctx, sceneXform, 0);
 			this.drawHealthBars(ctx, sceneXform, 1);
 
-			//sceneXform.apply(ctx);
 			if (this.sequence)
 				this.sequence.draw(ctx, sceneXform);
+		}
+
+		drawFighter(index: number, ctx: CanvasRenderingContext2D)
+		{
+			if (this.winnerIndex >= 0 && index != this.winnerIndex) // Dead! 
+			{
+				let rect = this.getImageRect(index);
+				ctx.translate(0, rect.height());
+				ctx.rotate(-Math.PI / 2);
+				ctx.translate(0, -rect.height());
+			}
+
+			for (let image of this.images[index])
+				image.draw(ctx);
 		}
 	}
 }
