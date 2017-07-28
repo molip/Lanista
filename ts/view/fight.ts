@@ -214,24 +214,15 @@ namespace View
 
 		onStartButton = () =>
 		{
-			Util.assert(Model.state.fight != null);
-
-			if (this.timer)
-			{
-				this.stopFight();
-			}
-			else
-			{
-				this.button.innerText = 'Stop';
-				this.doAttack();
-				this.timer = window.setInterval(this.onTick, 40);
-			}
+			Util.assert(Model.state.fight != null && this.timer == 0);
+			this.button.disabled = true;
+			this.doAttack();
+			this.timer = window.setInterval(this.onTick, 40);
 		}
 
 		stopFight()
 		{
 			Model.state.endFight();
-			this.button.disabled = true;
 		}
 
 		doAttack()
