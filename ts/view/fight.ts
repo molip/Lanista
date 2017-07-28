@@ -222,6 +222,20 @@ namespace View
 
 		stopFight()
 		{
+			Util.assert(Model.state.fight != null);
+			this.winnerIndex = Model.state.fight.winnerIndex;
+			const loserIndex = this.winnerIndex ? 0 : 1;
+			const rewards = Model.state.fight.getRewards();
+
+			let div = document.createElement('div');
+			div.id = 'fight_results';
+			this.div.appendChild(div);
+
+			let html = '<b>' + Model.state.fight.getFighter(this.winnerIndex).name + ' has won! Fame +' + rewards.fame[this.winnerIndex] + '</b><br>';
+			html += Model.state.fight.getFighter(loserIndex).name + ' has lost. Fame +' + rewards.fame[loserIndex] + '<br><br>';
+			html += 'Money earned: ' + rewards.money;
+			div.innerHTML = html;
+
 			Model.state.endFight();
 		}
 
@@ -251,10 +265,7 @@ namespace View
 
 			this.update();
 			if (Model.state.fight.winnerIndex >= 0)
-			{
-				this.winnerIndex = Model.state.fight.winnerIndex;
 				this.stopFight();
-			}
 		}
 
 		makeHumanSequence(result: Model.Fight.AttackResult, attackerIndex: number, defenderIndex: number)

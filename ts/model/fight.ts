@@ -57,6 +57,7 @@ namespace Model
 			nextSideIndex: number;
 			steps: number;
 			winnerIndex = -1;
+
 			constructor(sideA: Side, sideB: Side, private event: FightEvent)
 			{
 				this.sides = [sideA, sideB];
@@ -162,12 +163,12 @@ namespace Model
 				if (!this.isFighterOK(defenderSide.getFighter()))
 				{
 					this.winnerIndex = attackerIndex;
-					this.text += attackerSide.getFighter().name + ' has won the fight!<br>';
 
-					let rewards = this.event.applyRewards(this);
-					this.text += this.sides[0].getFighter().name + ' has gained ' + rewards.fameA + ' fame.<br>';
-					this.text += this.sides[1].getFighter().name + ' has gained ' + rewards.fameB + ' fame.<br>';
-					this.text += 'You have gained ' + rewards.money + ' money.<br>';
+					let rewards = this.getRewards();
+
+					Model.state.addMoney(rewards.money);
+					for (let i = 0; i < 2; ++i)
+						this.getFighter(i).addFame(rewards.fame[i]);
 				}
 				else
 					this.nextSideIndex = defenderIndex;
@@ -175,6 +176,11 @@ namespace Model
 				Model.invalidate();
 
 				return result;
+			}
+		
+			getRewards()
+			{
+				return this.event.getRewards(this);
 			}
 
 			attack(attackerSide: Side, defenderSide: Side)
