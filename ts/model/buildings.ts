@@ -68,7 +68,7 @@ namespace Model
 			{
 				Util.assert(tag in this.types);
 				var level = this.getNextLevel(tag);
-				return level && Model.state.getMoney() >= level.cost && !this.isConstructing(tag);
+				return level && !this.isConstructing(tag);
 			}
 
 			buyUpgrade(tag: string) 
