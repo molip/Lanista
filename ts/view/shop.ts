@@ -96,11 +96,16 @@ namespace View
 		}
 	}
 
+	class ShopTab 
+	{
+		constructor(public )
+	}
+
 	export class ShopPage extends Page
 	{
 		private	tabs: TabBar;
 		private tableFactory: Table.Factory;
-		private pages: HTMLDivElement[] = [];
+		private pages: { [itemType: string]: HTMLDivElement } = {};
 
 		constructor(title: string)
 		{
@@ -118,18 +123,18 @@ namespace View
 			this.div.appendChild(topDiv);
 			this.div.appendChild(bottomDiv);
 
-			let page = this.addPage('People');
-			page = this.addPage('Animals');
-
+			let page = this.addPage('People', Shop.PersonItem);
+			page = this.addPage('Buildings', Shop.BuildingItem);
 		}
 
-		private addPage(name: string)
+		private addPage(name: string, itemType: typeof Shop.Item)
 		{
+			alert(itemType.name);
 			let scroller = this.tableFactory.makeScroller();
 			scroller.id = 'shop_scroller';
 			this.div.appendChild(scroller);
 			this.tabs.addTab(name, scroller);
-
+			this.pages[itemType.name] = scroller;
 		}
 
 		private onTabClicked = (data: any) =>
@@ -140,9 +145,12 @@ namespace View
 
 		addItem(item: Shop.Item)
 		{
-			const types = [Shop.BuildingItem, Shop.PersonItem];
+			let scroller = this.pages[(typeof item).n];
+			const types = [Shop.PersonItem, Shop.BuildingItem];
 
-
+			for (let t of types)
+				if (item instanceof t)
+					alert(t);
 
 			let cells = [new Table.TextCell('<h4>' + item.title + '</h4>', 20), new Table.ImageCell(item.image, 20), new Table.TextCell(item.description), new Table.TextCell(Util.formatMoney(item.cost))];
 			this.tableFactory.addRow(cells, !item.canBuy(), function ()
