@@ -30,8 +30,6 @@ namespace View
 			buy()
 			{
 				Model.state.buildings.buyUpgrade(this.tag);
-				Controller.updateHUD();
-				View.ludus.updateObjects();
 			}
 
 		}
@@ -54,8 +52,6 @@ namespace View
 			buy()
 			{
 				Model.state.buildings.buyUpgrade(this.tag);
-				Controller.updateHUD();
-				View.ludus.updateObjects();
 			}
 
 		}
@@ -71,7 +67,7 @@ namespace View
 			this.div.className = 'tab_bar';
 		}
 
-		private onTabClicked(tab: HTMLDivElement, data?: any)
+		private onTabClicked(tab: HTMLDivElement, data: any)
 		{
 			for (let t of this.tabs)
 			{
@@ -89,28 +85,24 @@ namespace View
 			let tab = document.createElement('div');
 			tab.innerText = name;
 			tab.className = 'tab';
-			tab.classList.add('tab_selected');
 			tab.addEventListener('click', () => { this.onTabClicked(tab, data); });
 			this.tabs.push(tab);
 			this.div.appendChild(tab);
-		}
-	}
 
-	class ShopTab 
-	{
-		constructor(public )
+			if (this.tabs.length == 1)
+				this.onTabClicked(tab, data);
+		}
 	}
 
 	export class ShopPage extends Page
 	{
 		private	tabs: TabBar;
-		private tableFactory: Table.Factory;
-		private pages: { [itemType: string]: HTMLDivElement } = {};
+		private pages: { [itemType: string]: Table.Factory } = {};
 
 		constructor(title: string)
 		{
 			super(title);
-			this.tableFactory = new Table.Factory();
+			
 			let topDiv = document.createElement('div');
 			let bottomDiv = document.createElement('div');
 
@@ -129,34 +121,36 @@ namespace View
 
 		private addPage(name: string, itemType: typeof Shop.Item)
 		{
-			alert(itemType.name);
-			let scroller = this.tableFactory.makeScroller();
+			let table = new Table.Factory();
+			let scroller = table.makeScroller();
 			scroller.id = 'shop_scroller';
+			scroller.hidden = true;
 			this.div.appendChild(scroller);
 			this.tabs.addTab(name, scroller);
-			this.pages[itemType.name] = scroller;
+			this.pages[itemType.name] = table;
 		}
 
 		private onTabClicked = (data: any) =>
 		{
-			//let scroller = 
-
+			for (let type in this.pages)
+			{
+				let scroller = this.pages[type].scroller;
+				scroller.hidden = scroller !== data;
+			}
 		}
 
 		addItem(item: Shop.Item)
 		{
-			let scroller = this.pages[(typeof item).n];
-			const types = [Shop.PersonItem, Shop.BuildingItem];
-
-			for (let t of types)
-				if (item instanceof t)
-					alert(t);
+			let table = this.pages[item.constructor.name];
+			Util.assert(table != null);
 
 			let cells = [new Table.TextCell('<h4>' + item.title + '</h4>', 20), new Table.ImageCell(item.image, 20), new Table.TextCell(item.description), new Table.TextCell(Util.formatMoney(item.cost))];
-			this.tableFactory.addRow(cells, !item.canBuy(), function ()
+			table.addRow(cells, !item.canBuy(), function ()
 			{
 				Page.hideCurrent();
 				item.buy();
+				Controller.updateHUD();
+				View.ludus.updateObjects();
 			});
 		}
 	}

@@ -110,6 +110,7 @@ namespace View
 		export class Factory
 		{
 			table: HTMLTableElement;
+			scroller: HTMLDivElement = null;
 			private headerRow: HTMLTableRowElement;
 			constructor(table: HTMLTableElement = null)
 			{
@@ -151,10 +152,11 @@ namespace View
 
 			makeScroller()
 			{
-				let div = document.createElement('div');
-				div.appendChild(this.table);
-				div.className = 'scroller';
-				return div;
+				Util.assert(this.scroller == null);
+				this.scroller = document.createElement('div');
+				this.scroller.appendChild(this.table);
+				this.scroller.className = 'scroller';
+				return this.scroller;
 			}
 		}
 	}
