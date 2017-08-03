@@ -23,7 +23,7 @@ namespace Controller
 
 			for (let tag in Data.Buildings.Levels)
 				if (Model.state.buildings.getNextUpgradeIndex(tag) >= 0)
-					page.addItem(new View.Shop.BuildingItem(tag));
+					page.addItem(new Controller.Shop.BuildingItem(tag));
 
 			page.show();
 		}
