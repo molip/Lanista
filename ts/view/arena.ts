@@ -266,7 +266,7 @@ namespace View
 			this.fight = new Model.Fight.State(sideA, sideB, this.event);
 
 			this.updateStats();
-			this.button.disabled = !this.fight || !this.fight.canStart() || !this.fameOK;
+			this.button.disabled = !this.fight.canStart() || !this.fameOK;
 		}
 
 		updateStats()

@@ -77,7 +77,8 @@ namespace Model
 
 			getFighter(index: number) 
 			{
-				return this.sides[index].getFighter();
+				let side = this.sides[index];
+				return side && side.getFighter();
 			}
 
 			getImages(fighterIndex: number, attack: Attack)
@@ -236,7 +237,7 @@ namespace Model
 			{
 				let fighterA = this.getFighter(0);
 				let fighterB = this.getFighter(1);
-				return fighterA !== fighterB && this.isFighterOK(fighterA) && this.isFighterOK(fighterB);
+				return fighterA && fighterB && fighterA !== fighterB && this.isFighterOK(fighterA) && this.isFighterOK(fighterB);
 			}
 
 			getFame()
