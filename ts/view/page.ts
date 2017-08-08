@@ -52,25 +52,4 @@ namespace View
 		onShow() { }
 		onClose() { return true; }
 	}
-
-	export class ListPage extends Page
-	{
-		private tableFactory: Table.Factory;
-		constructor(title: string)
-		{
-			super(title);
-			this.tableFactory = new Table.Factory();
-			this.div.appendChild(this.tableFactory.makeScroller());
-		}
-
-		addItem(title: string, description: string, image: string, locked: boolean, handler: ()=>void)
-		{
-			let cells = [new Table.TextCell('<h4>' + title + '</h4>', 20), new Table.ImageCell(image, 20), new Table.TextCell(description)];
-			this.tableFactory.addRow(cells, locked, function ()
-			{
-				Page.hideCurrent();
-				handler();
-			});
-		}
-	}
 }

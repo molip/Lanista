@@ -59,3 +59,18 @@ class Xform
 	}
 
 }
+
+class NumberMap
+{
+	private map: { [key: string]: number } = {};
+
+	get(key: string)
+	{
+		return key in this.map ? this.map[key] : 0;
+	}
+
+	add(key: string, count: number)
+	{
+		this.map[key] = this.get(key) + count;
+	}
+}

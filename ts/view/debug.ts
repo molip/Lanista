@@ -12,6 +12,7 @@ namespace View
 			this.addButton('Buy all people', this.onBuyAllPeople);
 			this.addButton('Buy all buildings', this.onBuyAllBuildings);
 			this.addButton('Heal fighters', this.onHeal);
+			this.addButton('Add 100 money', this.onAddMoney);
 		}
 
 		private addButton(caption: string, handler: () => void)
@@ -30,7 +31,6 @@ namespace View
 				Model.state.addMoney(Data.Animals.Types[tag].cost);
 				Model.state.buyAnimal(tag);
 			}
-			Page.hideCurrent();
 		}
 
 		onBuyAllPeople = () =>
@@ -40,7 +40,6 @@ namespace View
 				Model.state.addMoney(Data.People.Types[tag].cost);
 				Model.state.buyPerson(tag);
 			}
-			Page.hideCurrent();
 		}
 
 		onBuyAllBuildings = () =>
@@ -56,15 +55,17 @@ namespace View
 					Model.state.buildings.buyUpgrade(tag);
 				}
 			}
-			Page.hideCurrent();
 		}
 
 		onHeal = () =>
 		{
 			for (let id in Model.state.team.fighters)
 				Model.state.team.fighters[id].resetHealth();
+		}
 
-			Page.hideCurrent();
+		onAddMoney = () =>
+		{
+			Model.state.addMoney(100);
 		}
 	}
 }

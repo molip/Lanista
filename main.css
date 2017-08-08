@@ -113,6 +113,58 @@ th {
     font-size: 1em;
 }
 
+/* Shop */
+#shop_top
+{
+    position: absolute;
+    width: 100%;
+    top: 0;
+    height: 5%;
+}
+
+#shop_scroller
+{
+    top: 5%;
+	height:85%;
+}
+
+#shop_bottom
+{
+	position: absolute;
+	width: 100%;
+	top: 90%;
+	height:10%;
+}
+
+/* TabBar */
+.tab_bar
+{
+    height: 1.5em;
+}
+
+.tab
+{
+    width: 10em;
+    height: 100%;
+    border: 1px solid;
+    float: left;
+}
+
+.tab_selected
+{
+    font-weight: bold;
+}
+
+.tab:hover
+{
+    background-color: cornflowerblue;
+}
+
+.tab:active
+{
+    background-color: white;
+}
+
 #master_div {
     position: absolute;
 }
