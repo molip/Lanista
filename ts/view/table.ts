@@ -90,9 +90,9 @@ namespace View
 		{
 			public checkbox: HTMLInputElement;
 
-			constructor(private handler: (value: boolean) => void)
+			constructor(width: number, private handler: (value: boolean) => void)
 			{
-				super(20);
+				super(width);
 			}
 
 			getElement(): HTMLTableDataCellElement
@@ -104,6 +104,48 @@ namespace View
 				let e = super.getElement();
 				e.appendChild(this.checkbox);
 				return e;
+			}
+		}
+
+		export class NumberInputCell extends Cell
+		{
+			decButton: HTMLButtonElement;
+			incButton: HTMLButtonElement;
+			span: HTMLSpanElement;
+			value: number = 0;
+
+			constructor(width: number, private handler: () => void)
+			{
+				super(width);
+			}
+
+			getElement(): HTMLTableDataCellElement
+			{
+				let addButton = (text: string, delta: number) =>
+				{
+					let button = document.createElement('button');
+					button.innerText = text;
+					button.addEventListener('click', () => { this.value += delta; this.update(); this.handler() });
+					return button;
+				};
+
+				this.decButton = addButton('-', -1);
+				this.incButton = addButton('+', 1);
+				this.span = document.createElement('span');
+				this.span.style.margin = '0 0.2em 0 0.2em';
+
+				let e = super.getElement();
+				e.appendChild(this.decButton);
+				e.appendChild(this.span);
+				e.appendChild(this.incButton);
+
+				this.update();
+				return e;
+			}
+
+			update()
+			{
+				this.span.innerText = this.value.toString();
 			}
 		}
 

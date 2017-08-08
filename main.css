@@ -119,21 +119,21 @@ th {
     position: absolute;
     width: 100%;
     top: 0;
-    height: 2em;
+    height: 5%;
 }
 
 #shop_scroller
 {
-    top: 2em;
-	height:90%;
+    top: 5%;
+	height:85%;
 }
 
 #shop_bottom
 {
 	position: absolute;
 	width: 100%;
-	top: 95%;
-	height:5%;
+	top: 90%;
+	height:10%;
 }
 
 /* TabBar */

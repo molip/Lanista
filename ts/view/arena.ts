@@ -63,7 +63,7 @@ namespace View
 				let item = Model.state.team.items[id];
 				let data = Model.state.team.getItemData(id);
 				let handler = (value: boolean) => { arenaPage.onItemChecked(index, id, value); }
-				let checkboxCell = new Table.CheckboxCell(handler);
+				let checkboxCell = new Table.CheckboxCell(20, handler);
 				let fameCell = new Table.TextCell(data.fame.toString());
 				let cells = [new Table.TextCell(data.name), fameCell, checkboxCell];
 				tableFactory.addRow(cells, false, null);

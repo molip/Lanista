@@ -2,12 +2,20 @@ namespace Controller
 {
 	export namespace Shop
 	{
+		export type Basket = NumberMap;
+
 		export abstract class Item
 		{
-			constructor(public tag: string, public title: string, public description: string, public image: string, public cost: number) { }
+			constructor(public type: string, public tag: string, public title: string, public description: string, public image: string, public cost: number) { }
 
-			abstract canBuy(): boolean;
+			canBuy() { return true; }
 			abstract buy(): void;
+			abstract getMaxTypeCount(): number;
+
+			canAddToBasket(basket: Basket)
+			{
+				return basket.get(this.type) < this.getMaxTypeCount();
+			}
 		}
 
 		export class BuildingItem extends Item
@@ -17,7 +25,12 @@ namespace Controller
 				let levelIndex = Model.state.buildings.getNextUpgradeIndex(tag);
 				let level = Data.Buildings.getLevel(tag, levelIndex);
 				Util.assert(level != null);
-				super(tag, level.name, level.description, Util.getImage('buildings', tag + levelIndex), level.cost);
+				super('building:' + tag, tag, level.name, level.description, Util.getImage('buildings', tag + levelIndex), level.cost);
+			}
+
+			getMaxTypeCount()
+			{
+				return 1;
 			}
 
 			canBuy()
@@ -29,7 +42,6 @@ namespace Controller
 			{
 				Model.state.buildings.buyUpgrade(this.tag);
 			}
-
 		}
 
 		export class AnimalItem extends Item
@@ -38,12 +50,12 @@ namespace Controller
 			{
 				let data = Data.Animals.Types[tag];
 				Util.assert(data != null);
-				super(tag, data.name, data.getDescription(), Util.getImage('animals', tag), data.cost);
+				super('animal', tag, data.name, data.getDescription(), Util.getImage('animals', tag), data.cost);
 			}
 
-			canBuy()
+			getMaxTypeCount()
 			{
-				return Model.state.team.getAnimals().length < Model.state.buildings.getCapacity('kennels');
+				return Model.state.buildings.getCapacity('kennels') - Model.state.team.getAnimals().length;
 			}
 
 			buy()
@@ -58,12 +70,12 @@ namespace Controller
 			{
 				let data = Data.People.Types[tag];
 				Util.assert(data != null);
-				super(tag, data.name, data.getDescription(), Util.getImage('people', tag), data.cost);
+				super('person', tag, data.name, data.getDescription(), Util.getImage('people', tag), data.cost);
 			}
 
-			canBuy()
+			getMaxTypeCount()
 			{
-				return Model.state.team.getPeople().length < Model.state.buildings.getCapacity('barracks');
+				return Model.state.buildings.getCapacity('barracks') - Model.state.team.getPeople().length;
 			}
 
 			buy()
@@ -72,18 +84,26 @@ namespace Controller
 			}
 		}
 
-		export class ArmourItem extends Item
+		abstract class AccessoryItem extends Item
+		{
+			constructor(public tag: string, public title: string, public description: string, public cost: number)
+			{
+				super('accessory', tag, title, description, Util.getImage('items', tag), cost);
+			}
+
+			getMaxTypeCount()
+			{
+				return Model.state.buildings.getCapacity('storage') - Model.state.team.getItemCount();
+			}
+		}
+
+		export class ArmourItem extends AccessoryItem
 		{
 			constructor(tag: string)
 			{
 				let data = Data.Armour.Types[tag];
 				Util.assert(data != null);
-				super(tag, data.name, data.getDescription(), Util.getImage('items', tag), data.cost);
-			}
-
-			canBuy()
-			{
-				return Model.state.team.getItemCount() < Model.state.buildings.getCapacity('storage');
+				super(tag, data.name, data.getDescription(), data.cost);
 			}
 
 			buy()
@@ -92,18 +112,13 @@ namespace Controller
 			}
 		}
 
-		export class WeaponItem extends Item
+		export class WeaponItem extends AccessoryItem
 		{
 			constructor(tag: string)
 			{
 				let data = Data.Weapons.Types[tag];
 				Util.assert(data != null);
-				super(tag, data.name, data.getDescription(), Util.getImage('items', tag), data.cost);
-			}
-
-			canBuy()
-			{
-				return Model.state.team.getItemCount() < Model.state.buildings.getCapacity('storage');
+				super(tag, data.name, data.getDescription(), data.cost);
 			}
 
 			buy()
