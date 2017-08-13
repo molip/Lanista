@@ -13,6 +13,7 @@ namespace View
 			this.addButton('Buy all buildings', this.onBuyAllBuildings);
 			this.addButton('Heal fighters', this.onHeal);
 			this.addButton('Add 100 money', this.onAddMoney);
+			this.addButton('Show pose page', this.onShowPosePage);
 		}
 
 		private addButton(caption: string, handler: () => void)
@@ -66,6 +67,12 @@ namespace View
 		onAddMoney = () =>
 		{
 			Model.state.addMoney(100);
+		}
+
+		onShowPosePage = () =>
+		{
+			Page.hideCurrent();
+			new PosePage().show(); 
 		}
 	}
 }

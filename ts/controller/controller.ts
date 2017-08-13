@@ -14,8 +14,11 @@ namespace Controller
 		window.addEventListener('keydown', Controller.onKeyDown);
 		window.addEventListener('resize', View.updateLayout);
 
-		if (Model.state.fight)
-			showFightPage();
+		//if (Model.state.fight)
+		//	showFightPage();
+
+		new View.PosePage().show(); 
+
 	}
 
 	export function setSpeed(speed: number)
