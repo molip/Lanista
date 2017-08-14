@@ -2,6 +2,12 @@
 
 namespace View 
 {
+	class BoneHitTest
+	{
+
+		constructor(public point: Point) { }
+	}
+
 	class Bone
 	{
 		children: Bone[] = [];
