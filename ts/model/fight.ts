@@ -213,8 +213,7 @@ namespace Model
 					baseDamage = attack.data.damage;
 					let damage = baseDamage * (100 - defense) / 100;
 
-					let oldHealth = defender.health;
-					defender.health = Math.max(0, oldHealth - damage);
+					defender.addHealth(-damage);
 
 					msg += 'Damage = ' + baseDamage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
 				}

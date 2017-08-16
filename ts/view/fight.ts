@@ -382,7 +382,7 @@ namespace View
 			for (let i = 0; i < 2; ++i)
 			{
 				if (this.fighters[i])
-					this.healths[i] = this.fighters[i].health;
+					this.healths[i] = this.fighters[i].getHealth();
 			}
 		}
 

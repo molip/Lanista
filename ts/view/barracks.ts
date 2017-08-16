@@ -27,7 +27,7 @@ namespace View
 				let cells: Table.Cell[] = [];
 				cells.push(new Table.TextCell('<h4>' + person.name + '</h4>'));
 				cells.push(new Table.ImageCell(person.image));
-				cells.push(new Table.TextCell(person.health.toString() + '/' + person.getSpeciesData().health));
+				cells.push(new Table.TextCell(person.getHealth().toString() + '/' + person.getSpeciesData().health));
 				cells.push(new Table.TextCell(person.fame.toString()));
 
 				for (let c of Util.formatRows(person.getSkills()))

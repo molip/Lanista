@@ -1,261 +1,4 @@
 ﻿"use strict";
-var Controller;
-(function (Controller) {
-    var Canvas;
-    (function (Canvas) {
-        Canvas.HotObject = null;
-        function init() {
-            var canvas = View.ludus.element;
-            canvas.addEventListener('click', Controller.Canvas.onClick);
-            canvas.addEventListener('mousemove', Controller.Canvas.onMouseMove);
-            canvas.addEventListener('mouseout', Controller.Canvas.onMouseOut);
-        }
-        Canvas.init = init;
-        function hitTestObjects(x, y) {
-            for (let obj of View.ludus.Objects)
-                if (obj.isEnabled() && obj.getRect().pointInRect(new Point(x, y)))
-                    return obj;
-            return null;
-        }
-        function onClick() {
-            if (Canvas.HotObject)
-                Canvas.HotObject.onClick();
-        }
-        Canvas.onClick = onClick;
-        function onMouseMove(e) {
-            let devPos = Util.getEventPos(e, View.ludus.element);
-            let logPos = View.ludus.devToLog(devPos.x, devPos.y);
-            let obj = hitTestObjects(logPos.x, logPos.y);
-            if (obj != Canvas.HotObject) {
-                Canvas.HotObject = obj;
-                View.ludus.draw();
-            }
-        }
-        Canvas.onMouseMove = onMouseMove;
-        function onMouseOut() {
-            if (Canvas.HotObject) {
-                Canvas.HotObject = null;
-                View.ludus.draw();
-            }
-        }
-        Canvas.onMouseOut = onMouseOut;
-    })(Canvas = Controller.Canvas || (Controller.Canvas = {}));
-})(Controller || (Controller = {}));
-"use strict";
-var Controller;
-(function (Controller) {
-    function onLoad() {
-        Data.validate();
-        Model.init();
-        View.init();
-        Controller.Canvas.init();
-        updateHUD();
-        window.setInterval(Controller.onTick, 1000);
-        window.addEventListener('keydown', Controller.onKeyDown);
-        window.addEventListener('resize', View.updateLayout);
-        if (Model.state.fight)
-            showFightPage();
-    }
-    Controller.onLoad = onLoad;
-    function setSpeed(speed) {
-        Model.state.setSpeed(speed);
-        View.updateSpeedButtons();
-    }
-    Controller.setSpeed = setSpeed;
-    function onResize() {
-        View.updateLayout();
-    }
-    Controller.onResize = onResize;
-    function onTick() {
-        if (View.Page.Current)
-            return;
-        if (View.isTransitioning())
-            return;
-        switch (Model.state.phase) {
-            case Model.Phase.Day:
-                View.enable(true);
-                if (Model.state.update(1))
-                    View.ludus.updateObjects();
-                break;
-            case Model.Phase.Dawn:
-                View.enable(false);
-                startTransition(false);
-                break;
-            case Model.Phase.Dusk:
-                View.enable(false);
-                startTransition(true);
-                break;
-            case Model.Phase.News:
-                new View.NewsPage(() => { Model.state.advancePhase(); }).show();
-                break;
-            case Model.Phase.Event:
-                showEventUI(Model.state.getEventsForDay(Model.state.getDay()));
-                break;
-            case Model.Phase.Fight:
-                new View.FightPage().show();
-                break;
-        }
-        updateHUD();
-    }
-    Controller.onTick = onTick;
-    function showEventUI(events) {
-        Util.assert(events.length == 1);
-        if (events[0] instanceof Model.FightEvent)
-            new View.ArenaPage(events[0]).show();
-        else
-            Util.assert(false);
-    }
-    function startTransition(dusk) {
-        View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
-    }
-    function onBuildingTriggerClicked(tag) {
-        var handlers = {
-            'home': onHomeTriggerClicked,
-            'barracks': onBarracksTriggerClicked,
-            'kennels': onKennelsTriggerClicked,
-            'storage': onStorageTriggerClicked,
-            'weapon': onWeaponTriggerClicked,
-            'armour': onArmourTriggerClicked,
-            'training': onTrainingTriggerClicked,
-            'surgery': onSurgeryTriggerClicked,
-            'lab': onLabTriggerClicked,
-            'merch': onMerchTriggerClicked,
-            'arena': onArenaTriggerClicked,
-        };
-        Util.assert(handlers[tag]);
-        handlers[tag]();
-    }
-    Controller.onBuildingTriggerClicked = onBuildingTriggerClicked;
-    function onResetClicked() {
-        if (confirm('Reset game?')) {
-            Model.resetState();
-            updateHUD();
-            View.ludus.initObjects();
-            View.updateSpeedButtons();
-            Controller.onTick();
-        }
-    }
-    Controller.onResetClicked = onResetClicked;
-    function onDebugClicked() {
-        new View.DebugPage().show();
-    }
-    Controller.onDebugClicked = onDebugClicked;
-    function onSkipDayClicked() {
-        Model.state.skipToNextDay(true);
-        View.ludus.updateObjects();
-    }
-    Controller.onSkipDayClicked = onSkipDayClicked;
-    function onHomeTriggerClicked() {
-        let page = new View.HomePage();
-        page.show();
-    }
-    function onBarracksTriggerClicked() {
-        let page = new View.BarracksPage();
-        page.show();
-    }
-    function onKennelsTriggerClicked() {
-        let page = new View.KennelsPage();
-        page.show();
-    }
-    function onStorageTriggerClicked() {
-        let page = new View.StoragePage();
-        page.show();
-    }
-    function onWeaponTriggerClicked() {
-        View.showInfo('Weapon', 'TODO.');
-    }
-    function onArmourTriggerClicked() {
-        View.showInfo('Armour', 'TODO.');
-    }
-    function onTrainingTriggerClicked() {
-        View.showInfo('Training', 'TODO.');
-    }
-    function onSurgeryTriggerClicked() {
-        View.showInfo('Surgery', 'TODO.');
-    }
-    function onLabTriggerClicked() {
-        View.showInfo('Lab', 'TODO.');
-    }
-    function onMerchTriggerClicked() {
-        View.showInfo('Merch', 'TODO.');
-    }
-    function onArenaTriggerClicked() {
-        View.showInfo('Arena', 'TODO.');
-    }
-    function onTownTriggerClicked() {
-        Controller.Shop.showShopsPage();
-    }
-    Controller.onTownTriggerClicked = onTownTriggerClicked;
-    function showFightPage() {
-        let page = new View.FightPage();
-        page.show();
-    }
-    function updateHUD() {
-        let money = ' Money: ' + Util.formatMoney(Model.state.getMoney());
-        let time = Model.state.getTimeString();
-        View.setHUDText(money, time);
-    }
-    Controller.updateHUD = updateHUD;
-    function onKeyDown(evt) {
-        if (evt.keyCode == 27) {
-            if (View.Page.Current) {
-                View.Page.hideCurrent();
-            }
-            else if (View.isTransitioning()) {
-                View.cancelTransition();
-                Model.state.cancelNight();
-            }
-        }
-    }
-    Controller.onKeyDown = onKeyDown;
-})(Controller || (Controller = {}));
-"use strict";
-var Controller;
-(function (Controller) {
-    var Shop;
-    (function (Shop) {
-        function getShopTitle(name) {
-            return name + ' (money available: ' + Util.formatMoney(Model.state.getMoney()) + ')';
-        }
-        function showShopsPage() {
-            let page = new View.ShopPage('Let\'s go shopping!');
-            populateBuildings(page);
-            populateAnimals(page);
-            populatePeople(page);
-            populateArmour(page);
-            populateWeapons(page);
-            page.show();
-        }
-        Shop.showShopsPage = showShopsPage;
-        function populateBuildings(page) {
-            let table = page.addTable('Buildings');
-            for (let tag in Data.Buildings.Levels)
-                if (Model.state.buildings.getNextUpgradeIndex(tag) >= 0)
-                    page.addItem(new Controller.Shop.BuildingItem(tag), table);
-        }
-        function populateAnimals(page) {
-            let table = page.addTable('Animals');
-            for (let tag in Data.Animals.Types)
-                page.addItem(new Controller.Shop.AnimalItem(tag), table);
-        }
-        function populatePeople(page) {
-            let table = page.addTable('People');
-            for (let tag in Data.People.Types)
-                page.addItem(new Controller.Shop.PeopleItem(tag), table);
-        }
-        function populateArmour(page) {
-            let table = page.addTable('Armour');
-            for (let tag in Data.Armour.Types)
-                page.addItem(new Controller.Shop.ArmourItem(tag), table);
-        }
-        function populateWeapons(page) {
-            let table = page.addTable('Weapons');
-            for (let tag in Data.Weapons.Types)
-                page.addItem(new Controller.Shop.WeaponItem(tag), table);
-        }
-    })(Shop = Controller.Shop || (Controller.Shop = {}));
-})(Controller || (Controller = {}));
-"use strict";
 var Data;
 (function (Data) {
     class Attack {
@@ -484,7 +227,495 @@ var Data;
     (function (Misc) {
     })(Misc = Data.Misc || (Data.Misc = {}));
 })(Data || (Data = {}));
-"use strict";
+class Point {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    clone() { return new Point(this.x, this.y); }
+    translate(ctx) { ctx.translate(this.x, this.y); }
+    ;
+}
+class Rect {
+    constructor(left, top, right, bottom) {
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
+    }
+    clone() { return new Rect(this.left, this.top, this.right, this.bottom); }
+    width() { return this.right - this.left; }
+    height() { return this.bottom - this.top; }
+    centre() { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); }
+    path(ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); }
+    ;
+    fill(ctx) { ctx.fillRect(this.left, this.top, this.width(), this.height()); }
+    ;
+    stroke(ctx) { ctx.strokeRect(this.left, this.top, this.width(), this.height()); }
+    ;
+    expand(left, top, right, bottom) {
+        this.left += left;
+        this.top += top;
+        this.right += right;
+        this.bottom += bottom;
+    }
+    pointInRect(point) {
+        return point.x >= this.left && point.y >= this.top && point.x < this.right && point.y < this.bottom;
+    }
+    offset(dx, dy) {
+        this.left += dx;
+        this.right += dx;
+        this.top += dy;
+        this.bottom += dy;
+    }
+}
+class Xform {
+    constructor() {
+        this.matrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix();
+    }
+    transformPoint(point) {
+        let svgPoint = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGPoint();
+        svgPoint.x = point.x;
+        svgPoint.y = point.y;
+        svgPoint = svgPoint.matrixTransform(this.matrix);
+        return new Point(svgPoint.x, svgPoint.y);
+    }
+    apply(ctx) {
+        let m = this.matrix;
+        ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
+    }
+}
+class NumberMap {
+    constructor() {
+        this.map = {};
+    }
+    get(key) {
+        return key in this.map ? this.map[key] : 0;
+    }
+    add(key, count) {
+        this.map[key] = this.get(key) + count;
+    }
+}
+var Util;
+(function (Util) {
+    function formatMoney(amount) {
+        return '§' + amount;
+    }
+    Util.formatMoney = formatMoney;
+    function getEventPos(event, element) {
+        var rect = element.getBoundingClientRect();
+        return new Point(event.clientX - rect.left, event.clientY - rect.top);
+    }
+    Util.getEventPos = getEventPos;
+    function assert(condition, message) {
+        if (!condition)
+            alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
+    }
+    Util.assert = assert;
+    function formatRows(rows) {
+        let columns = [];
+        for (let i = 0; i < rows.length; ++i)
+            for (let j = 0; j < rows[i].length; ++j) {
+                if (i == 0)
+                    columns[j] = '<table>';
+                columns[j] += '<tr><td>' + rows[i][j] + '</tr></td>';
+                if (i == rows.length - 1)
+                    columns[j] += '</table>';
+            }
+        return columns;
+    }
+    Util.formatRows = formatRows;
+    function getRandomInt(max) {
+        return Math.floor(Math.random() * max);
+    }
+    Util.getRandomInt = getRandomInt;
+    function lerp(start, end, param) {
+        return start + (end - start) * param;
+    }
+    Util.lerp = lerp;
+    function querp(start, end, param) {
+        return start + (end - start) * param * param;
+    }
+    Util.querp = querp;
+    function scaleCentred(ctx, scale, x, y) {
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.translate(-x, -y);
+    }
+    Util.scaleCentred = scaleCentred;
+    function setPrototype(obj, type) {
+        obj.__proto__ = type.prototype;
+    }
+    Util.setPrototype = setPrototype;
+    function dynamicCast(instance, ctor) {
+        return (instance instanceof ctor) ? instance : null;
+    }
+    Util.dynamicCast = dynamicCast;
+    function assertCast(instance, ctor) {
+        assert(instance instanceof ctor);
+        return instance;
+    }
+    Util.assertCast = assertCast;
+    function getImage(dir, name) {
+        return 'images/' + dir + '/' + name + '.png';
+    }
+    Util.getImage = getImage;
+})(Util || (Util = {}));
+var Controller;
+(function (Controller) {
+    var Canvas;
+    (function (Canvas) {
+        Canvas.HotObject = null;
+        function init() {
+            var canvas = View.ludus.element;
+            canvas.addEventListener('click', Controller.Canvas.onClick);
+            canvas.addEventListener('mousemove', Controller.Canvas.onMouseMove);
+            canvas.addEventListener('mouseout', Controller.Canvas.onMouseOut);
+        }
+        Canvas.init = init;
+        function hitTestObjects(x, y) {
+            for (let obj of View.ludus.Objects)
+                if (obj.isEnabled() && obj.getRect().pointInRect(new Point(x, y)))
+                    return obj;
+            return null;
+        }
+        function onClick() {
+            if (Canvas.HotObject)
+                Canvas.HotObject.onClick();
+        }
+        Canvas.onClick = onClick;
+        function onMouseMove(e) {
+            let devPos = Util.getEventPos(e, View.ludus.element);
+            let logPos = View.ludus.devToLog(devPos.x, devPos.y);
+            let obj = hitTestObjects(logPos.x, logPos.y);
+            if (obj != Canvas.HotObject) {
+                Canvas.HotObject = obj;
+                View.ludus.draw();
+            }
+        }
+        Canvas.onMouseMove = onMouseMove;
+        function onMouseOut() {
+            if (Canvas.HotObject) {
+                Canvas.HotObject = null;
+                View.ludus.draw();
+            }
+        }
+        Canvas.onMouseOut = onMouseOut;
+    })(Canvas = Controller.Canvas || (Controller.Canvas = {}));
+})(Controller || (Controller = {}));
+var Controller;
+(function (Controller) {
+    function onLoad() {
+        Data.validate();
+        Model.init();
+        View.init();
+        Controller.Canvas.init();
+        updateHUD();
+        window.setInterval(Controller.onTick, 1000);
+        window.addEventListener('keydown', Controller.onKeyDown);
+        window.addEventListener('resize', View.updateLayout);
+        if (Model.state.fight)
+            showFightPage();
+    }
+    Controller.onLoad = onLoad;
+    function setSpeed(speed) {
+        Model.state.setSpeed(speed);
+        View.updateSpeedButtons();
+    }
+    Controller.setSpeed = setSpeed;
+    function onResize() {
+        View.updateLayout();
+    }
+    Controller.onResize = onResize;
+    function onTick() {
+        if (View.Page.Current)
+            return;
+        if (View.isTransitioning())
+            return;
+        switch (Model.state.phase) {
+            case Model.Phase.Day:
+                View.enable(true);
+                if (Model.state.update(1))
+                    View.ludus.updateObjects();
+                break;
+            case Model.Phase.Dawn:
+                View.enable(false);
+                startTransition(false);
+                break;
+            case Model.Phase.Dusk:
+                View.enable(false);
+                startTransition(true);
+                break;
+            case Model.Phase.News:
+                new View.NewsPage(() => { Model.state.advancePhase(); }).show();
+                break;
+            case Model.Phase.Event:
+                showEventUI(Model.state.getEventsForDay(Model.state.getDay()));
+                break;
+            case Model.Phase.Fight:
+                new View.FightPage().show();
+                break;
+        }
+        updateHUD();
+    }
+    Controller.onTick = onTick;
+    function showEventUI(events) {
+        Util.assert(events.length == 1);
+        if (events[0] instanceof Model.FightEvent)
+            new View.ArenaPage(events[0]).show();
+        else
+            Util.assert(false);
+    }
+    function startTransition(dusk) {
+        View.startTransition(new View.Transition(dusk, () => { Model.state.advancePhase(); }));
+    }
+    function onBuildingTriggerClicked(tag) {
+        var handlers = {
+            'home': onHomeTriggerClicked,
+            'barracks': onBarracksTriggerClicked,
+            'kennels': onKennelsTriggerClicked,
+            'storage': onStorageTriggerClicked,
+            'weapon': onWeaponTriggerClicked,
+            'armour': onArmourTriggerClicked,
+            'training': onTrainingTriggerClicked,
+            'surgery': onSurgeryTriggerClicked,
+            'lab': onLabTriggerClicked,
+            'merch': onMerchTriggerClicked,
+            'arena': onArenaTriggerClicked,
+        };
+        Util.assert(handlers[tag]);
+        handlers[tag]();
+    }
+    Controller.onBuildingTriggerClicked = onBuildingTriggerClicked;
+    function onResetClicked() {
+        if (confirm('Reset game?')) {
+            Model.resetState();
+            updateHUD();
+            View.ludus.initObjects();
+            View.updateSpeedButtons();
+            Controller.onTick();
+        }
+    }
+    Controller.onResetClicked = onResetClicked;
+    function onDebugClicked() {
+        new View.DebugPage().show();
+    }
+    Controller.onDebugClicked = onDebugClicked;
+    function onSkipDayClicked() {
+        Model.state.skipToNextDay(true);
+        View.ludus.updateObjects();
+    }
+    Controller.onSkipDayClicked = onSkipDayClicked;
+    function onHomeTriggerClicked() {
+        let page = new View.HomePage();
+        page.show();
+    }
+    function onBarracksTriggerClicked() {
+        let page = new View.BarracksPage();
+        page.show();
+    }
+    function onKennelsTriggerClicked() {
+        let page = new View.KennelsPage();
+        page.show();
+    }
+    function onStorageTriggerClicked() {
+        let page = new View.StoragePage();
+        page.show();
+    }
+    function onWeaponTriggerClicked() {
+        View.showInfo('Weapon', 'TODO.');
+    }
+    function onArmourTriggerClicked() {
+        View.showInfo('Armour', 'TODO.');
+    }
+    function onTrainingTriggerClicked() {
+        View.showInfo('Training', 'TODO.');
+    }
+    function onSurgeryTriggerClicked() {
+        View.showInfo('Surgery', 'TODO.');
+    }
+    function onLabTriggerClicked() {
+        View.showInfo('Lab', 'TODO.');
+    }
+    function onMerchTriggerClicked() {
+        View.showInfo('Merch', 'TODO.');
+    }
+    function onArenaTriggerClicked() {
+        View.showInfo('Arena', 'TODO.');
+    }
+    function onTownTriggerClicked() {
+        Controller.Shop.showShopsPage();
+    }
+    Controller.onTownTriggerClicked = onTownTriggerClicked;
+    function showFightPage() {
+        let page = new View.FightPage();
+        page.show();
+    }
+    function updateHUD() {
+        let money = ' Money: ' + Util.formatMoney(Model.state.getMoney());
+        let time = Model.state.getTimeString();
+        View.setHUDText(money, time);
+    }
+    Controller.updateHUD = updateHUD;
+    function onKeyDown(evt) {
+        if (evt.keyCode == 27) {
+            if (View.Page.Current) {
+                View.Page.hideCurrent();
+            }
+            else if (View.isTransitioning()) {
+                View.cancelTransition();
+                Model.state.cancelNight();
+            }
+        }
+    }
+    Controller.onKeyDown = onKeyDown;
+})(Controller || (Controller = {}));
+var Controller;
+(function (Controller) {
+    var Shop;
+    (function (Shop) {
+        function getShopTitle(name) {
+            return name + ' (money available: ' + Util.formatMoney(Model.state.getMoney()) + ')';
+        }
+        function showShopsPage() {
+            let page = new View.ShopPage('Let\'s go shopping!');
+            populateBuildings(page);
+            populateAnimals(page);
+            populatePeople(page);
+            populateArmour(page);
+            populateWeapons(page);
+            page.show();
+        }
+        Shop.showShopsPage = showShopsPage;
+        function populateBuildings(page) {
+            let table = page.addTable('Buildings');
+            for (let tag in Data.Buildings.Levels)
+                if (Model.state.buildings.getNextUpgradeIndex(tag) >= 0)
+                    page.addItem(new Controller.Shop.BuildingItem(tag), table);
+        }
+        function populateAnimals(page) {
+            let table = page.addTable('Animals');
+            for (let tag in Data.Animals.Types)
+                page.addItem(new Controller.Shop.AnimalItem(tag), table);
+        }
+        function populatePeople(page) {
+            let table = page.addTable('People');
+            for (let tag in Data.People.Types)
+                page.addItem(new Controller.Shop.PeopleItem(tag), table);
+        }
+        function populateArmour(page) {
+            let table = page.addTable('Armour');
+            for (let tag in Data.Armour.Types)
+                page.addItem(new Controller.Shop.ArmourItem(tag), table);
+        }
+        function populateWeapons(page) {
+            let table = page.addTable('Weapons');
+            for (let tag in Data.Weapons.Types)
+                page.addItem(new Controller.Shop.WeaponItem(tag), table);
+        }
+    })(Shop = Controller.Shop || (Controller.Shop = {}));
+})(Controller || (Controller = {}));
+var Controller;
+(function (Controller) {
+    var Shop;
+    (function (Shop) {
+        class Item {
+            constructor(type, tag, title, description, image, cost) {
+                this.type = type;
+                this.tag = tag;
+                this.title = title;
+                this.description = description;
+                this.image = image;
+                this.cost = cost;
+            }
+            canBuy() { return true; }
+            canAddToBasket(basket) {
+                return basket.get(this.type) < this.getMaxTypeCount();
+            }
+        }
+        Shop.Item = Item;
+        class BuildingItem extends Item {
+            constructor(tag) {
+                let levelIndex = Model.state.buildings.getNextUpgradeIndex(tag);
+                let level = Data.Buildings.getLevel(tag, levelIndex);
+                Util.assert(level != null);
+                super('building:' + tag, tag, level.name, level.description, Util.getImage('buildings', tag + levelIndex), level.cost);
+            }
+            getMaxTypeCount() {
+                return 1;
+            }
+            canBuy() {
+                return Model.state.buildings.canUpgrade(this.tag);
+            }
+            buy() {
+                Model.state.buildings.buyUpgrade(this.tag);
+            }
+        }
+        Shop.BuildingItem = BuildingItem;
+        class AnimalItem extends Item {
+            constructor(tag) {
+                let data = Data.Animals.Types[tag];
+                Util.assert(data != null);
+                super('animal', tag, data.name, data.getDescription(), Util.getImage('animals', tag), data.cost);
+            }
+            getMaxTypeCount() {
+                return Model.state.buildings.getCapacity('kennels') - Model.state.team.getAnimals().length;
+            }
+            buy() {
+                Model.state.buyAnimal(this.tag);
+            }
+        }
+        Shop.AnimalItem = AnimalItem;
+        class PeopleItem extends Item {
+            constructor(tag) {
+                let data = Data.People.Types[tag];
+                Util.assert(data != null);
+                super('person', tag, data.name, data.getDescription(), Util.getImage('people', tag), data.cost);
+            }
+            getMaxTypeCount() {
+                return Model.state.buildings.getCapacity('barracks') - Model.state.team.getPeople().length;
+            }
+            buy() {
+                Model.state.buyPerson(this.tag);
+            }
+        }
+        Shop.PeopleItem = PeopleItem;
+        class AccessoryItem extends Item {
+            constructor(tag, title, description, cost) {
+                super('accessory', tag, title, description, Util.getImage('items', tag), cost);
+                this.tag = tag;
+                this.title = title;
+                this.description = description;
+                this.cost = cost;
+            }
+            getMaxTypeCount() {
+                return Model.state.buildings.getCapacity('storage') - Model.state.team.getItemCount();
+            }
+        }
+        class ArmourItem extends AccessoryItem {
+            constructor(tag) {
+                let data = Data.Armour.Types[tag];
+                Util.assert(data != null);
+                super(tag, data.name, data.getDescription(), data.cost);
+            }
+            buy() {
+                Model.state.buyArmour(this.tag);
+            }
+        }
+        Shop.ArmourItem = ArmourItem;
+        class WeaponItem extends AccessoryItem {
+            constructor(tag) {
+                let data = Data.Weapons.Types[tag];
+                Util.assert(data != null);
+                super(tag, data.name, data.getDescription(), data.cost);
+            }
+            buy() {
+                Model.state.buyWeapon(this.tag);
+            }
+        }
+        Shop.WeaponItem = WeaponItem;
+    })(Shop = Controller.Shop || (Controller.Shop = {}));
+})(Controller || (Controller = {}));
 var Model;
 (function (Model) {
     class BodyPart {
@@ -528,7 +759,7 @@ var Model;
             this.skills = {}; // +/- percent.
             this.nextBodyPartID = 1;
             this.health = 0;
-            this.activity = '';
+            this.activity = 'idle';
             this.experience = {};
             let data = this.getSpeciesData();
             this.health = data.health;
@@ -643,11 +874,17 @@ var Model;
             this.skills[tag] = this.getSkill(tag) + value;
             Model.invalidate();
         }
+        getHealth() {
+            return this.health;
+        }
+        addHealth(value) {
+            this.health = Math.max(Math.min(this.health + value, this.getSpeciesData().health), 0);
+            Model.invalidate();
+        }
     }
     Model.Fighter = Fighter;
 })(Model || (Model = {}));
 /// <reference path="fighter.ts" />
-"use strict";
 var Model;
 (function (Model) {
     class Animal extends Model.Fighter {
@@ -658,7 +895,6 @@ var Model;
     }
     Model.Animal = Animal;
 })(Model || (Model = {}));
-"use strict";
 var Model;
 (function (Model) {
     var Buildings;
@@ -757,7 +993,6 @@ var Model;
         Buildings.State = State;
     })(Buildings = Model.Buildings || (Model.Buildings = {}));
 })(Model || (Model = {}));
-"use strict";
 var Model;
 (function (Model) {
     class Event {
@@ -852,7 +1087,6 @@ var Model;
     }
     Model.AwayFightEvent = AwayFightEvent;
 })(Model || (Model = {}));
-"use strict";
 var Model;
 (function (Model) {
     var Fight;
@@ -1004,8 +1238,7 @@ var Model;
                     defense = armourData ? armourData.getDefense(attack.data.type) : 0;
                     baseDamage = attack.data.damage;
                     let damage = baseDamage * (100 - defense) / 100;
-                    let oldHealth = defender.health;
-                    defender.health = Math.max(0, oldHealth - damage);
+                    defender.addHealth(-damage);
                     msg += 'Damage = ' + baseDamage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
                 }
                 else {
@@ -1032,7 +1265,6 @@ var Model;
         Fight.State = State;
     })(Fight = Model.Fight || (Model.Fight = {}));
 })(Model || (Model = {}));
-"use strict";
 var Model;
 (function (Model) {
     class ItemPosition {
@@ -1135,7 +1367,6 @@ var Model;
     }
     Model.Loadout = Loadout;
 })(Model || (Model = {}));
-"use strict";
 var Model;
 (function (Model) {
     const minutesPerDay = 60 * 12;
@@ -1274,11 +1505,20 @@ var Model;
                     workers[activity].push(fighter);
                 }
                 else {
+                    let healRate = 0;
                     let parts = activity.split(':');
                     if (parts.length == 2 && parts[0] == 'train') {
                         let skill = parts[1];
                         fighter.addSkill(skill, hours * Data.Misc.TrainingRate);
                     }
+                    else if (activity == 'heal') {
+                        healRate = Data.Misc.HealingRate;
+                    }
+                    else if (activity == 'idle') {
+                        healRate = Data.Misc.IdleHealingRate;
+                    }
+                    if (healRate)
+                        fighter.addHealth(hours * healRate);
                 }
             }
             // Building, training animals, training gladiators, crafting, repairing:
@@ -1358,7 +1598,7 @@ var Model;
             Model.invalidate();
         }
     }
-    State.key = "state.v19";
+    State.key = "state.v20";
     Model.State = State;
     let dirty = false;
     function init() {
@@ -1390,7 +1630,6 @@ var Model;
     }
     Model.resetState = resetState;
 })(Model || (Model = {}));
-"use strict";
 var Model;
 (function (Model) {
     class News {
@@ -1410,7 +1649,6 @@ var Model;
     Model.EventNews = EventNews;
 })(Model || (Model = {}));
 /// <reference path="fighter.ts" />
-"use strict";
 var Model;
 (function (Model) {
     class Person extends Model.Fighter {
@@ -1421,7 +1659,6 @@ var Model;
     }
     Model.Person = Person;
 })(Model || (Model = {}));
-"use strict";
 var Model;
 (function (Model) {
     var ItemType;
@@ -1537,143 +1774,6 @@ var Model;
     }
     Model.Team = Team;
 })(Model || (Model = {}));
-"use strict";
-class Point {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-    clone() { return new Point(this.x, this.y); }
-    translate(ctx) { ctx.translate(this.x, this.y); }
-    ;
-}
-class Rect {
-    constructor(left, top, right, bottom) {
-        this.left = left;
-        this.top = top;
-        this.right = right;
-        this.bottom = bottom;
-    }
-    clone() { return new Rect(this.left, this.top, this.right, this.bottom); }
-    width() { return this.right - this.left; }
-    height() { return this.bottom - this.top; }
-    centre() { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); }
-    path(ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); }
-    ;
-    fill(ctx) { ctx.fillRect(this.left, this.top, this.width(), this.height()); }
-    ;
-    stroke(ctx) { ctx.strokeRect(this.left, this.top, this.width(), this.height()); }
-    ;
-    expand(left, top, right, bottom) {
-        this.left += left;
-        this.top += top;
-        this.right += right;
-        this.bottom += bottom;
-    }
-    pointInRect(point) {
-        return point.x >= this.left && point.y >= this.top && point.x < this.right && point.y < this.bottom;
-    }
-    offset(dx, dy) {
-        this.left += dx;
-        this.right += dx;
-        this.top += dy;
-        this.bottom += dy;
-    }
-}
-class Xform {
-    constructor() {
-        this.matrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix();
-    }
-    transformPoint(point) {
-        let svgPoint = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGPoint();
-        svgPoint.x = point.x;
-        svgPoint.y = point.y;
-        svgPoint = svgPoint.matrixTransform(this.matrix);
-        return new Point(svgPoint.x, svgPoint.y);
-    }
-    apply(ctx) {
-        let m = this.matrix;
-        ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
-    }
-}
-class NumberMap {
-    constructor() {
-        this.map = {};
-    }
-    get(key) {
-        return key in this.map ? this.map[key] : 0;
-    }
-    add(key, count) {
-        this.map[key] = this.get(key) + count;
-    }
-}
-"use strict";
-var Util;
-(function (Util) {
-    function formatMoney(amount) {
-        return '§' + amount;
-    }
-    Util.formatMoney = formatMoney;
-    function getEventPos(event, element) {
-        var rect = element.getBoundingClientRect();
-        return new Point(event.clientX - rect.left, event.clientY - rect.top);
-    }
-    Util.getEventPos = getEventPos;
-    function assert(condition, message) {
-        if (!condition)
-            alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
-    }
-    Util.assert = assert;
-    function formatRows(rows) {
-        let columns = [];
-        for (let i = 0; i < rows.length; ++i)
-            for (let j = 0; j < rows[i].length; ++j) {
-                if (i == 0)
-                    columns[j] = '<table>';
-                columns[j] += '<tr><td>' + rows[i][j] + '</tr></td>';
-                if (i == rows.length - 1)
-                    columns[j] += '</table>';
-            }
-        return columns;
-    }
-    Util.formatRows = formatRows;
-    function getRandomInt(max) {
-        return Math.floor(Math.random() * max);
-    }
-    Util.getRandomInt = getRandomInt;
-    function lerp(start, end, param) {
-        return start + (end - start) * param;
-    }
-    Util.lerp = lerp;
-    function querp(start, end, param) {
-        return start + (end - start) * param * param;
-    }
-    Util.querp = querp;
-    function scaleCentred(ctx, scale, x, y) {
-        ctx.translate(x, y);
-        ctx.scale(scale, scale);
-        ctx.translate(-x, -y);
-    }
-    Util.scaleCentred = scaleCentred;
-    function setPrototype(obj, type) {
-        obj.__proto__ = type.prototype;
-    }
-    Util.setPrototype = setPrototype;
-    function dynamicCast(instance, ctor) {
-        return (instance instanceof ctor) ? instance : null;
-    }
-    Util.dynamicCast = dynamicCast;
-    function assertCast(instance, ctor) {
-        assert(instance instanceof ctor);
-        return instance;
-    }
-    Util.assertCast = assertCast;
-    function getImage(dir, name) {
-        return 'images/' + dir + '/' + name + '.png';
-    }
-    Util.getImage = getImage;
-})(Util || (Util = {}));
-"use strict";
 var View;
 (function (View) {
     class Animation {
@@ -1731,7 +1831,6 @@ var View;
     }
     View.Sequence = Sequence;
 })(View || (View = {}));
-"use strict";
 var View;
 (function (View) {
     class Page {
@@ -1773,7 +1872,6 @@ var View;
     View.Page = Page;
 })(View || (View = {}));
 /// <reference path="page.ts" />
-"use strict";
 var View;
 (function (View) {
     class FighterUI {
@@ -2000,7 +2098,6 @@ var View;
     View.ArenaPage = ArenaPage;
 })(View || (View = {}));
 /// <reference path="page.ts" />
-"use strict";
 var View;
 (function (View) {
     class BarracksPage extends View.Page {
@@ -2021,7 +2118,7 @@ var View;
                 let cells = [];
                 cells.push(new View.Table.TextCell('<h4>' + person.name + '</h4>'));
                 cells.push(new View.Table.ImageCell(person.image));
-                cells.push(new View.Table.TextCell(person.health.toString() + '/' + person.getSpeciesData().health));
+                cells.push(new View.Table.TextCell(person.getHealth().toString() + '/' + person.getSpeciesData().health));
                 cells.push(new View.Table.TextCell(person.fame.toString()));
                 for (let c of Util.formatRows(person.getSkills()))
                     cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
@@ -2034,7 +2131,6 @@ var View;
     }
     View.BarracksPage = BarracksPage;
 })(View || (View = {}));
-"use strict";
 var View;
 (function (View) {
     class CanvasObject {
@@ -2085,7 +2181,6 @@ var View;
     View.Canvas = Canvas;
 })(View || (View = {}));
 /// <reference path="page.ts" />
-"use strict";
 var View;
 (function (View) {
     class DebugPage extends View.Page {
@@ -2137,7 +2232,6 @@ var View;
     View.DebugPage = DebugPage;
 })(View || (View = {}));
 /// <reference path="page.ts" />
-"use strict";
 var View;
 (function (View) {
     function drawAttack(name, ctx) {
@@ -2412,7 +2506,7 @@ var View;
         updateHealths() {
             for (let i = 0; i < 2; ++i) {
                 if (this.fighters[i])
-                    this.healths[i] = this.fighters[i].health;
+                    this.healths[i] = this.fighters[i].getHealth();
             }
         }
         getImageRect(index) {
@@ -2507,7 +2601,6 @@ var View;
     View.FightPage = FightPage;
 })(View || (View = {}));
 /// <reference path="page.ts" />
-"use strict";
 var View;
 (function (View) {
     class HomePage extends View.Page {
@@ -2547,7 +2640,6 @@ var View;
     View.HomePage = HomePage;
 })(View || (View = {}));
 /// <reference path="page.ts" />
-"use strict";
 var View;
 (function (View) {
     class KennelsPage extends View.Page {
@@ -2563,7 +2655,7 @@ var View;
                 let cells = [];
                 cells.push(new View.Table.TextCell('<h4>' + animal.name + '</h4>'));
                 cells.push(new View.Table.ImageCell(animal.image));
-                cells.push(new View.Table.TextCell(animal.health.toString() + '/' + animal.getSpeciesData().health));
+                cells.push(new View.Table.TextCell(animal.getHealth().toString() + '/' + animal.getSpeciesData().health));
                 cells.push(new View.Table.TextCell(animal.fame.toString()));
                 tableFactory.addRow(cells, false, null);
             }
@@ -2571,7 +2663,6 @@ var View;
     }
     View.KennelsPage = KennelsPage;
 })(View || (View = {}));
-"use strict";
 var View;
 (function (View) {
     class Trigger extends View.CanvasImage {
@@ -2710,7 +2801,6 @@ var View;
     View.Ludus = Ludus;
 })(View || (View = {}));
 /// <reference path="page.ts" />
-"use strict";
 var View;
 (function (View) {
     class NewsPage extends View.Page {
@@ -2733,7 +2823,6 @@ var View;
     }
     View.NewsPage = NewsPage;
 })(View || (View = {}));
-"use strict";
 var View;
 (function (View) {
     class Preloader {
@@ -2764,7 +2853,87 @@ var View;
     View.Preloader = Preloader;
 })(View || (View = {}));
 /// <reference path="page.ts" />
-"use strict";
+var View;
+(function (View) {
+    class ShopPage extends View.Page {
+        constructor(title) {
+            super(title);
+            this.scrollers = [];
+            this.items = [];
+            let topDiv = document.createElement('div');
+            let bottomDiv = document.createElement('div');
+            topDiv.id = 'shop_top';
+            bottomDiv.id = 'shop_bottom';
+            this.tabs = new View.TabBar((data) => { this.onTabClicked(data); });
+            topDiv.appendChild(this.tabs.div);
+            this.div.appendChild(topDiv);
+            this.div.appendChild(bottomDiv);
+            this.totalSpan = document.createElement('span');
+            this.checkoutButton = document.createElement('button');
+            this.checkoutButton.innerText = 'Check out';
+            this.checkoutButton.addEventListener('click', () => { this.onCheckOut(); });
+            this.totalSpan.style.cssFloat = this.checkoutButton.style.cssFloat = 'right';
+            bottomDiv.appendChild(this.checkoutButton);
+            bottomDiv.appendChild(this.totalSpan);
+        }
+        addTable(name) {
+            let table = new View.Table.Factory();
+            let scroller = table.makeScroller();
+            scroller.id = 'shop_scroller';
+            scroller.hidden = this.scrollers.length > 0;
+            this.div.appendChild(scroller);
+            this.tabs.addTab(name, scroller);
+            this.scrollers.push(scroller);
+            return table;
+        }
+        onShow() {
+            this.updateItems();
+        }
+        onTabClicked(data) {
+            for (let scroller of this.scrollers)
+                scroller.hidden = scroller !== data;
+        }
+        onCheckOut() {
+            for (let [item, cell] of this.items)
+                for (let i = 0; i < cell.value; ++i)
+                    item.buy();
+            View.Page.hideCurrent();
+            Controller.updateHUD();
+            View.ludus.updateObjects();
+        }
+        updateItems() {
+            let total = 0;
+            let basket = new NumberMap();
+            for (let [item, cell] of this.items) {
+                total += item.cost * cell.value;
+                basket.add(item.type, cell.value);
+            }
+            let moneyLeft = Model.state.getMoney() - total;
+            for (let [item, cell] of this.items) {
+                let canAdd = item.canBuy() && item.canAddToBasket(basket) && item.cost <= moneyLeft;
+                cell.decButton.disabled = cell.value == 0;
+                cell.incButton.disabled = !canAdd;
+            }
+            this.totalSpan.innerText = 'Total: ' + total + '. Money left: ' + moneyLeft;
+            this.totalSpan.style.marginRight = '1em';
+            this.checkoutButton.disabled = total == 0;
+        }
+        addItem(item, table) {
+            let inputCell = new View.Table.NumberInputCell(15, () => { this.updateItems(); });
+            let cells = [
+                new View.Table.TextCell('<h4>' + item.title + '</h4>', 15),
+                new View.Table.ImageCell(item.image, 15),
+                new View.Table.TextCell(item.description, 40),
+                new View.Table.TextCell(Util.formatMoney(item.cost), 15),
+                inputCell
+            ];
+            table.addRow(cells, !item.canBuy(), null);
+            this.items.push([item, inputCell]);
+        }
+    }
+    View.ShopPage = ShopPage;
+})(View || (View = {}));
+/// <reference path="page.ts" />
 var View;
 (function (View) {
     class StoragePage extends View.Page {
@@ -2786,7 +2955,37 @@ var View;
     }
     View.StoragePage = StoragePage;
 })(View || (View = {}));
-"use strict";
+var View;
+(function (View) {
+    class TabBar {
+        constructor(handler) {
+            this.handler = handler;
+            this.div = document.createElement('div');
+            this.tabs = [];
+            this.div.className = 'tab_bar';
+        }
+        onTabClicked(tab, data) {
+            for (let t of this.tabs) {
+                if (t === tab)
+                    t.classList.add('tab_selected');
+                else
+                    t.classList.remove('tab_selected');
+            }
+            this.handler(data);
+        }
+        addTab(name, data) {
+            let tab = document.createElement('div');
+            tab.innerText = name;
+            tab.className = 'tab';
+            tab.addEventListener('click', () => { this.onTabClicked(tab, data); });
+            this.tabs.push(tab);
+            this.div.appendChild(tab);
+            if (this.tabs.length == 1)
+                this.onTabClicked(tab, data);
+        }
+    }
+    View.TabBar = TabBar;
+})(View || (View = {}));
 var View;
 (function (View) {
     var Table;
@@ -2945,7 +3144,6 @@ var View;
         Table.Factory = Factory;
     })(Table = View.Table || (View.Table = {}));
 })(View || (View = {}));
-"use strict";
 var View;
 (function (View) {
     View.Width = 1280;
@@ -3061,220 +3259,4 @@ var View;
         document.getElementById('skip_day_btn').disabled = !enable;
     }
     View.enable = enable;
-})(View || (View = {}));
-"use strict";
-var Controller;
-(function (Controller) {
-    var Shop;
-    (function (Shop) {
-        class Item {
-            constructor(type, tag, title, description, image, cost) {
-                this.type = type;
-                this.tag = tag;
-                this.title = title;
-                this.description = description;
-                this.image = image;
-                this.cost = cost;
-            }
-            canBuy() { return true; }
-            canAddToBasket(basket) {
-                return basket.get(this.type) < this.getMaxTypeCount();
-            }
-        }
-        Shop.Item = Item;
-        class BuildingItem extends Item {
-            constructor(tag) {
-                let levelIndex = Model.state.buildings.getNextUpgradeIndex(tag);
-                let level = Data.Buildings.getLevel(tag, levelIndex);
-                Util.assert(level != null);
-                super('building:' + tag, tag, level.name, level.description, Util.getImage('buildings', tag + levelIndex), level.cost);
-            }
-            getMaxTypeCount() {
-                return 1;
-            }
-            canBuy() {
-                return Model.state.buildings.canUpgrade(this.tag);
-            }
-            buy() {
-                Model.state.buildings.buyUpgrade(this.tag);
-            }
-        }
-        Shop.BuildingItem = BuildingItem;
-        class AnimalItem extends Item {
-            constructor(tag) {
-                let data = Data.Animals.Types[tag];
-                Util.assert(data != null);
-                super('animal', tag, data.name, data.getDescription(), Util.getImage('animals', tag), data.cost);
-            }
-            getMaxTypeCount() {
-                return Model.state.buildings.getCapacity('kennels') - Model.state.team.getAnimals().length;
-            }
-            buy() {
-                Model.state.buyAnimal(this.tag);
-            }
-        }
-        Shop.AnimalItem = AnimalItem;
-        class PeopleItem extends Item {
-            constructor(tag) {
-                let data = Data.People.Types[tag];
-                Util.assert(data != null);
-                super('person', tag, data.name, data.getDescription(), Util.getImage('people', tag), data.cost);
-            }
-            getMaxTypeCount() {
-                return Model.state.buildings.getCapacity('barracks') - Model.state.team.getPeople().length;
-            }
-            buy() {
-                Model.state.buyPerson(this.tag);
-            }
-        }
-        Shop.PeopleItem = PeopleItem;
-        class AccessoryItem extends Item {
-            constructor(tag, title, description, cost) {
-                super('accessory', tag, title, description, Util.getImage('items', tag), cost);
-                this.tag = tag;
-                this.title = title;
-                this.description = description;
-                this.cost = cost;
-            }
-            getMaxTypeCount() {
-                return Model.state.buildings.getCapacity('storage') - Model.state.team.getItemCount();
-            }
-        }
-        class ArmourItem extends AccessoryItem {
-            constructor(tag) {
-                let data = Data.Armour.Types[tag];
-                Util.assert(data != null);
-                super(tag, data.name, data.getDescription(), data.cost);
-            }
-            buy() {
-                Model.state.buyArmour(this.tag);
-            }
-        }
-        Shop.ArmourItem = ArmourItem;
-        class WeaponItem extends AccessoryItem {
-            constructor(tag) {
-                let data = Data.Weapons.Types[tag];
-                Util.assert(data != null);
-                super(tag, data.name, data.getDescription(), data.cost);
-            }
-            buy() {
-                Model.state.buyWeapon(this.tag);
-            }
-        }
-        Shop.WeaponItem = WeaponItem;
-    })(Shop = Controller.Shop || (Controller.Shop = {}));
-})(Controller || (Controller = {}));
-/// <reference path="page.ts" />
-"use strict";
-var View;
-(function (View) {
-    class ShopPage extends View.Page {
-        constructor(title) {
-            super(title);
-            this.scrollers = [];
-            this.items = [];
-            let topDiv = document.createElement('div');
-            let bottomDiv = document.createElement('div');
-            topDiv.id = 'shop_top';
-            bottomDiv.id = 'shop_bottom';
-            this.tabs = new View.TabBar((data) => { this.onTabClicked(data); });
-            topDiv.appendChild(this.tabs.div);
-            this.div.appendChild(topDiv);
-            this.div.appendChild(bottomDiv);
-            this.totalSpan = document.createElement('span');
-            this.checkoutButton = document.createElement('button');
-            this.checkoutButton.innerText = 'Check out';
-            this.checkoutButton.addEventListener('click', () => { this.onCheckOut(); });
-            this.totalSpan.style.cssFloat = this.checkoutButton.style.cssFloat = 'right';
-            bottomDiv.appendChild(this.checkoutButton);
-            bottomDiv.appendChild(this.totalSpan);
-        }
-        addTable(name) {
-            let table = new View.Table.Factory();
-            let scroller = table.makeScroller();
-            scroller.id = 'shop_scroller';
-            scroller.hidden = this.scrollers.length > 0;
-            this.div.appendChild(scroller);
-            this.tabs.addTab(name, scroller);
-            this.scrollers.push(scroller);
-            return table;
-        }
-        onShow() {
-            this.updateItems();
-        }
-        onTabClicked(data) {
-            for (let scroller of this.scrollers)
-                scroller.hidden = scroller !== data;
-        }
-        onCheckOut() {
-            for (let [item, cell] of this.items)
-                for (let i = 0; i < cell.value; ++i)
-                    item.buy();
-            View.Page.hideCurrent();
-            Controller.updateHUD();
-            View.ludus.updateObjects();
-        }
-        updateItems() {
-            let total = 0;
-            let basket = new NumberMap();
-            for (let [item, cell] of this.items) {
-                total += item.cost * cell.value;
-                basket.add(item.type, cell.value);
-            }
-            let moneyLeft = Model.state.getMoney() - total;
-            for (let [item, cell] of this.items) {
-                let canAdd = item.canBuy() && item.canAddToBasket(basket) && item.cost <= moneyLeft;
-                cell.decButton.disabled = cell.value == 0;
-                cell.incButton.disabled = !canAdd;
-            }
-            this.totalSpan.innerText = 'Total: ' + total + '. Money left: ' + moneyLeft;
-            this.totalSpan.style.marginRight = '1em';
-            this.checkoutButton.disabled = total == 0;
-        }
-        addItem(item, table) {
-            let inputCell = new View.Table.NumberInputCell(15, () => { this.updateItems(); });
-            let cells = [
-                new View.Table.TextCell('<h4>' + item.title + '</h4>', 15),
-                new View.Table.ImageCell(item.image, 15),
-                new View.Table.TextCell(item.description, 40),
-                new View.Table.TextCell(Util.formatMoney(item.cost), 15),
-                inputCell
-            ];
-            table.addRow(cells, !item.canBuy(), null);
-            this.items.push([item, inputCell]);
-        }
-    }
-    View.ShopPage = ShopPage;
-})(View || (View = {}));
-"use strict";
-var View;
-(function (View) {
-    class TabBar {
-        constructor(handler) {
-            this.handler = handler;
-            this.div = document.createElement('div');
-            this.tabs = [];
-            this.div.className = 'tab_bar';
-        }
-        onTabClicked(tab, data) {
-            for (let t of this.tabs) {
-                if (t === tab)
-                    t.classList.add('tab_selected');
-                else
-                    t.classList.remove('tab_selected');
-            }
-            this.handler(data);
-        }
-        addTab(name, data) {
-            let tab = document.createElement('div');
-            tab.innerText = name;
-            tab.className = 'tab';
-            tab.addEventListener('click', () => { this.onTabClicked(tab, data); });
-            this.tabs.push(tab);
-            this.div.appendChild(tab);
-            if (this.tabs.length == 1)
-                this.onTabClicked(tab, data);
-        }
-    }
-    View.TabBar = TabBar;
 })(View || (View = {}));

@@ -21,7 +21,7 @@ namespace View
 				let cells: Table.Cell[] = [];
 				cells.push(new Table.TextCell('<h4>' + animal.name + '</h4>'));
 				cells.push(new Table.ImageCell(animal.image));
-				cells.push(new Table.TextCell(animal.health.toString() + '/' + animal.getSpeciesData().health));
+				cells.push(new Table.TextCell(animal.getHealth().toString() + '/' + animal.getSpeciesData().health));
 				cells.push(new Table.TextCell(animal.fame.toString()));
 
 				tableFactory.addRow(cells, false, null);
