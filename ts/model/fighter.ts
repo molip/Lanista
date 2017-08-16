@@ -35,7 +35,7 @@ namespace Model
 		bodyParts: { [id: string]: BodyPart } = {};
 		private skills: { [tag: string]: number } = {}; // +/- percent.
 		private nextBodyPartID: number = 1;
-		health: number = 0;
+		private health: number = 0;
 		private activity: string = 'idle';
 		private experience: { [tag: string]: number } = {};
 
@@ -202,6 +202,17 @@ namespace Model
 		addSkill(tag: string, value: number)
 		{
 			this.skills[tag] = this.getSkill(tag) + value;
+			Model.invalidate();
+		}
+
+		getHealth()
+		{
+			return this.health;
+		}
+
+		addHealth(value: number)
+		{
+			this.health = Math.max(Math.min(this.health + value, this.getSpeciesData().health), 0);
 			Model.invalidate();
 		}
 	}
