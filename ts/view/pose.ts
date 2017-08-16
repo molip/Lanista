@@ -2,6 +2,13 @@
 
 namespace View 
 {
+	class BodySize
+	{
+		legLength = 100;
+		armLength = 80;
+		spineLength = 60;
+	}
+
 	class BoneHitTest
 	{
 
@@ -15,8 +22,10 @@ namespace View
 
 		constructor(/*public x: number, public y: number, */public length: number) { } 
 
-		draw(ctx: CanvasRenderingContext2D)
+		draw(ctx: CanvasRenderingContext2D, xform: Xform)
 		{
+			xform.matrix.
+
 			//ctx.translate(this.x, this.y);
 			ctx.save();
 			ctx.rotate(Math.PI * this.angle / 180);
