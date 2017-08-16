@@ -36,7 +36,7 @@ namespace Model
 		private skills: { [tag: string]: number } = {}; // +/- percent.
 		private nextBodyPartID: number = 1;
 		health: number = 0;
-		private activity: string = '';
+		private activity: string = 'idle';
 		private experience: { [tag: string]: number } = {};
 
 		constructor(public id: number, public species: string, public name: string, public image: string, public fame: number)
