@@ -1,4 +1,369 @@
 ﻿"use strict";
+var Data;
+(function (Data) {
+    class Attack {
+        constructor(name, type, damage) {
+            this.name = name;
+            this.type = type;
+            this.damage = damage;
+        }
+    }
+    Data.Attack = Attack;
+    class WeaponSite {
+        constructor(name, type, replacesAttack) {
+            this.name = name;
+            this.type = type;
+            this.replacesAttack = replacesAttack;
+        }
+    }
+    Data.WeaponSite = WeaponSite;
+    class Site {
+        constructor(species, type, count) {
+            this.species = species;
+            this.type = type;
+            this.count = count;
+        }
+    }
+    Data.Site = Site;
+    var Armour;
+    (function (Armour) {
+        class Type {
+            constructor(name, cost, fame, description, sites, defence) {
+                this.name = name;
+                this.cost = cost;
+                this.fame = fame;
+                this.description = description;
+                this.sites = sites;
+                this.defence = defence;
+            }
+            validate() {
+                for (let site of this.sites) {
+                    let speciesData = Species.Types[site.species];
+                    if (!(speciesData && speciesData.bodyParts && speciesData.bodyParts[site.type]))
+                        console.log('Armour: "%s" site references unknown body part "%s/%s"', this.name, site.species, site.type);
+                }
+            }
+            getDefense(attackType) {
+                return this.defence[attackType] ? this.defence[attackType] : 0;
+            }
+            getDescription() {
+                return this.description + ' (fame: ' + this.fame + ')';
+            }
+        }
+        Armour.Type = Type;
+    })(Armour = Data.Armour || (Data.Armour = {}));
+    var Weapons;
+    (function (Weapons) {
+        class Type {
+            constructor(name, block, cost, fame, description, sites, attacks) {
+                this.name = name;
+                this.block = block;
+                this.cost = cost;
+                this.fame = fame;
+                this.description = description;
+                this.sites = sites;
+                this.attacks = attacks;
+            }
+            validate() {
+                for (let site of this.sites) {
+                    let found = false;
+                    let speciesData = Species.Types[site.species];
+                    if (speciesData) {
+                        for (let id in speciesData.bodyParts) {
+                            let weaponSite = speciesData.bodyParts[id].weaponSite;
+                            if (weaponSite && weaponSite.type == site.type) {
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!found)
+                        console.log('Weapon: "%s" site references unknown weapon site "%s/%s"', this.name, site.species, site.type);
+                }
+            }
+            getDescription() {
+                return this.description + ' (fame: ' + this.fame + ')';
+            }
+        }
+        Weapons.Type = Type;
+    })(Weapons = Data.Weapons || (Data.Weapons = {}));
+    class BodyPartInstance {
+        constructor(name, x, y) {
+            this.name = name;
+            this.x = x;
+            this.y = y;
+        }
+    }
+    Data.BodyPartInstance = BodyPartInstance;
+    class BodyPart {
+        constructor(attack, instances, weaponSite = null) {
+            this.attack = attack;
+            this.instances = instances;
+            this.weaponSite = weaponSite;
+        }
+    }
+    Data.BodyPart = BodyPart;
+    var Species;
+    (function (Species) {
+        class Type {
+            constructor(name, health) {
+                this.name = name;
+                this.health = health;
+            }
+        }
+        Species.Type = Type;
+    })(Species = Data.Species || (Data.Species = {}));
+    var Animals;
+    (function (Animals) {
+        class Type {
+            constructor(cost, fame, species, name, description) {
+                this.cost = cost;
+                this.fame = fame;
+                this.species = species;
+                this.name = name;
+                this.description = description;
+            }
+            validate() {
+                if (!Species.Types[this.species])
+                    console.log('Animal: "%s" references unknown species "%s"', this.name, this.species);
+                if (!Species.Types[this.species].bodyParts)
+                    console.log('Animal: "%s" has no body parts', this.name);
+            }
+            getDescription() {
+                return this.description + ' (fame: ' + this.fame + ')';
+            }
+        }
+        Animals.Type = Type;
+    })(Animals = Data.Animals || (Data.Animals = {}));
+    var People;
+    (function (People) {
+        class Type {
+            constructor(cost, fame, name, description) {
+                this.cost = cost;
+                this.fame = fame;
+                this.name = name;
+                this.description = description;
+            }
+            validate() {
+            }
+            getDescription() {
+                return this.description + ' (fame: ' + this.fame + ')';
+            }
+        }
+        People.Type = Type;
+    })(People = Data.People || (Data.People = {}));
+    var Buildings;
+    (function (Buildings) {
+        class Level {
+            constructor(cost, buildTime, mapX, mapY, capacity, name, description) {
+                this.cost = cost;
+                this.buildTime = buildTime;
+                this.mapX = mapX;
+                this.mapY = mapY;
+                this.capacity = capacity;
+                this.name = name;
+                this.description = description;
+            }
+        }
+        Buildings.Level = Level;
+        function getLevel(tag, index) {
+            Util.assert(tag in Buildings.Levels);
+            return index >= 0 && index < Buildings.Levels[tag].length ? Buildings.Levels[tag][index] : null;
+        }
+        Buildings.getLevel = getLevel;
+    })(Buildings = Data.Buildings || (Data.Buildings = {}));
+    var Activities;
+    (function (Activities) {
+        class Type {
+            constructor(name, job, human, animal, freeWork) {
+                this.name = name;
+                this.job = job;
+                this.human = human;
+                this.animal = animal;
+                this.freeWork = freeWork;
+            }
+        }
+        Activities.Type = Type;
+    })(Activities = Data.Activities || (Data.Activities = {}));
+    var Events;
+    (function (Events_1) {
+        class AwayFightEvent {
+            constructor(day, injuryThreshold, fameRequired, losingFameReward, winningFameReward, losingMoneyReward, winningMoneyReward, name) {
+                this.day = day;
+                this.injuryThreshold = injuryThreshold;
+                this.fameRequired = fameRequired;
+                this.losingFameReward = losingFameReward;
+                this.winningFameReward = winningFameReward;
+                this.losingMoneyReward = losingMoneyReward;
+                this.winningMoneyReward = winningMoneyReward;
+                this.name = name;
+            }
+        }
+        Events_1.AwayFightEvent = AwayFightEvent;
+    })(Events = Data.Events || (Data.Events = {}));
+    function validate() {
+        console.log('Validating data...');
+        for (let tag in Armour.Types)
+            Armour.Types[tag].validate();
+        for (let tag in Weapons.Types)
+            Weapons.Types[tag].validate();
+        for (let tag in Animals.Types)
+            Animals.Types[tag].validate();
+        for (let tag in People.Types)
+            People.Types[tag].validate();
+        console.log('Validating finished.');
+    }
+    Data.validate = validate;
+    var Skills;
+    (function (Skills) {
+        class Type {
+            constructor(name) {
+                this.name = name;
+            }
+        }
+        Skills.Type = Type;
+    })(Skills = Data.Skills || (Data.Skills = {}));
+    var Misc;
+    (function (Misc) {
+    })(Misc = Data.Misc || (Data.Misc = {}));
+})(Data || (Data = {}));
+"use strict";
+class Point {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    clone() { return new Point(this.x, this.y); }
+    translate(ctx) { ctx.translate(this.x, this.y); }
+    ;
+}
+class Rect {
+    constructor(left, top, right, bottom) {
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
+    }
+    clone() { return new Rect(this.left, this.top, this.right, this.bottom); }
+    width() { return this.right - this.left; }
+    height() { return this.bottom - this.top; }
+    centre() { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); }
+    path(ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); }
+    ;
+    fill(ctx) { ctx.fillRect(this.left, this.top, this.width(), this.height()); }
+    ;
+    stroke(ctx) { ctx.strokeRect(this.left, this.top, this.width(), this.height()); }
+    ;
+    expand(left, top, right, bottom) {
+        this.left += left;
+        this.top += top;
+        this.right += right;
+        this.bottom += bottom;
+    }
+    pointInRect(point) {
+        return point.x >= this.left && point.y >= this.top && point.x < this.right && point.y < this.bottom;
+    }
+    offset(dx, dy) {
+        this.left += dx;
+        this.right += dx;
+        this.top += dy;
+        this.bottom += dy;
+    }
+}
+class Xform {
+    constructor() {
+        this.matrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix();
+    }
+    transformPoint(point) {
+        let svgPoint = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGPoint();
+        svgPoint.x = point.x;
+        svgPoint.y = point.y;
+        svgPoint = svgPoint.matrixTransform(this.matrix);
+        return new Point(svgPoint.x, svgPoint.y);
+    }
+    apply(ctx) {
+        let m = this.matrix;
+        ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
+    }
+}
+class NumberMap {
+    constructor() {
+        this.map = {};
+    }
+    get(key) {
+        return key in this.map ? this.map[key] : 0;
+    }
+    add(key, count) {
+        this.map[key] = this.get(key) + count;
+    }
+}
+"use strict";
+var Util;
+(function (Util) {
+    function formatMoney(amount) {
+        return '§' + amount;
+    }
+    Util.formatMoney = formatMoney;
+    function getEventPos(event, element) {
+        var rect = element.getBoundingClientRect();
+        return new Point(event.clientX - rect.left, event.clientY - rect.top);
+    }
+    Util.getEventPos = getEventPos;
+    function assert(condition, message) {
+        if (!condition)
+            alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
+    }
+    Util.assert = assert;
+    function formatRows(rows) {
+        let columns = [];
+        for (let i = 0; i < rows.length; ++i)
+            for (let j = 0; j < rows[i].length; ++j) {
+                if (i == 0)
+                    columns[j] = '<table>';
+                columns[j] += '<tr><td>' + rows[i][j] + '</tr></td>';
+                if (i == rows.length - 1)
+                    columns[j] += '</table>';
+            }
+        return columns;
+    }
+    Util.formatRows = formatRows;
+    function getRandomInt(max) {
+        return Math.floor(Math.random() * max);
+    }
+    Util.getRandomInt = getRandomInt;
+    function lerp(start, end, param) {
+        return start + (end - start) * param;
+    }
+    Util.lerp = lerp;
+    function querp(start, end, param) {
+        return start + (end - start) * param * param;
+    }
+    Util.querp = querp;
+    function scaleCentred(ctx, scale, x, y) {
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.translate(-x, -y);
+    }
+    Util.scaleCentred = scaleCentred;
+    function setPrototype(obj, type) {
+        obj.__proto__ = type.prototype;
+    }
+    Util.setPrototype = setPrototype;
+    function dynamicCast(instance, ctor) {
+        return (instance instanceof ctor) ? instance : null;
+    }
+    Util.dynamicCast = dynamicCast;
+    function assertCast(instance, ctor) {
+        assert(instance instanceof ctor);
+        return instance;
+    }
+    Util.assertCast = assertCast;
+    function getImage(dir, name) {
+        return 'images/' + dir + '/' + name + '.png';
+    }
+    Util.getImage = getImage;
+})(Util || (Util = {}));
+"use strict";
 var Controller;
 (function (Controller) {
     var Canvas;
@@ -256,234 +621,107 @@ var Controller;
     })(Shop = Controller.Shop || (Controller.Shop = {}));
 })(Controller || (Controller = {}));
 "use strict";
-var Data;
-(function (Data) {
-    class Attack {
-        constructor(name, type, damage) {
-            this.name = name;
-            this.type = type;
-            this.damage = damage;
-        }
-    }
-    Data.Attack = Attack;
-    class WeaponSite {
-        constructor(name, type, replacesAttack) {
-            this.name = name;
-            this.type = type;
-            this.replacesAttack = replacesAttack;
-        }
-    }
-    Data.WeaponSite = WeaponSite;
-    class Site {
-        constructor(species, type, count) {
-            this.species = species;
-            this.type = type;
-            this.count = count;
-        }
-    }
-    Data.Site = Site;
-    var Armour;
-    (function (Armour) {
-        class Type {
-            constructor(name, cost, fame, description, sites, defence) {
-                this.name = name;
-                this.cost = cost;
-                this.fame = fame;
+var Controller;
+(function (Controller) {
+    var Shop;
+    (function (Shop) {
+        class Item {
+            constructor(type, tag, title, description, image, cost) {
+                this.type = type;
+                this.tag = tag;
+                this.title = title;
                 this.description = description;
-                this.sites = sites;
-                this.defence = defence;
-            }
-            validate() {
-                for (let site of this.sites) {
-                    let speciesData = Species.Types[site.species];
-                    if (!(speciesData && speciesData.bodyParts && speciesData.bodyParts[site.type]))
-                        console.log('Armour: "%s" site references unknown body part "%s/%s"', this.name, site.species, site.type);
-                }
-            }
-            getDefense(attackType) {
-                return this.defence[attackType] ? this.defence[attackType] : 0;
-            }
-            getDescription() {
-                return this.description + ' (fame: ' + this.fame + ')';
-            }
-        }
-        Armour.Type = Type;
-    })(Armour = Data.Armour || (Data.Armour = {}));
-    var Weapons;
-    (function (Weapons) {
-        class Type {
-            constructor(name, block, cost, fame, description, sites, attacks) {
-                this.name = name;
-                this.block = block;
+                this.image = image;
                 this.cost = cost;
-                this.fame = fame;
+            }
+            canBuy() { return true; }
+            canAddToBasket(basket) {
+                return basket.get(this.type) < this.getMaxTypeCount();
+            }
+        }
+        Shop.Item = Item;
+        class BuildingItem extends Item {
+            constructor(tag) {
+                let levelIndex = Model.state.buildings.getNextUpgradeIndex(tag);
+                let level = Data.Buildings.getLevel(tag, levelIndex);
+                Util.assert(level != null);
+                super('building:' + tag, tag, level.name, level.description, Util.getImage('buildings', tag + levelIndex), level.cost);
+            }
+            getMaxTypeCount() {
+                return 1;
+            }
+            canBuy() {
+                return Model.state.buildings.canUpgrade(this.tag);
+            }
+            buy() {
+                Model.state.buildings.buyUpgrade(this.tag);
+            }
+        }
+        Shop.BuildingItem = BuildingItem;
+        class AnimalItem extends Item {
+            constructor(tag) {
+                let data = Data.Animals.Types[tag];
+                Util.assert(data != null);
+                super('animal', tag, data.name, data.getDescription(), Util.getImage('animals', tag), data.cost);
+            }
+            getMaxTypeCount() {
+                return Model.state.buildings.getCapacity('kennels') - Model.state.team.getAnimals().length;
+            }
+            buy() {
+                Model.state.buyAnimal(this.tag);
+            }
+        }
+        Shop.AnimalItem = AnimalItem;
+        class PeopleItem extends Item {
+            constructor(tag) {
+                let data = Data.People.Types[tag];
+                Util.assert(data != null);
+                super('person', tag, data.name, data.getDescription(), Util.getImage('people', tag), data.cost);
+            }
+            getMaxTypeCount() {
+                return Model.state.buildings.getCapacity('barracks') - Model.state.team.getPeople().length;
+            }
+            buy() {
+                Model.state.buyPerson(this.tag);
+            }
+        }
+        Shop.PeopleItem = PeopleItem;
+        class AccessoryItem extends Item {
+            constructor(tag, title, description, cost) {
+                super('accessory', tag, title, description, Util.getImage('items', tag), cost);
+                this.tag = tag;
+                this.title = title;
                 this.description = description;
-                this.sites = sites;
-                this.attacks = attacks;
-            }
-            validate() {
-                for (let site of this.sites) {
-                    let found = false;
-                    let speciesData = Species.Types[site.species];
-                    if (speciesData) {
-                        for (let id in speciesData.bodyParts) {
-                            let weaponSite = speciesData.bodyParts[id].weaponSite;
-                            if (weaponSite && weaponSite.type == site.type) {
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!found)
-                        console.log('Weapon: "%s" site references unknown weapon site "%s/%s"', this.name, site.species, site.type);
-                }
-            }
-            getDescription() {
-                return this.description + ' (fame: ' + this.fame + ')';
-            }
-        }
-        Weapons.Type = Type;
-    })(Weapons = Data.Weapons || (Data.Weapons = {}));
-    class BodyPartInstance {
-        constructor(name, x, y) {
-            this.name = name;
-            this.x = x;
-            this.y = y;
-        }
-    }
-    Data.BodyPartInstance = BodyPartInstance;
-    class BodyPart {
-        constructor(attack, instances, weaponSite = null) {
-            this.attack = attack;
-            this.instances = instances;
-            this.weaponSite = weaponSite;
-        }
-    }
-    Data.BodyPart = BodyPart;
-    var Species;
-    (function (Species) {
-        class Type {
-            constructor(name, health) {
-                this.name = name;
-                this.health = health;
-            }
-        }
-        Species.Type = Type;
-    })(Species = Data.Species || (Data.Species = {}));
-    var Animals;
-    (function (Animals) {
-        class Type {
-            constructor(cost, fame, species, name, description) {
                 this.cost = cost;
-                this.fame = fame;
-                this.species = species;
-                this.name = name;
-                this.description = description;
             }
-            validate() {
-                if (!Species.Types[this.species])
-                    console.log('Animal: "%s" references unknown species "%s"', this.name, this.species);
-                if (!Species.Types[this.species].bodyParts)
-                    console.log('Animal: "%s" has no body parts', this.name);
-            }
-            getDescription() {
-                return this.description + ' (fame: ' + this.fame + ')';
+            getMaxTypeCount() {
+                return Model.state.buildings.getCapacity('storage') - Model.state.team.getItemCount();
             }
         }
-        Animals.Type = Type;
-    })(Animals = Data.Animals || (Data.Animals = {}));
-    var People;
-    (function (People) {
-        class Type {
-            constructor(cost, fame, name, description) {
-                this.cost = cost;
-                this.fame = fame;
-                this.name = name;
-                this.description = description;
+        class ArmourItem extends AccessoryItem {
+            constructor(tag) {
+                let data = Data.Armour.Types[tag];
+                Util.assert(data != null);
+                super(tag, data.name, data.getDescription(), data.cost);
             }
-            validate() {
-            }
-            getDescription() {
-                return this.description + ' (fame: ' + this.fame + ')';
+            buy() {
+                Model.state.buyArmour(this.tag);
             }
         }
-        People.Type = Type;
-    })(People = Data.People || (Data.People = {}));
-    var Buildings;
-    (function (Buildings) {
-        class Level {
-            constructor(cost, buildTime, mapX, mapY, capacity, name, description) {
-                this.cost = cost;
-                this.buildTime = buildTime;
-                this.mapX = mapX;
-                this.mapY = mapY;
-                this.capacity = capacity;
-                this.name = name;
-                this.description = description;
+        Shop.ArmourItem = ArmourItem;
+        class WeaponItem extends AccessoryItem {
+            constructor(tag) {
+                let data = Data.Weapons.Types[tag];
+                Util.assert(data != null);
+                super(tag, data.name, data.getDescription(), data.cost);
+            }
+            buy() {
+                Model.state.buyWeapon(this.tag);
             }
         }
-        Buildings.Level = Level;
-        function getLevel(tag, index) {
-            Util.assert(tag in Buildings.Levels);
-            return index >= 0 && index < Buildings.Levels[tag].length ? Buildings.Levels[tag][index] : null;
-        }
-        Buildings.getLevel = getLevel;
-    })(Buildings = Data.Buildings || (Data.Buildings = {}));
-    var Activities;
-    (function (Activities) {
-        class Type {
-            constructor(name, job, human, animal, freeWork) {
-                this.name = name;
-                this.job = job;
-                this.human = human;
-                this.animal = animal;
-                this.freeWork = freeWork;
-            }
-        }
-        Activities.Type = Type;
-    })(Activities = Data.Activities || (Data.Activities = {}));
-    var Events;
-    (function (Events_1) {
-        class AwayFightEvent {
-            constructor(day, injuryThreshold, fameRequired, losingFameReward, winningFameReward, losingMoneyReward, winningMoneyReward, name) {
-                this.day = day;
-                this.injuryThreshold = injuryThreshold;
-                this.fameRequired = fameRequired;
-                this.losingFameReward = losingFameReward;
-                this.winningFameReward = winningFameReward;
-                this.losingMoneyReward = losingMoneyReward;
-                this.winningMoneyReward = winningMoneyReward;
-                this.name = name;
-            }
-        }
-        Events_1.AwayFightEvent = AwayFightEvent;
-    })(Events = Data.Events || (Data.Events = {}));
-    function validate() {
-        console.log('Validating data...');
-        for (let tag in Armour.Types)
-            Armour.Types[tag].validate();
-        for (let tag in Weapons.Types)
-            Weapons.Types[tag].validate();
-        for (let tag in Animals.Types)
-            Animals.Types[tag].validate();
-        for (let tag in People.Types)
-            People.Types[tag].validate();
-        console.log('Validating finished.');
-    }
-    Data.validate = validate;
-    var Skills;
-    (function (Skills) {
-        class Type {
-            constructor(name) {
-                this.name = name;
-            }
-        }
-        Skills.Type = Type;
-    })(Skills = Data.Skills || (Data.Skills = {}));
-    var Misc;
-    (function (Misc) {
-    })(Misc = Data.Misc || (Data.Misc = {}));
-})(Data || (Data = {}));
+        Shop.WeaponItem = WeaponItem;
+    })(Shop = Controller.Shop || (Controller.Shop = {}));
+})(Controller || (Controller = {}));
 "use strict";
 var Model;
 (function (Model) {
@@ -528,7 +766,7 @@ var Model;
             this.skills = {}; // +/- percent.
             this.nextBodyPartID = 1;
             this.health = 0;
-            this.activity = '';
+            this.activity = 'idle';
             this.experience = {};
             let data = this.getSpeciesData();
             this.health = data.health;
@@ -641,6 +879,13 @@ var Model;
         }
         addSkill(tag, value) {
             this.skills[tag] = this.getSkill(tag) + value;
+            Model.invalidate();
+        }
+        getHealth() {
+            return this.health;
+        }
+        addHealth(value) {
+            this.health = Math.max(Math.min(this.health + value, this.getSpeciesData().health), 0);
             Model.invalidate();
         }
     }
@@ -1004,8 +1249,7 @@ var Model;
                     defense = armourData ? armourData.getDefense(attack.data.type) : 0;
                     baseDamage = attack.data.damage;
                     let damage = baseDamage * (100 - defense) / 100;
-                    let oldHealth = defender.health;
-                    defender.health = Math.max(0, oldHealth - damage);
+                    defender.addHealth(-damage);
                     msg += 'Damage = ' + baseDamage + ' x ' + (100 - defense) + '% = ' + damage.toFixed(1) + '. ';
                 }
                 else {
@@ -1274,11 +1518,20 @@ var Model;
                     workers[activity].push(fighter);
                 }
                 else {
+                    let healRate = 0;
                     let parts = activity.split(':');
                     if (parts.length == 2 && parts[0] == 'train') {
                         let skill = parts[1];
                         fighter.addSkill(skill, hours * Data.Misc.TrainingRate);
                     }
+                    else if (activity == 'heal') {
+                        healRate = Data.Misc.HealingRate;
+                    }
+                    else if (activity == 'idle') {
+                        healRate = Data.Misc.IdleHealingRate;
+                    }
+                    if (healRate)
+                        fighter.addHealth(hours * healRate);
                 }
             }
             // Building, training animals, training gladiators, crafting, repairing:
@@ -1358,7 +1611,7 @@ var Model;
             Model.invalidate();
         }
     }
-    State.key = "state.v19";
+    State.key = "state.v20";
     Model.State = State;
     let dirty = false;
     function init() {
@@ -1537,142 +1790,6 @@ var Model;
     }
     Model.Team = Team;
 })(Model || (Model = {}));
-"use strict";
-class Point {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-    clone() { return new Point(this.x, this.y); }
-    translate(ctx) { ctx.translate(this.x, this.y); }
-    ;
-}
-class Rect {
-    constructor(left, top, right, bottom) {
-        this.left = left;
-        this.top = top;
-        this.right = right;
-        this.bottom = bottom;
-    }
-    clone() { return new Rect(this.left, this.top, this.right, this.bottom); }
-    width() { return this.right - this.left; }
-    height() { return this.bottom - this.top; }
-    centre() { return new Point((this.left + this.right) / 2, (this.bottom + this.top) / 2); }
-    path(ctx) { ctx.rect(this.left, this.top, this.width(), this.height()); }
-    ;
-    fill(ctx) { ctx.fillRect(this.left, this.top, this.width(), this.height()); }
-    ;
-    stroke(ctx) { ctx.strokeRect(this.left, this.top, this.width(), this.height()); }
-    ;
-    expand(left, top, right, bottom) {
-        this.left += left;
-        this.top += top;
-        this.right += right;
-        this.bottom += bottom;
-    }
-    pointInRect(point) {
-        return point.x >= this.left && point.y >= this.top && point.x < this.right && point.y < this.bottom;
-    }
-    offset(dx, dy) {
-        this.left += dx;
-        this.right += dx;
-        this.top += dy;
-        this.bottom += dy;
-    }
-}
-class Xform {
-    constructor() {
-        this.matrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix();
-    }
-    transformPoint(point) {
-        let svgPoint = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGPoint();
-        svgPoint.x = point.x;
-        svgPoint.y = point.y;
-        svgPoint = svgPoint.matrixTransform(this.matrix);
-        return new Point(svgPoint.x, svgPoint.y);
-    }
-    apply(ctx) {
-        let m = this.matrix;
-        ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
-    }
-}
-class NumberMap {
-    constructor() {
-        this.map = {};
-    }
-    get(key) {
-        return key in this.map ? this.map[key] : 0;
-    }
-    add(key, count) {
-        this.map[key] = this.get(key) + count;
-    }
-}
-"use strict";
-var Util;
-(function (Util) {
-    function formatMoney(amount) {
-        return '§' + amount;
-    }
-    Util.formatMoney = formatMoney;
-    function getEventPos(event, element) {
-        var rect = element.getBoundingClientRect();
-        return new Point(event.clientX - rect.left, event.clientY - rect.top);
-    }
-    Util.getEventPos = getEventPos;
-    function assert(condition, message) {
-        if (!condition)
-            alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
-    }
-    Util.assert = assert;
-    function formatRows(rows) {
-        let columns = [];
-        for (let i = 0; i < rows.length; ++i)
-            for (let j = 0; j < rows[i].length; ++j) {
-                if (i == 0)
-                    columns[j] = '<table>';
-                columns[j] += '<tr><td>' + rows[i][j] + '</tr></td>';
-                if (i == rows.length - 1)
-                    columns[j] += '</table>';
-            }
-        return columns;
-    }
-    Util.formatRows = formatRows;
-    function getRandomInt(max) {
-        return Math.floor(Math.random() * max);
-    }
-    Util.getRandomInt = getRandomInt;
-    function lerp(start, end, param) {
-        return start + (end - start) * param;
-    }
-    Util.lerp = lerp;
-    function querp(start, end, param) {
-        return start + (end - start) * param * param;
-    }
-    Util.querp = querp;
-    function scaleCentred(ctx, scale, x, y) {
-        ctx.translate(x, y);
-        ctx.scale(scale, scale);
-        ctx.translate(-x, -y);
-    }
-    Util.scaleCentred = scaleCentred;
-    function setPrototype(obj, type) {
-        obj.__proto__ = type.prototype;
-    }
-    Util.setPrototype = setPrototype;
-    function dynamicCast(instance, ctor) {
-        return (instance instanceof ctor) ? instance : null;
-    }
-    Util.dynamicCast = dynamicCast;
-    function assertCast(instance, ctor) {
-        assert(instance instanceof ctor);
-        return instance;
-    }
-    Util.assertCast = assertCast;
-    function getImage(dir, name) {
-        return 'images/' + dir + '/' + name + '.png';
-    }
-    Util.getImage = getImage;
-})(Util || (Util = {}));
 "use strict";
 var View;
 (function (View) {
@@ -2021,7 +2138,7 @@ var View;
                 let cells = [];
                 cells.push(new View.Table.TextCell('<h4>' + person.name + '</h4>'));
                 cells.push(new View.Table.ImageCell(person.image));
-                cells.push(new View.Table.TextCell(person.health.toString() + '/' + person.getSpeciesData().health));
+                cells.push(new View.Table.TextCell(person.getHealth().toString() + '/' + person.getSpeciesData().health));
                 cells.push(new View.Table.TextCell(person.fame.toString()));
                 for (let c of Util.formatRows(person.getSkills()))
                     cells.push(new View.Table.TextCell('<small>' + c + '</small>'));
@@ -2412,7 +2529,7 @@ var View;
         updateHealths() {
             for (let i = 0; i < 2; ++i) {
                 if (this.fighters[i])
-                    this.healths[i] = this.fighters[i].health;
+                    this.healths[i] = this.fighters[i].getHealth();
             }
         }
         getImageRect(index) {
@@ -2563,7 +2680,7 @@ var View;
                 let cells = [];
                 cells.push(new View.Table.TextCell('<h4>' + animal.name + '</h4>'));
                 cells.push(new View.Table.ImageCell(animal.image));
-                cells.push(new View.Table.TextCell(animal.health.toString() + '/' + animal.getSpeciesData().health));
+                cells.push(new View.Table.TextCell(animal.getHealth().toString() + '/' + animal.getSpeciesData().health));
                 cells.push(new View.Table.TextCell(animal.fame.toString()));
                 tableFactory.addRow(cells, false, null);
             }
@@ -2767,6 +2884,88 @@ var View;
 "use strict";
 var View;
 (function (View) {
+    class ShopPage extends View.Page {
+        constructor(title) {
+            super(title);
+            this.scrollers = [];
+            this.items = [];
+            let topDiv = document.createElement('div');
+            let bottomDiv = document.createElement('div');
+            topDiv.id = 'shop_top';
+            bottomDiv.id = 'shop_bottom';
+            this.tabs = new View.TabBar((data) => { this.onTabClicked(data); });
+            topDiv.appendChild(this.tabs.div);
+            this.div.appendChild(topDiv);
+            this.div.appendChild(bottomDiv);
+            this.totalSpan = document.createElement('span');
+            this.checkoutButton = document.createElement('button');
+            this.checkoutButton.innerText = 'Check out';
+            this.checkoutButton.addEventListener('click', () => { this.onCheckOut(); });
+            this.totalSpan.style.cssFloat = this.checkoutButton.style.cssFloat = 'right';
+            bottomDiv.appendChild(this.checkoutButton);
+            bottomDiv.appendChild(this.totalSpan);
+        }
+        addTable(name) {
+            let table = new View.Table.Factory();
+            let scroller = table.makeScroller();
+            scroller.id = 'shop_scroller';
+            scroller.hidden = this.scrollers.length > 0;
+            this.div.appendChild(scroller);
+            this.tabs.addTab(name, scroller);
+            this.scrollers.push(scroller);
+            return table;
+        }
+        onShow() {
+            this.updateItems();
+        }
+        onTabClicked(data) {
+            for (let scroller of this.scrollers)
+                scroller.hidden = scroller !== data;
+        }
+        onCheckOut() {
+            for (let [item, cell] of this.items)
+                for (let i = 0; i < cell.value; ++i)
+                    item.buy();
+            View.Page.hideCurrent();
+            Controller.updateHUD();
+            View.ludus.updateObjects();
+        }
+        updateItems() {
+            let total = 0;
+            let basket = new NumberMap();
+            for (let [item, cell] of this.items) {
+                total += item.cost * cell.value;
+                basket.add(item.type, cell.value);
+            }
+            let moneyLeft = Model.state.getMoney() - total;
+            for (let [item, cell] of this.items) {
+                let canAdd = item.canBuy() && item.canAddToBasket(basket) && item.cost <= moneyLeft;
+                cell.decButton.disabled = cell.value == 0;
+                cell.incButton.disabled = !canAdd;
+            }
+            this.totalSpan.innerText = 'Total: ' + total + '. Money left: ' + moneyLeft;
+            this.totalSpan.style.marginRight = '1em';
+            this.checkoutButton.disabled = total == 0;
+        }
+        addItem(item, table) {
+            let inputCell = new View.Table.NumberInputCell(15, () => { this.updateItems(); });
+            let cells = [
+                new View.Table.TextCell('<h4>' + item.title + '</h4>', 15),
+                new View.Table.ImageCell(item.image, 15),
+                new View.Table.TextCell(item.description, 40),
+                new View.Table.TextCell(Util.formatMoney(item.cost), 15),
+                inputCell
+            ];
+            table.addRow(cells, !item.canBuy(), null);
+            this.items.push([item, inputCell]);
+        }
+    }
+    View.ShopPage = ShopPage;
+})(View || (View = {}));
+/// <reference path="page.ts" />
+"use strict";
+var View;
+(function (View) {
     class StoragePage extends View.Page {
         constructor() {
             super('Storage (' + Model.state.team.getItemCount() + '/' + Model.state.buildings.getCapacity('storage') + ')');
@@ -2785,6 +2984,38 @@ var View;
         }
     }
     View.StoragePage = StoragePage;
+})(View || (View = {}));
+"use strict";
+var View;
+(function (View) {
+    class TabBar {
+        constructor(handler) {
+            this.handler = handler;
+            this.div = document.createElement('div');
+            this.tabs = [];
+            this.div.className = 'tab_bar';
+        }
+        onTabClicked(tab, data) {
+            for (let t of this.tabs) {
+                if (t === tab)
+                    t.classList.add('tab_selected');
+                else
+                    t.classList.remove('tab_selected');
+            }
+            this.handler(data);
+        }
+        addTab(name, data) {
+            let tab = document.createElement('div');
+            tab.innerText = name;
+            tab.className = 'tab';
+            tab.addEventListener('click', () => { this.onTabClicked(tab, data); });
+            this.tabs.push(tab);
+            this.div.appendChild(tab);
+            if (this.tabs.length == 1)
+                this.onTabClicked(tab, data);
+        }
+    }
+    View.TabBar = TabBar;
 })(View || (View = {}));
 "use strict";
 var View;
@@ -3061,220 +3292,4 @@ var View;
         document.getElementById('skip_day_btn').disabled = !enable;
     }
     View.enable = enable;
-})(View || (View = {}));
-"use strict";
-var Controller;
-(function (Controller) {
-    var Shop;
-    (function (Shop) {
-        class Item {
-            constructor(type, tag, title, description, image, cost) {
-                this.type = type;
-                this.tag = tag;
-                this.title = title;
-                this.description = description;
-                this.image = image;
-                this.cost = cost;
-            }
-            canBuy() { return true; }
-            canAddToBasket(basket) {
-                return basket.get(this.type) < this.getMaxTypeCount();
-            }
-        }
-        Shop.Item = Item;
-        class BuildingItem extends Item {
-            constructor(tag) {
-                let levelIndex = Model.state.buildings.getNextUpgradeIndex(tag);
-                let level = Data.Buildings.getLevel(tag, levelIndex);
-                Util.assert(level != null);
-                super('building:' + tag, tag, level.name, level.description, Util.getImage('buildings', tag + levelIndex), level.cost);
-            }
-            getMaxTypeCount() {
-                return 1;
-            }
-            canBuy() {
-                return Model.state.buildings.canUpgrade(this.tag);
-            }
-            buy() {
-                Model.state.buildings.buyUpgrade(this.tag);
-            }
-        }
-        Shop.BuildingItem = BuildingItem;
-        class AnimalItem extends Item {
-            constructor(tag) {
-                let data = Data.Animals.Types[tag];
-                Util.assert(data != null);
-                super('animal', tag, data.name, data.getDescription(), Util.getImage('animals', tag), data.cost);
-            }
-            getMaxTypeCount() {
-                return Model.state.buildings.getCapacity('kennels') - Model.state.team.getAnimals().length;
-            }
-            buy() {
-                Model.state.buyAnimal(this.tag);
-            }
-        }
-        Shop.AnimalItem = AnimalItem;
-        class PeopleItem extends Item {
-            constructor(tag) {
-                let data = Data.People.Types[tag];
-                Util.assert(data != null);
-                super('person', tag, data.name, data.getDescription(), Util.getImage('people', tag), data.cost);
-            }
-            getMaxTypeCount() {
-                return Model.state.buildings.getCapacity('barracks') - Model.state.team.getPeople().length;
-            }
-            buy() {
-                Model.state.buyPerson(this.tag);
-            }
-        }
-        Shop.PeopleItem = PeopleItem;
-        class AccessoryItem extends Item {
-            constructor(tag, title, description, cost) {
-                super('accessory', tag, title, description, Util.getImage('items', tag), cost);
-                this.tag = tag;
-                this.title = title;
-                this.description = description;
-                this.cost = cost;
-            }
-            getMaxTypeCount() {
-                return Model.state.buildings.getCapacity('storage') - Model.state.team.getItemCount();
-            }
-        }
-        class ArmourItem extends AccessoryItem {
-            constructor(tag) {
-                let data = Data.Armour.Types[tag];
-                Util.assert(data != null);
-                super(tag, data.name, data.getDescription(), data.cost);
-            }
-            buy() {
-                Model.state.buyArmour(this.tag);
-            }
-        }
-        Shop.ArmourItem = ArmourItem;
-        class WeaponItem extends AccessoryItem {
-            constructor(tag) {
-                let data = Data.Weapons.Types[tag];
-                Util.assert(data != null);
-                super(tag, data.name, data.getDescription(), data.cost);
-            }
-            buy() {
-                Model.state.buyWeapon(this.tag);
-            }
-        }
-        Shop.WeaponItem = WeaponItem;
-    })(Shop = Controller.Shop || (Controller.Shop = {}));
-})(Controller || (Controller = {}));
-/// <reference path="page.ts" />
-"use strict";
-var View;
-(function (View) {
-    class ShopPage extends View.Page {
-        constructor(title) {
-            super(title);
-            this.scrollers = [];
-            this.items = [];
-            let topDiv = document.createElement('div');
-            let bottomDiv = document.createElement('div');
-            topDiv.id = 'shop_top';
-            bottomDiv.id = 'shop_bottom';
-            this.tabs = new View.TabBar((data) => { this.onTabClicked(data); });
-            topDiv.appendChild(this.tabs.div);
-            this.div.appendChild(topDiv);
-            this.div.appendChild(bottomDiv);
-            this.totalSpan = document.createElement('span');
-            this.checkoutButton = document.createElement('button');
-            this.checkoutButton.innerText = 'Check out';
-            this.checkoutButton.addEventListener('click', () => { this.onCheckOut(); });
-            this.totalSpan.style.cssFloat = this.checkoutButton.style.cssFloat = 'right';
-            bottomDiv.appendChild(this.checkoutButton);
-            bottomDiv.appendChild(this.totalSpan);
-        }
-        addTable(name) {
-            let table = new View.Table.Factory();
-            let scroller = table.makeScroller();
-            scroller.id = 'shop_scroller';
-            scroller.hidden = this.scrollers.length > 0;
-            this.div.appendChild(scroller);
-            this.tabs.addTab(name, scroller);
-            this.scrollers.push(scroller);
-            return table;
-        }
-        onShow() {
-            this.updateItems();
-        }
-        onTabClicked(data) {
-            for (let scroller of this.scrollers)
-                scroller.hidden = scroller !== data;
-        }
-        onCheckOut() {
-            for (let [item, cell] of this.items)
-                for (let i = 0; i < cell.value; ++i)
-                    item.buy();
-            View.Page.hideCurrent();
-            Controller.updateHUD();
-            View.ludus.updateObjects();
-        }
-        updateItems() {
-            let total = 0;
-            let basket = new NumberMap();
-            for (let [item, cell] of this.items) {
-                total += item.cost * cell.value;
-                basket.add(item.type, cell.value);
-            }
-            let moneyLeft = Model.state.getMoney() - total;
-            for (let [item, cell] of this.items) {
-                let canAdd = item.canBuy() && item.canAddToBasket(basket) && item.cost <= moneyLeft;
-                cell.decButton.disabled = cell.value == 0;
-                cell.incButton.disabled = !canAdd;
-            }
-            this.totalSpan.innerText = 'Total: ' + total + '. Money left: ' + moneyLeft;
-            this.totalSpan.style.marginRight = '1em';
-            this.checkoutButton.disabled = total == 0;
-        }
-        addItem(item, table) {
-            let inputCell = new View.Table.NumberInputCell(15, () => { this.updateItems(); });
-            let cells = [
-                new View.Table.TextCell('<h4>' + item.title + '</h4>', 15),
-                new View.Table.ImageCell(item.image, 15),
-                new View.Table.TextCell(item.description, 40),
-                new View.Table.TextCell(Util.formatMoney(item.cost), 15),
-                inputCell
-            ];
-            table.addRow(cells, !item.canBuy(), null);
-            this.items.push([item, inputCell]);
-        }
-    }
-    View.ShopPage = ShopPage;
-})(View || (View = {}));
-"use strict";
-var View;
-(function (View) {
-    class TabBar {
-        constructor(handler) {
-            this.handler = handler;
-            this.div = document.createElement('div');
-            this.tabs = [];
-            this.div.className = 'tab_bar';
-        }
-        onTabClicked(tab, data) {
-            for (let t of this.tabs) {
-                if (t === tab)
-                    t.classList.add('tab_selected');
-                else
-                    t.classList.remove('tab_selected');
-            }
-            this.handler(data);
-        }
-        addTab(name, data) {
-            let tab = document.createElement('div');
-            tab.innerText = name;
-            tab.className = 'tab';
-            tab.addEventListener('click', () => { this.onTabClicked(tab, data); });
-            this.tabs.push(tab);
-            this.div.appendChild(tab);
-            if (this.tabs.length == 1)
-                this.onTabClicked(tab, data);
-        }
-    }
-    View.TabBar = TabBar;
 })(View || (View = {}));
