@@ -308,8 +308,14 @@ var Util;
     }
     Util.getEventPos = getEventPos;
     function assert(condition, message) {
-        if (!condition)
-            alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
+        if (!condition) {
+            let str = 'Assertion failed';
+            if (message)
+                str += ': ' + message;
+            str += '\n\nCall stack:\n' + (new Error).stack;
+            alert(str);
+            debugger;
+        }
     }
     Util.assert = assert;
     function formatRows(rows) {

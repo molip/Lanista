@@ -14,7 +14,15 @@
 	export function assert(condition: boolean, message?: string)
 	{
 		if (!condition)
-			alert(message ? 'Assertion failed: ' + message : 'Assertion failed');
+		{
+			let str = 'Assertion failed';
+			if (message)
+				str += ': ' + message;
+
+			str += '\n\nCall stack:\n' + (new Error).stack;
+			alert(str);
+			debugger;
+		}
 	}
 
 	export function formatRows(rows: string[][])
