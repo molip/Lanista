@@ -180,8 +180,6 @@ namespace Model
 				}
 				else
 				{
-					let healRate = 0;
-
 					let parts = activity.split(':');
 					if (parts.length == 2 && parts[0] == 'train')
 					{
@@ -190,15 +188,12 @@ namespace Model
 					}
 					else if (activity == 'heal')
 					{
-						healRate = Data.Misc.HealingRate;
+						fighter.heal(hours, true);
 					}
 					else if (activity == 'idle')
 					{
-						healRate = Data.Misc.IdleHealingRate;
+						fighter.heal(hours, false);
 					}
-
-					if (healRate)
-						fighter.addHealth(hours * healRate);
 				}
 			}
 

@@ -9,5 +9,10 @@ namespace Model
 			let type = Data.Animals.Types[tag];
 			super(id, type.species, name, Util.getImage('animals', tag), fame);
 		}
+
+		getHealingRate(fast: boolean)
+		{
+			return fast ? Data.Misc.AnimalHealingRate : Data.Misc.IdleAnimalHealingRate;
+		}
 	}
 }
