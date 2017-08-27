@@ -18,7 +18,7 @@ Data.Buildings.Levels = {
 	],
 	'kennels': [
 		new Data.Buildings.Level(	0,		3,		350,	60,		5,			'Kennels 1',			'For animals to live in'		),
-		new Data.Buildings.Level(	200,	5,		350,	60,		12,			'Kennels 2',			'Nice Kennels'				),
+//		new Data.Buildings.Level(	200,	5,		350,	60,		12,			'Kennels 2',			'Nice Kennels'				),
 	],
 	'storage': [
 		new Data.Buildings.Level(	0,		0,		390,	347,	3,			'Box',					'Small, but keeps the rain off'	),
@@ -34,7 +34,7 @@ Data.Buildings.Levels = {
 //	],
 	'training': [
 		new Data.Buildings.Level(	100,	3,		700,	300,	0,			'Training 1',			'To train gladiators'		 ),
-		new Data.Buildings.Level(	200,	5,		700,	300,	0,			'Training 2',			'Nice Training'				),
+//		new Data.Buildings.Level(	200,	5,		700,	300,	0,			'Training 2',			'Nice Training'				),
 	],
 //	'surgery': [
 //		new Data.Buildings.Level(	100,	3,		1100,	300,	0,			'Surgery 1',			'To fix gladiators'			),
