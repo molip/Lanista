@@ -30,7 +30,7 @@ namespace Model
 		constructor(public data: Data.Attack, public weaponTag: string, public sourceID: string, public skill: number) { }
 	}
 
-	export class Fighter
+	export abstract class Fighter
 	{
 		bodyParts: { [id: string]: BodyPart } = {};
 		private skills: { [tag: string]: number } = {}; // +/- percent.
@@ -215,5 +215,12 @@ namespace Model
 			this.health = Math.max(Math.min(this.health + value, this.getSpeciesData().health), 0);
 			Model.invalidate();
 		}
+
+		heal(hours: number, fast: boolean)
+		{
+			this.addHealth(hours * this.getHealingRate(fast));
+		}
+
+		abstract getHealingRate(fast: boolean): number;
 	}
 }

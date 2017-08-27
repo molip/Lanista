@@ -197,8 +197,10 @@
 		export let FightBackgroundImage: string;
 		export let ExperienceBenefit: number;
 		export let TrainingRate: number;
-		export let HealingRate: number;
-		export let IdleHealingRate: number;
+		export let HumanHealingRate: number;
+		export let IdleHumanHealingRate: number;
+		export let AnimalHealingRate: number;
+		export let IdleAnimalHealingRate: number;
 		export let StartingMoney: number;
 		export let BaseAttackSkill: number;
 		export let HomeFightInjuryThreshold: number;

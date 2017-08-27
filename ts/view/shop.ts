@@ -49,7 +49,7 @@ namespace View
 			return table;
 		}
 
-		private onShow()
+		onShow()
 		{
 			this.updateItems();
 		}

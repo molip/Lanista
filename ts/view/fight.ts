@@ -247,6 +247,8 @@ namespace View
 			let result = Model.state.fight.step();
 			let defenderIndex = Model.state.fight.nextSideIndex;
 
+			Util.assert(attackerIndex != defenderIndex);
+
 			let attacker = this.fighters[attackerIndex];
 			let defender = this.fighters[defenderIndex];
 

@@ -171,8 +171,8 @@ namespace Model
 					for (let i = 0; i < 2; ++i)
 						this.getFighter(i).addFame(rewards.fame[i]);
 				}
-				else
-					this.nextSideIndex = defenderIndex;
+
+				this.nextSideIndex = defenderIndex;
 
 				Model.invalidate();
 

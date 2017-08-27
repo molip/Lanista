@@ -5,11 +5,11 @@
 
 Data.Animals.Types = {
 //	tag										cost	fame	species			name			description
-	'rabbit':		new Data.Animals.Type(	10,		1,		'rabbit',		'Rabbit',		'Ferocious and fluffy'),
+	'rabbit':		new Data.Animals.Type(	5,		1,		'rabbit',		'Rabbit',		'Ferocious and fluffy'),
 //	'rhino':		new Data.Animals.Type(	90, 	0,		'rhino',		'Rhino',		'Ferocious and spikey'),
 //	'dog':			new Data.Animals.Type(	25,		0,		'dog',			'Dog',			'Loyal but dangerous'),
-	'wolf':			new Data.Animals.Type(	30,		3,		'wolf',			'Wolf',			'Wild'),
-	'lynx':			new Data.Animals.Type(	35,		5,		'lynx',			'Lynx',			'Sly'),
+	'wolf':			new Data.Animals.Type(	20,		3,		'wolf',			'Wolf',			'Wild'),
+	'lynx':			new Data.Animals.Type(	25,		5,		'lynx',			'Lynx',			'Sly'),
 //	'snake':		new Data.Animals.Type(	30,		0,		'snake',		'Snake',		'Small but lethal'),
 //	'boar':			new Data.Animals.Type(	25,		0,		'boar',			'Boar',			'A solid angry beast'),
 //	'bear':			new Data.Animals.Type(	90,		0,		'bear',			'Bear',			'A furry killer'),

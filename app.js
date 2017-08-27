@@ -887,6 +887,9 @@ var Model;
             this.health = Math.max(Math.min(this.health + value, this.getSpeciesData().health), 0);
             Model.invalidate();
         }
+        heal(hours, fast) {
+            this.addHealth(hours * this.getHealingRate(fast));
+        }
     }
     Model.Fighter = Fighter;
 })(Model || (Model = {}));
@@ -897,6 +900,9 @@ var Model;
         constructor(id, tag, name, fame) {
             let type = Data.Animals.Types[tag];
             super(id, type.species, name, Util.getImage('animals', tag), fame);
+        }
+        getHealingRate(fast) {
+            return fast ? Data.Misc.AnimalHealingRate : Data.Misc.IdleAnimalHealingRate;
         }
     }
     Model.Animal = Animal;
@@ -1216,8 +1222,7 @@ var Model;
                     for (let i = 0; i < 2; ++i)
                         this.getFighter(i).addFame(rewards.fame[i]);
                 }
-                else
-                    this.nextSideIndex = defenderIndex;
+                this.nextSideIndex = defenderIndex;
                 Model.invalidate();
                 return result;
             }
@@ -1511,20 +1516,17 @@ var Model;
                     workers[activity].push(fighter);
                 }
                 else {
-                    let healRate = 0;
                     let parts = activity.split(':');
                     if (parts.length == 2 && parts[0] == 'train') {
                         let skill = parts[1];
                         fighter.addSkill(skill, hours * Data.Misc.TrainingRate);
                     }
                     else if (activity == 'heal') {
-                        healRate = Data.Misc.HealingRate;
+                        fighter.heal(hours, true);
                     }
                     else if (activity == 'idle') {
-                        healRate = Data.Misc.IdleHealingRate;
+                        fighter.heal(hours, false);
                     }
-                    if (healRate)
-                        fighter.addHealth(hours * healRate);
                 }
             }
             // Building, training animals, training gladiators, crafting, repairing:
@@ -1661,6 +1663,9 @@ var Model;
         constructor(id, tag, name, fame) {
             let type = Data.People.Types[tag];
             super(id, 'human', name, Util.getImage('people', tag), fame);
+        }
+        getHealingRate(fast) {
+            return fast ? Data.Misc.HumanHealingRate : Data.Misc.IdleHumanHealingRate;
         }
     }
     Model.Person = Person;
@@ -2434,6 +2439,7 @@ var View;
             let attackerIndex = Model.state.fight.nextSideIndex;
             let result = Model.state.fight.step();
             let defenderIndex = Model.state.fight.nextSideIndex;
+            Util.assert(attackerIndex != defenderIndex);
             let attacker = this.fighters[attackerIndex];
             let defender = this.fighters[defenderIndex];
             if (this.fighters[attackerIndex].isHuman()) {

@@ -9,5 +9,10 @@ namespace Model
 			let type = Data.People.Types[tag];
 			super(id, 'human', name, Util.getImage('people', tag), fame);
 		}
+
+		getHealingRate(fast: boolean)
+		{
+			return fast ? Data.Misc.HumanHealingRate : Data.Misc.IdleHumanHealingRate;
+		}
 	}
 }
