@@ -25,7 +25,7 @@ var Data;
         }
     }
     Data.Site = Site;
-    var Armour;
+    let Armour;
     (function (Armour) {
         class Type {
             constructor(name, cost, fame, description, sites, defence) {
@@ -52,7 +52,7 @@ var Data;
         }
         Armour.Type = Type;
     })(Armour = Data.Armour || (Data.Armour = {}));
-    var Weapons;
+    let Weapons;
     (function (Weapons) {
         class Type {
             constructor(name, block, cost, fame, description, sites, attacks) {
@@ -103,7 +103,7 @@ var Data;
         }
     }
     Data.BodyPart = BodyPart;
-    var Species;
+    let Species;
     (function (Species) {
         class Type {
             constructor(name, health) {
@@ -113,7 +113,7 @@ var Data;
         }
         Species.Type = Type;
     })(Species = Data.Species || (Data.Species = {}));
-    var Animals;
+    let Animals;
     (function (Animals) {
         class Type {
             constructor(cost, fame, species, name, description) {
@@ -135,7 +135,7 @@ var Data;
         }
         Animals.Type = Type;
     })(Animals = Data.Animals || (Data.Animals = {}));
-    var People;
+    let People;
     (function (People) {
         class Type {
             constructor(cost, fame, name, description) {
@@ -152,7 +152,7 @@ var Data;
         }
         People.Type = Type;
     })(People = Data.People || (Data.People = {}));
-    var Buildings;
+    let Buildings;
     (function (Buildings) {
         class Level {
             constructor(cost, buildTime, mapX, mapY, capacity, name, description) {
@@ -172,7 +172,7 @@ var Data;
         }
         Buildings.getLevel = getLevel;
     })(Buildings = Data.Buildings || (Data.Buildings = {}));
-    var Activities;
+    let Activities;
     (function (Activities) {
         class Type {
             constructor(name, job, human, animal, freeWork) {
@@ -185,7 +185,7 @@ var Data;
         }
         Activities.Type = Type;
     })(Activities = Data.Activities || (Data.Activities = {}));
-    var Events;
+    let Events;
     (function (Events_1) {
         class AwayFightEvent {
             constructor(day, injuryThreshold, fameRequired, losingFameReward, winningFameReward, losingMoneyReward, winningMoneyReward, name) {
@@ -214,7 +214,7 @@ var Data;
         console.log('Validating finished.');
     }
     Data.validate = validate;
-    var Skills;
+    let Skills;
     (function (Skills) {
         class Type {
             constructor(name) {
@@ -223,7 +223,7 @@ var Data;
         }
         Skills.Type = Type;
     })(Skills = Data.Skills || (Data.Skills = {}));
-    var Misc;
+    let Misc;
     (function (Misc) {
     })(Misc = Data.Misc || (Data.Misc = {}));
 })(Data || (Data = {}));
@@ -369,7 +369,7 @@ var Util;
 })(Util || (Util = {}));
 var Controller;
 (function (Controller) {
-    var Canvas;
+    let Canvas;
     (function (Canvas) {
         Canvas.HotObject = null;
         function init() {
@@ -564,7 +564,8 @@ var Controller;
     }
     Controller.updateHUD = updateHUD;
     function onKeyDown(evt) {
-        if (evt.keyCode == 27) {
+        if (evt.keyCode == 27) // Escape.
+         {
             if (View.Page.Current) {
                 View.Page.hideCurrent();
             }
@@ -578,7 +579,7 @@ var Controller;
 })(Controller || (Controller = {}));
 var Controller;
 (function (Controller) {
-    var Shop;
+    let Shop;
     (function (Shop) {
         function getShopTitle(name) {
             return name + ' (money available: ' + Util.formatMoney(Model.state.getMoney()) + ')';
@@ -623,7 +624,7 @@ var Controller;
 })(Controller || (Controller = {}));
 var Controller;
 (function (Controller) {
-    var Shop;
+    let Shop;
     (function (Shop) {
         class Item {
             constructor(type, tag, title, description, image, cost) {
@@ -738,7 +739,7 @@ var Model;
         }
         // Gets tag of armour or weapon site, if present.
         getSiteTag(accType, speciesData) {
-            if (accType == Model.ItemType.Armour)
+            if (accType == Model.ItemType.Armour) // We are our own armour site.
                 return this.tag;
             let site = this.getData(speciesData).weaponSite;
             return site ? site.type : null;
@@ -909,7 +910,7 @@ var Model;
 })(Model || (Model = {}));
 var Model;
 (function (Model) {
-    var Buildings;
+    let Buildings;
     (function (Buildings) {
         class State {
             constructor() {
@@ -1082,7 +1083,7 @@ var Model;
             this.name = name;
         }
         getDescription() {
-            return this.name;
+            return this.name + ' (' + this.fameRequired + ' fame required)';
         }
         createNPCSide() {
             let team = new Model.Team();
@@ -1101,7 +1102,7 @@ var Model;
 })(Model || (Model = {}));
 var Model;
 (function (Model) {
-    var Fight;
+    let Fight;
     (function (Fight) {
         class AttackResult {
             constructor(attack, description, attackDamage, defense, targetID) {
@@ -1175,7 +1176,7 @@ var Model;
                     Util.assert(part.tag in fighter.getSpeciesData().bodyParts);
                     Util.assert(fighter.getSpeciesData().bodyParts[part.tag].instances.length == 2); // Arms or legs.
                     bodyImage = (part.index == 1 ? 'right ' : 'left ') + part.tag + ' up';
-                    if (attack.weaponTag && Data.Weapons.Types[attack.weaponTag].sites[0].count == 2)
+                    if (attack.weaponTag && Data.Weapons.Types[attack.weaponTag].sites[0].count == 2) // TODO: What about other sites? 
                         bodyImage = 'both arms up';
                 }
                 images.push(basePath + bodyImage + '.png');
@@ -1185,7 +1186,7 @@ var Model;
                     let item = side.getTeam().getItem(itemPos.itemID);
                     if (item.type == Model.ItemType.Weapon) {
                         let weaponPath = '';
-                        if (itemPos.bodyPartIDs.length == 1)
+                        if (itemPos.bodyPartIDs.length == 1) // Single-handed.
                             weaponPath = fighter.bodyParts[itemPos.bodyPartIDs[0]].index == 1 ? 'right ' : 'left ';
                         weaponPath += item.tag;
                         if (attack && itemPos.bodyPartIDs.indexOf(attack.sourceID) >= 0)
@@ -1381,7 +1382,7 @@ var Model;
 var Model;
 (function (Model) {
     const minutesPerDay = 60 * 12;
-    var Phase;
+    let Phase;
     (function (Phase) {
         Phase[Phase["Dawn"] = 0] = "Dawn";
         Phase[Phase["News"] = 1] = "News";
@@ -1420,7 +1421,7 @@ var Model;
             this.team.onLoad();
             for (let event of this.events)
                 Model.Event.initPrototype(event);
-            if (this.phase == Phase.Dusk)
+            if (this.phase == Phase.Dusk) // Skip it. 
                 this.phase = Phase.Dawn;
         }
         update(seconds) {
@@ -1430,8 +1431,12 @@ var Model;
             return changed;
         }
         skipToNextDay(doWork) {
+            return this.skipToDay(this.getDay() + 1, doWork);
+        }
+        skipToDay(day, doWork) {
             Util.assert(this.phase == Phase.Day || this.phase == Phase.Fight);
-            let newTime = (this.getDay() + 1) * minutesPerDay;
+            Util.assert(day > this.getDay());
+            let newTime = day * minutesPerDay;
             let changed = this.addMinutes(newTime - this.time, doWork);
             this.phase = Phase.Dusk;
             Model.invalidate();
@@ -1448,8 +1453,8 @@ var Model;
             Model.invalidate();
             return changed;
         }
-        deleteEventsForToday() {
-            this.events = this.events.filter(e => e.day != this.getDay());
+        deletePastEvents() {
+            this.events = this.events.filter(e => e.day > this.getDay());
             Model.invalidate();
         }
         isNight() { return this.phase == Phase.Dawn || this.phase == Phase.Dusk; }
@@ -1474,7 +1479,7 @@ var Model;
                     break;
                 case Phase.Event:
                     Util.assert(this.fight == null); // Otherwise startFight sets the phase. 
-                    this.deleteEventsForToday();
+                    this.deletePastEvents();
                     this.phase = Phase.Day;
                     break;
                 case Phase.Day:
@@ -1594,7 +1599,7 @@ var Model;
             Util.assert(this.phase == Phase.Event);
             Util.assert(fight && fight.canStart());
             this.fight = fight;
-            this.deleteEventsForToday();
+            this.deletePastEvents();
             this.phase = Phase.Fight;
             Model.invalidate();
         }
@@ -1672,7 +1677,7 @@ var Model;
 })(Model || (Model = {}));
 var Model;
 (function (Model) {
-    var ItemType;
+    let ItemType;
     (function (ItemType) {
         ItemType[ItemType["Weapon"] = 0] = "Weapon";
         ItemType[ItemType["Armour"] = 1] = "Armour";
@@ -2600,7 +2605,8 @@ var View;
                 this.sequence.draw(ctx, sceneXform);
         }
         drawFighter(index, ctx) {
-            if (this.winnerIndex >= 0 && index != this.winnerIndex) {
+            if (this.winnerIndex >= 0 && index != this.winnerIndex) // Dead! 
+             {
                 let rect = this.getImageRect(index);
                 ctx.translate(0, rect.height());
                 ctx.rotate(-Math.PI / 2);
@@ -2622,6 +2628,12 @@ var View;
                 Model.state.addEvent(new Model.HomeFightEvent(Model.state.getDay() + 1, Data.Misc.HomeFightInjuryThreshold));
                 this.update();
             };
+            this.onFightClicked = (day) => {
+                if (confirm('Skip to day ' + (day + 1) + '?')) {
+                    View.Page.hideCurrent();
+                    Model.state.skipToDay(day, true);
+                }
+            };
             let topDiv = document.createElement('div');
             topDiv.className = 'top_section';
             this.bottomDiv = document.createElement('div');
@@ -2640,7 +2652,7 @@ var View;
             tableFactory.addColumnHeader('Event', 90);
             for (let event of Model.state.events) {
                 let cells = [new View.Table.TextCell((event.day + 1).toString()), new View.Table.TextCell(event.getDescription())];
-                tableFactory.addRow(cells, false, null);
+                tableFactory.addRow(cells, false, () => { this.onFightClicked(event.day); });
             }
             if (this.bottomDiv.firstChild)
                 this.bottomDiv.removeChild(this.bottomDiv.firstChild);
@@ -3000,7 +3012,7 @@ var View;
 })(View || (View = {}));
 var View;
 (function (View) {
-    var Table;
+    let Table;
     (function (Table) {
         class Cell {
             constructor(width) {

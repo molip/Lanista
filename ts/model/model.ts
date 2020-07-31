@@ -62,9 +62,15 @@ namespace Model
 
 		skipToNextDay(doWork: boolean)
 		{
-			Util.assert(this.phase == Phase.Day || this.phase == Phase.Fight);
+			return this.skipToDay(this.getDay() + 1, doWork);
+		}
 
-			let newTime = (this.getDay() + 1) * minutesPerDay;
+		skipToDay(day: number, doWork: boolean)
+		{
+			Util.assert(this.phase == Phase.Day || this.phase == Phase.Fight);
+			Util.assert(day > this.getDay());
+
+			let newTime = day * minutesPerDay;
 			let changed = this.addMinutes(newTime - this.time, doWork);
 			this.phase = Phase.Dusk;
 			Model.invalidate();
@@ -89,9 +95,9 @@ namespace Model
 			return changed;
 		}
 
-		private deleteEventsForToday()
+		private deletePastEvents() // Includes today.
 		{
-			this.events = this.events.filter(e => e.day != this.getDay());
+			this.events = this.events.filter(e => e.day > this.getDay());
 			Model.invalidate();
 		}
 
@@ -122,7 +128,7 @@ namespace Model
 					break;
 				case Phase.Event:
 					Util.assert(this.fight == null); // Otherwise startFight sets the phase. 
-					this.deleteEventsForToday();
+					this.deletePastEvents();
 					this.phase = Phase.Day;
 					break;
 				case Phase.Day:
@@ -290,7 +296,7 @@ namespace Model
 			Util.assert(this.phase == Phase.Event);
 			Util.assert(fight && fight.canStart());
 			this.fight = fight;
-			this.deleteEventsForToday();
+			this.deletePastEvents();
 			this.phase = Phase.Fight;
 			Model.invalidate();
 		}

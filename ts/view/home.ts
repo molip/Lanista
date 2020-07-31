@@ -35,6 +35,15 @@ namespace View
 			this.update();
 		}
 
+		private onFightClicked = (day: number) =>
+		{
+			if (confirm('Skip to day ' + (day + 1) + '?'))
+			{
+				Page.hideCurrent();
+				Model.state.skipToDay(day, true);
+			}
+		}
+
 		private update()
 		{
 			let tableFactory = new Table.Factory();
@@ -45,7 +54,7 @@ namespace View
 			for (let event of Model.state.events)
 			{
 				let cells = [new Table.TextCell((event.day + 1).toString()), new Table.TextCell(event.getDescription())];
-				tableFactory.addRow(cells, false, null);
+				tableFactory.addRow(cells, false, () => { this.onFightClicked(event.day); });
 			}
 
 			if (this.bottomDiv.firstChild)

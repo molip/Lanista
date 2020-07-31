@@ -93,7 +93,7 @@ namespace Model
 
 		getDescription()
 		{
-			return this.name;
+			return this.name + ' (' + this.fameRequired + ' fame required)';
 		}
 
 		createNPCSide()
